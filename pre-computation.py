@@ -8,6 +8,9 @@ import pickle
 import time
 import os
 
+
+
+
 #Coumpound counter starts from 1
 # Helper function for binary translation
 def IntegerToBinaryTF(num: int, ls_bn: list)-> list:
@@ -103,26 +106,52 @@ def assign_wells_multidim(n_compounds:int, n_dims:int, **kwargs)->np.array:
 
 
 ''' Method 4: Pooling using random design'''
-def assign_wells_random(n_compounds:int,  differentiate:int, n_compounds_per_well=0, n_wells=0, guesses=0, **kwargs)->np.array:
+def assign_wells_random(n_compounds:int,  differentiate:int, n_compounds_per_well=0, n_wells=0, guesses=0, Evaluate=False, return_me=False, **kwargs)->np.array:
     if guesses==0:
         guesses=n_compounds
-    min_tests=n_compounds**2
-    if n_compounds_per_well*n_wells==0:
-        n_compounds_per_well, n_wells = find_rand_params(n_compounds, differentiate, n_compounds_per_well, n_wells, guesses=0)
+    min_tests=np.inf
+
+    if n_compounds_per_well==0 or n_wells==0:
+        _,_, min_tests, WA_rand=find_rand_params(n_compounds=n_compounds, differentiate=differentiate, 
+                                 n_compounds_per_well=n_compounds_per_well, n_wells=n_wells, guesses=guesses)
+        if return_me:
+            return WA_rand,  min_tests
         
-    second_axis=np.tile(np.arange(n_wells),n_compounds_per_well).reshape(n_compounds_per_well,-1)
-    for i in range(guesses):
-        idt=np.random.randint(0,n_compounds,size=(n_compounds_per_well,n_wells) )
-        well_assigner=np.zeros((n_compounds,n_wells))==1
-        well_assigner[idt, second_axis]=True
-        TF,_, counts= is_consistent(well_assigner, differentiate)
-        mean_tests=extra_tests(counts)
-        if TF:
-            return(well_assigner)
-        elif mean_tests<min_tests: 
-            best_wa=well_assigner.copy()
-            min_tests=mean_tests
-    return(best_wa)
+        return WA_rand
+        
+
+
+    if Evaluate:
+        second_axis=np.tile(np.arange(n_wells),n_compounds_per_well).reshape(n_compounds_per_well,-1)
+        for i in range(guesses):
+            idt=np.random.randint(0,n_compounds,size=(n_compounds_per_well,n_wells) )
+            well_assigner=np.zeros((n_compounds,n_wells))==1
+            well_assigner[idt, second_axis]=True
+            if guesses==1:
+                if return_me:
+                    mean_exp, _, _, p_check= mean_metrics(well_assigner, differentiate)
+                    return well_assigner, mean_exp
+                return well_assigner
+            mean_exp, _, _, p_check= mean_metrics(well_assigner, differentiate)
+            if p_check<1:
+                if return_me:
+                    return well_assigner,  mean_exp
+                return well_assigner
+            elif mean_exp<min_tests: 
+                best_wa=well_assigner.copy()
+                min_tests=mean_exp
+
+        if return_me:
+            return best_wa,  min_tests
+        
+        return best_wa
+
+    _,_, min_tests, WA_rand=find_rand_params(n_compounds=n_compounds, differentiate=differentiate, 
+                                 n_compounds_per_well=n_compounds_per_well, n_wells=n_wells, guesses=guesses)
+    if return_me:
+        return WA_rand,  min_tests
+    
+    return WA_rand
 
 
 ''' Method 5: Pooling using STD design'''
@@ -323,8 +352,11 @@ def find_dims(n_compounds,differentiate, **kwargs):
     return ndmin
 
 
+
+
+
 def find_rand_params(n_compounds:int, differentiate:int, n_compounds_per_well=0, n_wells=0, guesses=0, 
-                     max_compounds=0, max_redundancy=4, min_redundancy=1, **kwargs):
+                     max_compounds=0, max_redundancy=4, min_redundancy=1):
     skip_compounds=True
     skip_wells=True
     if n_compounds_per_well==0:
@@ -344,34 +376,32 @@ def find_rand_params(n_compounds:int, differentiate:int, n_compounds_per_well=0,
         MW=int(MW+1)
 
     arr_wells=np.arange(mw,MW)
-    min_tests=np.max([n_compounds**2, n_compounds*100])
+    min_tests=np.inf
     for comp in arr_comp:
         if skip_compounds:
             comp=n_compounds_per_well
-            Comp=n_compounds_per_well
 
         for wells in arr_wells:
             if skip_wells:
                 if skip_compounds:
-                    return n_compounds_per_well, n_wells
+                    
+                    return n_compounds_per_well, n_wells, assign_wells_random(n_compounds=n_compounds, differentiate=differentiate, 
+                                               n_compounds_per_well=n_compounds_per_well, n_wells=n_wells, guesses=guesses, Evaluate=True)
                 wells=n_wells
-                Wells=n_wells
-            if comp*wells>max_redundancy*n_compounds or comp*wells<min_redundancy*n_compounds: continue
-            WA_tmp=assign_wells_random(n_compounds, differentiate, comp, wells, guesses)
-            mean_exp, _, _, _= mean_metrics(WA_tmp, differentiate)
+                
+            if comp*wells>max_redundancy*n_compounds or comp*wells<min_redundancy*n_compounds: continue 
+            WA_tmp, mean_exp=assign_wells_random(n_compounds, differentiate, comp, wells, guesses, Evaluate=True, return_me=True)
             if mean_exp<min_tests:
                 Comp=comp
                 Wells=wells
                 min_tests=mean_exp
+                min_wa=WA_tmp
             if skip_wells:
                 break
         if skip_compounds:
             break
 
-
-    return Comp, Wells
-
-
+    return Comp, Wells, min_tests, min_wa
     
                        
 
@@ -460,16 +490,15 @@ def method_comparison(**kwargs):
 def sweep_comparison(start=50, stop=150, step=10, differentiate=1, **kwargs):
     dict_comp={}
     current=start
+    kwargs['return_wa']=True
     while current<stop:
-        if kwargs['timeit']:
-            time0=time.time()
-            print(current)
+        print(current)
         df_met, dict_wa=method_comparison(n_compounds=current, differentiate=differentiate, **kwargs)
         dict_comp.update({current:[df_met, dict_wa]})
         current=current+step
-        if kwargs['timeit']:
-            print("segment time: %s seconds" % np.round(time.time() - time0, 1))
     return dict_comp
+
+
 
 
 

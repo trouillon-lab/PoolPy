@@ -492,10 +492,14 @@ def sweep_comparison(start=50, stop=150, step=10, differentiate=1, **kwargs):
     current=start
     kwargs['return_wa']=True
     while current<stop:
-        print(current)
+        time0=time.time()
+        if kwargs['timeit']:
+            print(current)
         df_met, dict_wa=method_comparison(n_compounds=current, differentiate=differentiate, **kwargs)
         dict_comp.update({current:[df_met, dict_wa]})
         current=current+step
+        if kwargs['timeit']:
+            print("segment time: %s seconds" % np.round(time.time() - time0, 1))
     return dict_comp
 
 
@@ -517,6 +521,8 @@ parser.add_argument('--return_wa')
 parser.add_argument('--timeit')
 
 args = parser.parse_args()
+
+
 
 differentiate= 2 if type(args.differentiate)==type(None) else int(args.differentiate)
 start= 50 if type(args.start)==type(None) else int(args.start)

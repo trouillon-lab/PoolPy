@@ -46,7 +46,7 @@ def get_ncomp_from_nwells(nwells: int, differentiatie=1) ->int:
 # Functions to be called by user to create the compound-wells assignment matrix
 
 ''' Method 1: Pooling using matrix design'''
-def assign_wells_mat(n_compounds:int)->np.array:
+def assign_wells_mat(n_compounds:int, **kwargs)->np.array:
     L1=np.ceil(np.sqrt(n_compounds))
     L2=L1-1 if L1*(L1-1)>=n_compounds else L1
     well_assigner=np.zeros((n_compounds, int(L1+L2)))==1
@@ -58,7 +58,7 @@ def assign_wells_mat(n_compounds:int)->np.array:
 
 ''' Method 2: Pooling using binary design'''
 # This functions also identifies the minimum number of wells needed for the compounds and level of detail (differentiate) selected
-def assign_wells_L(n_compounds:int, differentiate=1) -> np.array:
+def assign_wells_L(n_compounds:int, differentiate=1, **kwargs) -> np.array:
 
     if differentiate==1:
         n_wells=int(np.ceil(np.log2(n_compounds +1)))
@@ -76,7 +76,7 @@ def assign_wells_L(n_compounds:int, differentiate=1) -> np.array:
 
 
 ''' Method 3: Pooling using multidimensional matrix design'''
-def assign_wells_multidim(n_compounds:int, n_dims:int)->np.array:
+def assign_wells_multidim(n_compounds:int, n_dims:int, **kwargs)->np.array:
     L1=np.ceil(np.power(n_compounds, 1/n_dims))
     i=0
     while np.power(L1, n_dims-i-1)*np.power(L1-1, i+1)>n_compounds:
@@ -103,7 +103,7 @@ def assign_wells_multidim(n_compounds:int, n_dims:int)->np.array:
 
 
 ''' Method 4: Pooling using random design'''
-def assign_wells_random(n_compounds:int,  differentiate:int, n_compounds_per_well=0, n_wells=0, guesses=0)->np.array:
+def assign_wells_random(n_compounds:int,  differentiate:int, n_compounds_per_well=0, n_wells=0, guesses=0, **kwargs)->np.array:
     if guesses==0:
         guesses=n_compounds
     min_tests=n_compounds**2
@@ -158,7 +158,7 @@ def STD(N,q,k):
     L=L.reshape(-1,N)
     return(L.T)
 
-def assign_wells_STD(n_compounds:int, differentiate=1, False_results=0, force_q=False):
+def assign_wells_STD(n_compounds:int, differentiate=1, False_results=0, force_q=False, **kwargs):
     N=n_compounds
     t=differentiate
     E=False_results
@@ -177,7 +177,7 @@ def assign_wells_STD(n_compounds:int, differentiate=1, False_results=0, force_q=
 # Method from IMPROVED COMBINATORIAL GROUP TESTING ALGORITHMSFOR REAL-WORLD PROBLEM SIZES
 # section The Chinese remainder sieve
 
-def assign_wells_chinese(n_compounds:int,  differentiate:int)->np.array:
+def assign_wells_chinese(n_compounds:int,  differentiate:int, **kwargs)->np.array:
     prod=1
     n=1
     primes=[]
@@ -293,14 +293,14 @@ def decode(well_assigner:np.ndarray, readout:np.ndarray, differentiate:int) -> l
 def extra_tests(counts:np.array)->float:
     return(np.sum(counts*(counts-1))/np.sum(counts))
     
-def mean_tests(well_assigner, differentiate):
+def mean_tests(well_assigner, differentiate, **kwargs):
     BT=well_assigner.shape[1]
     _,_, counts= is_consistent(well_assigner, differentiate)    
     ET=extra_tests(counts)
     return(BT+ET)
 
 
-def mean_metrics(well_assigner, differentiate):
+def mean_metrics(well_assigner, differentiate, **kwargs):
     BT=well_assigner.shape[1]
     _,_, counts= is_consistent(well_assigner, differentiate) 
     ET=extra_tests(counts)   
@@ -309,7 +309,7 @@ def mean_metrics(well_assigner, differentiate):
     return BT+ET, ET,  rounds, p_check
 
 
-def find_dims(n_compounds,differentiate):
+def find_dims(n_compounds,differentiate, **kwargs):
     ND=2
     ndmin=2
     min_tests=n_compounds**2
@@ -324,7 +324,7 @@ def find_dims(n_compounds,differentiate):
 
 
 def find_rand_params(n_compounds:int, differentiate:int, n_compounds_per_well=0, n_wells=0, guesses=0, 
-                     max_compounds=0, max_retundancy=5, min_retundancy=2.5):
+                     max_compounds=0, max_retundancy=4, min_retundancy=1, **kwargs):
     skip_compounds=True
     skip_wells=True
     if n_compounds_per_well==0:
@@ -336,10 +336,15 @@ def find_rand_params(n_compounds:int, differentiate:int, n_compounds_per_well=0,
 
     MC= int(n_compounds/2) if max_compounds==0 else max_compounds
     mc=int(np.sqrt(n_compounds)) if int(np.sqrt(n_compounds))<MC else int(MC/2)
+    arr_comp=np.arange(int(mc),int(MC+1))
+    mw=int(0.75*np.sqrt(n_compounds))
+    MW=int(2*np.sqrt(n_compounds))
+    while MW-mw<10:
+        mw=int(abs(mw-1))
+        MW=int(MW+1)
 
-    arr_comp=np.arange(int(mc),int(MC))
-    arr_wells=np.arange(int(0.75*np.sqrt(n_compounds)),int(2*np.sqrt(n_compounds)))
-    min_tests=n_compounds**2
+    arr_wells=np.arange(mw,MW)
+    min_tests=np.max([n_compounds**2, n_compounds*100])
     for comp in arr_comp:
         if skip_compounds:
             comp=n_compounds_per_well
@@ -362,6 +367,7 @@ def find_rand_params(n_compounds:int, differentiate:int, n_compounds_per_well=0,
                 break
         if skip_compounds:
             break
+
 
     return Comp, Wells
 
@@ -394,57 +400,45 @@ def output_table(well_assigner:np.array,output_file_name='output_table'):
 
 ''' Method comparison '''
 
-def method_comparison(n_compounds:int, differentiate=1, **kwargs):
+def method_comparison(**kwargs):
     methods=['matrix', 'multidim', 'random', 'STD', 'Cinese trick']
     # matrix assignment
-    WA_mat=assign_wells_mat(n_compounds)
+    WA_mat=assign_wells_mat(**kwargs)
 
     # multidimensional matrix
     if 'n_dims' in kwargs.keys():
-        WA_mul=assign_wells_multidim(n_compounds,kwargs['n_dims'])
+        WA_mul=assign_wells_multidim(**kwargs)
         ndmin=kwargs['n_dims']
     else:
-        ndmin= find_dims(n_compounds,differentiate)
-        WA_mul=assign_wells_multidim(n_compounds,ndmin)
+        ndmin= find_dims(**kwargs)
+        WA_mul=assign_wells_multidim(n_dims=ndmin, **kwargs)
         
     methods[1]='multidim: '+str(ndmin)
 
     # random assignment
-    n_compounds_per_well = kwargs['n_compounds_per_well'] if 'n_compounds_per_well' in kwargs.keys() else 0
-    n_wells = kwargs['n_wells'] if 'n_wells' in kwargs.keys() else 0
-    guesses = kwargs['rand_guesses'] if 'guesses' in kwargs.keys() else 0
-    max_compounds =kwargs['max_compounds'] if 'max_compounds' in kwargs.keys() else 0
 
-    Comps, Wells=find_rand_params(n_compounds,differentiate,n_compounds_per_well, n_wells, guesses, max_compounds)
-
-    WA_ran=assign_wells_random(n_compounds,differentiate,Comps, Wells, guesses)
+    WA_ran=assign_wells_random(**kwargs)
 
     # STD asignment 
-    if 'force_q' in kwargs.keys():
-        WA_std=assign_wells_STD(n_compounds,differentiate, kwargs['force_q'])
-    else:
-        WA_std=assign_wells_STD(n_compounds,differentiate)
+    WA_std=assign_wells_STD(**kwargs)
 
     
 
     # chinese trick assignment
-    WA_chin=assign_wells_chinese(n_compounds,  differentiate)
+    WA_chin=assign_wells_chinese(**kwargs)
 
 
     WA_list=[WA_mat,WA_mul,WA_ran,WA_std, WA_chin]
 
-    if differentiate<2:
-        WA_bin=assign_wells_L(n_compounds,differentiate)
+    if kwargs['differentiate']<2:
+        WA_bin=assign_wells_L(**kwargs)
         methods.append('Binary')
         WA_list.append(WA_bin)
-
-
-    
 
     ls_met=[]
     
     for method, WA in zip(methods, WA_list):
-        mean_exp, extra_exp,  _, perc_check= mean_metrics(WA, differentiate)
+        mean_exp, extra_exp,  _, perc_check= mean_metrics(WA, **kwargs)
         n_wells=WA.shape[1]
         M_exp=np.round(mean_exp, 2)
         max_comp=np.max(np.sum(WA, axis=0))
@@ -463,16 +457,18 @@ def method_comparison(n_compounds:int, differentiate=1, **kwargs):
         return df_met, dict_wa
     return df_met
 
-
 def sweep_comparison(start=50, stop=150, step=10, differentiate=1, **kwargs):
     dict_comp={}
     current=start
-    kwargs['return_wa']=True
     while current<stop:
-        print(current)
+        if kwargs['timeit']:
+            time0=time.time()
+            print(current)
         df_met, dict_wa=method_comparison(n_compounds=current, differentiate=differentiate, **kwargs)
         dict_comp.update({current:[df_met, dict_wa]})
         current=current+step
+        if kwargs['timeit']:
+            print("segment time: %s seconds" % np.round(time.time() - time0, 1))
     return dict_comp
 
 
@@ -488,7 +484,8 @@ parser.add_argument('--max_compounds')
 parser.add_argument('--n_compounds_per_well')
 parser.add_argument('--n_wells')
 parser.add_argument('--n_dims')
-
+parser.add_argument('--return_wa')
+parser.add_argument('--timeit')
 
 args = parser.parse_args()
 
@@ -498,8 +495,10 @@ stop= 110 if type(args.stop)==type(None) else int(args.stop)
 step= 10 if type(args.step)==type(None) else int(args.step)
 base_dir= os.getcwd() if type(args.base_dir)==type(None) else str(args.base_dir)
 rand_guesses= 10 if type(args.rand_guesses)==type(None) else int(args.rand_guesses)
+return_wa= True if type(args.return_wa)==type(None) else args.return_wa
+timeit= True if type(args.timeit)==type(None) else args.timeit
 
-dict_kwargs={'differentiate':differentiate, 
+dict_kwargs={'differentiate':differentiate, 'return_wa':return_wa, 'timeit':timeit,
              'start':start, 'stop':stop,  'step':step, 'base_dir':base_dir, 'rand_guesses':rand_guesses}
 if type(args.max_compounds)!=type(None): 
     dict_kwargs.update({'max_compounds':int(args.max_compounds)})
@@ -514,12 +513,24 @@ print(dict_kwargs)
 
 start_time = time.time()
 dict_c=sweep_comparison(**dict_kwargs)
-print("--- %s seconds ---" % (time.time() - start_time))
+if timeit:
+    print('\n')
+    print('-----------------------------------------------------')
+    print("total time: %s seconds" % np.round(time.time() - start_time, 1))
+    print('-----------------------------------------------------')
+
 
 
 dict_c.update({'kwargs':dict_kwargs})
 
-full_dir=os.path.join(base_dir,str(start)+'-'+str(stop)+'.pk')
+fpath=os.path.join(base_dir,'diff_'+str(differentiate))
+
+if not os.path.exists(fpath):
+    os.makedirs(fpath)
+
+full_dir=os.path.join(fpath,str(start)+'-'+str(stop)+'.pk')
+
+
 
 with open(full_dir, 'wb') as handle:
     pickle.dump(dict_c, handle, protocol=pickle.HIGHEST_PROTOCOL)

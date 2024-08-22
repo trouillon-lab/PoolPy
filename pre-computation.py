@@ -431,7 +431,7 @@ def output_table(well_assigner:np.array,output_file_name='output_table'):
 ''' Method comparison '''
 
 def method_comparison(**kwargs):
-    methods=['matrix', 'multidim', 'random', 'STD', 'Cinese trick']
+    methods=['matrix', 'multidim', 'random', 'STD', 'Chinese trick']
     # matrix assignment
     WA_mat=assign_wells_mat(**kwargs)
 

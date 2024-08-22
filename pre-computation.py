@@ -324,7 +324,7 @@ def find_dims(n_compounds,differentiate, **kwargs):
 
 
 def find_rand_params(n_compounds:int, differentiate:int, n_compounds_per_well=0, n_wells=0, guesses=0, 
-                     max_compounds=0, max_retundancy=4, min_retundancy=1, **kwargs):
+                     max_compounds=0, max_redundancy=4, min_redundancy=1, **kwargs):
     skip_compounds=True
     skip_wells=True
     if n_compounds_per_well==0:
@@ -356,7 +356,7 @@ def find_rand_params(n_compounds:int, differentiate:int, n_compounds_per_well=0,
                     return n_compounds_per_well, n_wells
                 wells=n_wells
                 Wells=n_wells
-            if comp*wells>max_retundancy*n_compounds or comp*wells<min_retundancy*n_compounds: continue
+            if comp*wells>max_redundancy*n_compounds or comp*wells<min_redundancy*n_compounds: continue
             WA_tmp=assign_wells_random(n_compounds, differentiate, comp, wells, guesses)
             mean_exp, _, _, _= mean_metrics(WA_tmp, differentiate)
             if mean_exp<min_tests:

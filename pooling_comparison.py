@@ -1,0 +1,84 @@
+import numpy as np
+import math
+import re
+import itertools
+import pandas as pd
+import argparse
+import pickle
+import time
+import os
+
+
+from Functions import *
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--differentiate')
+parser.add_argument('--start')
+parser.add_argument('--stop')
+parser.add_argument('--step')
+parser.add_argument('--base_dir')
+parser.add_argument('--rand_guesses')
+parser.add_argument('--max_compounds')
+parser.add_argument('--n_compounds_per_well')
+parser.add_argument('--n_wells')
+parser.add_argument('--n_dims')
+parser.add_argument('--return_wa')
+parser.add_argument('--timeit')
+
+args = parser.parse_args()
+
+
+
+differentiate= 2 if type(args.differentiate)==type(None) else int(args.differentiate)
+start= 50 if type(args.start)==type(None) else int(args.start)
+stop= 110 if type(args.stop)==type(None) else int(args.stop)
+step= 10 if type(args.step)==type(None) else int(args.step)
+base_dir= os.getcwd() if type(args.base_dir)==type(None) else str(args.base_dir)
+rand_guesses= 10 if type(args.rand_guesses)==type(None) else int(args.rand_guesses)
+return_wa= True if type(args.return_wa)==type(None) else args.return_wa
+timeit= True if type(args.timeit)==type(None) else args.timeit
+
+dict_kwargs={'differentiate':differentiate, 'return_wa':return_wa, 'timeit':timeit,
+             'start':start, 'stop':stop,  'step':step, 'base_dir':base_dir, 'rand_guesses':rand_guesses}
+if type(args.max_compounds)!=type(None): 
+    dict_kwargs.update({'max_compounds':int(args.max_compounds)})
+if type(args.n_compounds_per_well)!=type(None): 
+    dict_kwargs.update({'n_compounds_per_well':int(args.n_compounds_per_well)})
+if type(args.n_wells)!=type(None): 
+    dict_kwargs.update({'n_wells':int(args.n_wells)})
+if type(args.n_dims)!=type(None): 
+    dict_kwargs.update({'n_dims':int(args.n_dims)})
+
+print(dict_kwargs)
+
+start_time = time.time()
+dict_c=sweep_comparison(**dict_kwargs)
+if timeit:
+    print('\n')
+    print('-----------------------------------------------------')
+    print("total time: %s seconds" % np.round(time.time() - start_time, 1))
+    print('-----------------------------------------------------')
+
+
+
+dict_c.update({'kwargs':dict_kwargs})
+
+fpath=os.path.join(base_dir,'diff_'+str(differentiate))
+
+if not os.path.exists(fpath):
+    os.makedirs(fpath)
+
+full_dir=os.path.join(fpath,str(start)+'-'+str(stop)+'_step'+str(step)+'.pk')
+
+
+
+with open(full_dir, 'wb') as handle:
+    pickle.dump(dict_c, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+
+
+# How to use :
+# python pooling_comparison.py --start 20 --stop 47 --step 5 --differentiate 1 --rand_guesses 3 --base_dir 'where/you/want' 
+# other inputs which are relevant only for random are --max_compounds --n_compounds_per_well --n_wells
+# only for multidim --n_dims

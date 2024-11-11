@@ -57,7 +57,7 @@ def assing_wells_L(n_compounds:int, differentiate=1) -> np.array:
         well_assigner[i,:]=well_selecter(i+1, n_wells, differentiate)
     return(well_assigner)
 
-def assing_wells_mat(n_compounds:int)->np.array:
+def assign_wells_mat(n_compounds:int)->np.array:
     L1=np.ceil(np.sqrt(n_compounds))
     L2=L1-1 if L1*(L1-1)>=n_compounds else L1
     well_assigner=np.zeros((n_compounds, int(L1+L2)))==1
@@ -138,7 +138,7 @@ pr1=np.sum(countss[countss>1])/np.sum(countss)
 pr2=1-np.sum(countss[countss==1])/len(countss)
 print('with this assignment method from',np.round(pr2*100) ,'to', np.round(pr1*100),'% of outcomes will lead to an ambiguous interpretation')
 
-WAM=assing_wells_mat(120)
+WAM=assign_wells_mat(120)
 
 WAM.shape
 

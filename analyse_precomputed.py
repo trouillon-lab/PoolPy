@@ -70,27 +70,39 @@ os.chdir(dir_path)
 all_precomputed=[diff_1,diff_2,diff_3,diff_4]
 diff_names=['diff_1','diff_2','diff_3','diff_4']
 
+all_methods = ['matrix', 'multidim', 'random', 'STD', 'Chinese trick','Binary']
+
 #%% test plot
 
 # Function to generate the scatter plot
 def plot_specific_method(data, selected_method):
-    
+
     plt.figure(figsize=(10, 6))
+
+    color_map = {diff: pal[i % len(pal)] for i, diff in enumerate(diff_names)}
 
     for idx, main_dict in enumerate(data):
         test_numbers = []
         mean_values = []
 
         for test_number, (df, _) in main_dict.items():
-            if selected_method in df.index:
-                test_numbers.append(test_number)
-                mean_values.append(df.loc[selected_method, 'mean_experiments'])
+            for method in df.index:
+                # Trim method name if it starts with 'multidim:'
+                base_method = method.split(':')[0].strip()
+                if selected_method==base_method:
+                    test_numbers.append(test_number)
+                    mean_values.append(df.loc[method, 'mean_experiments'])
 
-        plt.scatter(test_numbers, mean_values, label=f'Dict {idx + 1}')
+        plt.scatter(test_numbers, mean_values, label=diff_names[idx],color=color_map[diff_names[idx]], alpha=0.7, s=80)
 
-    plt.title(f'Scatter Plot for Method: {selected_method}')
-    plt.xlabel('Test Numbers')
-    plt.ylabel('Mean Experiments')
+
+    plt.xticks(fontsize=tick_label_fontsize)
+    plt.yticks(fontsize=tick_label_fontsize)
+    plt.legend(edgecolor='black')
+        
+    plt.title(f'Method: {selected_method}',size=axis_label_fontsize)
+    plt.xlabel('Test Numbers',size=axis_label_fontsize)
+    plt.ylabel('Mean Experiments',size=axis_label_fontsize)
     plt.legend()
     plt.show()
 
@@ -134,16 +146,16 @@ def plot_specific_diff(data, diff):
 
 
 
-#%%
+#%% Plots
 
-# Call the function with your data and selected method
-selected_method = 'random'  # Replace with your chosen method
-plot_specific_method(all_precomputed, selected_method)
+# Plot all diffs for each method
+for selected_method in all_methods:
+    plot_specific_method(all_precomputed, selected_method)
 
 
-# Call the function with your data and selected main dict index
-diff = 4 # Replace with the index of the main dict you want to analyze
-plot_specific_diff(all_precomputed, diff)
+# Plot all methods for each diff
+for diff in [1,2,3,4]:
+    plot_specific_diff(all_precomputed, diff)
 
 
 

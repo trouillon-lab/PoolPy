@@ -171,7 +171,7 @@ def server(input, output, session):
             output.extra_computation.set(1)
 
         elif differentiate > 4:
-            output_text=f'Maximum number of positives ({differentiate}) too high. The precoputed maximum is 4. To locally run the code for your specific setting follow the section below'
+            output_text=f'Maximum number of positives ({differentiate}) too high. The precomputed maximum is 4. To locally run the code for your specific setting follow the section below'
             output.database_reply.set(output_text)
             output.extra_computation.set(1)
 
@@ -189,13 +189,13 @@ def server(input, output, session):
 
             elif np.sum(a2==n_samp)==0:
                 md=np.min(a2[a2>n_samp])
-                output_text=f'There is no precoputed strategy for {n_samp} samples. \n The closest precomputed strategy is for {md} samples with up to {differentiate} positives'
+                output_text=f'There is no precomputed strategy for {n_samp} samples. \n The closest precomputed strategy is for {md} samples with up to {differentiate} positives'
                 output.database_reply.set(output_text)
                 output.extra_computation.set(0)
 
             else:
                 md=n_samp
-                output_text=f'There is a precoputed strategy for {n_samp} samples with up to {differentiate} positives'
+                output_text=f'There is a precomputed strategy for {n_samp} samples with up to {differentiate} positives'
                 output.database_reply.set(output_text)
                 output.extra_computation.set(0)
 

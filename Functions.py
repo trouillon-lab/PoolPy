@@ -199,9 +199,12 @@ def assign_wells_STD(n_compounds:int, differentiate=1, False_results=0, force_q=
             q=force_q 
     Gamma=get_Gamma(q,N)
     k=t*Gamma+2*E+1
-    WA=STD(N,q,k)
-    return(WA)
-
+    if kwargs['return_wa']==False:
+        return([q*k, np.sum((np.arange(n_compounds)%q)==0)])
+    else:
+        WA=STD(N,q,k)
+        return(WA)
+    
 # Method from IMPROVED COMBINATORIAL GROUP TESTING ALGORITHMSFOR REAL-WORLD PROBLEM SIZES
 # section The Chinese remainder sieve
 
@@ -429,7 +432,7 @@ def output_table(well_assigner:np.array,output_file_name='output_table'):
 
 ''' Method comparison '''
 
-def method_comparison(**kwargs):
+def full_method_comparison(**kwargs):
     methods=['matrix', 'multidim', 'random', 'STD', 'Chinese trick']
     # matrix assignment
     WA_mat=assign_wells_mat(**kwargs)
@@ -481,12 +484,12 @@ def method_comparison(**kwargs):
 
     dict_wa={method: WA for method, WA in zip(methods, WA_list)}
 
-    ret_wa= kwargs['return_wa'] if 'return_wa' in kwargs.keys()else False
+    ret_wa= kwargs['return_wa'] if 'return_wa' in kwargs.keys() else False
     if ret_wa:
         return df_met, dict_wa
     return df_met
 
-def sweep_comparison(start=50, stop=150, step=10, differentiate=1, **kwargs):
+def full_sweep_comparison(start=50, stop=150, step=10, **kwargs):
     dict_comp={}
     current=start
     kwargs['return_wa']=True
@@ -494,11 +497,95 @@ def sweep_comparison(start=50, stop=150, step=10, differentiate=1, **kwargs):
         time0=time.time()
         if kwargs['timeit']:
             print(current)
-        df_met, dict_wa=method_comparison(n_compounds=current, differentiate=differentiate, **kwargs)
+        df_met, dict_wa=full_method_comparison(n_compounds=current, **kwargs)
         dict_comp.update({current:[df_met, dict_wa]})
         current=current+step
         if kwargs['timeit']:
             print("segment time: %s seconds" % np.round(time.time() - time0, 1))
     return dict_comp
+
+def single_method_sweep(start=50, stop=150, step=10, **kwargs):
+    dict_comp={}
+    if kwargs['inline_print']:
+        fpath=os.path.join(kwargs['base_dir'],kwargs['method'])
+        if not os.path.exists(fpath):
+            os.makedirs(fpath)
+    current=start
+    while current<stop:
+        time0=time.time()
+        if kwargs['timeit']:
+            print(current)
+        match kwargs['method']:
+            case 'STD':
+                WA=assign_wells_STD(n_compounds=current, **kwargs)
+                if kwargs['return_wa']:
+                    mean_exp, extra_exp,  _, perc_check= mean_metrics(WA, **kwargs)
+                    n_wells=WA.shape[1]
+                    M_exp=np.round(mean_exp, 2)
+                    max_comp=np.max(np.sum(WA, axis=0))
+                    dict_wa={'WA': WA, 'metrics':[M_exp, max_comp, n_wells, perc_check,  extra_exp,]}
+
+                elif kwargs['inline_print']:
+                    full_file_dir=os.path.join(fpath,'diff_'+str(kwargs['differentiate'])+'_NS_'+
+                                               str(current)+'_NW_'+str(WA[0])+'_MS_'+str(WA[1])+".txt")
+                    open(full_file_dir, 'a').close()
+                else:
+                    dict_wa={'metrics':[WA[0], WA[1], WA[0], 0,  0,]}
+            case 'CT':
+                WA=assign_wells_chinese(n_compounds=current, **kwargs)
+                if kwargs['return_wa']:
+                    mean_exp, extra_exp,  _, perc_check= mean_metrics(WA,  **kwargs)
+                    n_wells=WA.shape[1]
+                    M_exp=np.round(mean_exp, 2)
+                    max_comp=np.max(np.sum(WA, axis=0))
+                    dict_wa={'WA': WA, 'metrics':[M_exp, max_comp, n_wells, perc_check,  extra_exp,]}
+                elif kwargs['inline_print']:
+                    full_file_dir=os.path.join(fpath,'diff_'+str(kwargs['differentiate'])+'_NS_'+str(current)+
+                                               '_NW_'+str(WA)+ '_MS_'+str(int(np.ceil(current/2)))+".txt")
+                    open(full_file_dir, 'a').close()
+                else:
+                    dict_wa={'metrics':[WA, int(np.ceil(current/2)), WA, 0,  0,]}
+
+            case 'random':
+                WA=assign_wells_random(**kwargs)
+                mean_exp, extra_exp,  _, perc_check= mean_metrics(WA, **kwargs)
+                n_wells=WA.shape[1]
+                M_exp=np.round(mean_exp, 2)
+                max_comp=np.max(np.sum(WA, axis=0))
+                dict_wa={'WA': WA, 'metrics':[M_exp, max_comp, n_wells, perc_check,  extra_exp,]}
+
+            case 'matrix':
+                WA=assign_wells_mat(**kwargs)
+                mean_exp, extra_exp,  _, perc_check= mean_metrics(WA, **kwargs)
+                n_wells=WA.shape[1]
+                M_exp=np.round(mean_exp, 2)
+                max_comp=np.max(np.sum(WA, axis=0))
+                dict_wa={'WA': WA, 'metrics':[M_exp, max_comp, n_wells, perc_check,  extra_exp,]}
+
+            case 'multidim':
+                if 'n_dims' in kwargs.keys():
+                    WA=assign_wells_multidim(**kwargs)
+                    ndmin=kwargs['n_dims']
+                else:
+                    ndmin= find_dims(**kwargs)
+                    WA=assign_wells_multidim(n_dims=ndmin, **kwargs)
+                mean_exp, extra_exp,  _, perc_check= mean_metrics(WA, **kwargs)
+                n_wells=WA.shape[1]
+                M_exp=np.round(mean_exp, 2)
+                max_comp=np.max(np.sum(WA, axis=0))
+                dict_wa={'WA': WA, 'metrics':[M_exp, max_comp, n_wells, perc_check,  extra_exp,]}
+
+        current=current+step
+        if kwargs['timeit']:
+            print("segment time: %s seconds" % np.round(time.time() - time0, 1))
+        if not kwargs['inline_print'] or kwargs['method'] not in ['STD', 'CT']:
+            dict_comp.update({current:dict_wa})
+
+
+    return(dict_comp)
+
+    
+
+
 
 

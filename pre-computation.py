@@ -25,6 +25,8 @@ parser.add_argument('--n_wells')
 parser.add_argument('--n_dims')
 parser.add_argument('--return_wa')
 parser.add_argument('--timeit')
+parser.add_argument('--method')
+parser.add_argument('--inline_print')
 
 args = parser.parse_args()
 
@@ -36,11 +38,14 @@ stop= 110 if type(args.stop)==type(None) else int(args.stop)
 step= 10 if type(args.step)==type(None) else int(args.step)
 base_dir= os.getcwd() if type(args.base_dir)==type(None) else str(args.base_dir)
 rand_guesses= 10 if type(args.rand_guesses)==type(None) else int(args.rand_guesses)
-return_wa= True if type(args.return_wa)==type(None) else args.return_wa
-timeit= True if type(args.timeit)==type(None) else args.timeit
+return_wa= True if type(args.return_wa)==type(None) else args.return_wa=='True'
+timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
+inline_print= False if type(args.inline_print)==type(None) else args.inline_print=='True'
+
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':return_wa, 'timeit':timeit,
-             'start':start, 'stop':stop,  'step':step, 'base_dir':base_dir, 'rand_guesses':rand_guesses}
+             'start':start, 'stop':stop,  'step':step, 'base_dir':base_dir, 'rand_guesses':rand_guesses,
+             'inline_print':inline_print}
 if type(args.max_compounds)!=type(None): 
     dict_kwargs.update({'max_compounds':int(args.max_compounds)})
 if type(args.n_compounds_per_well)!=type(None): 
@@ -49,32 +54,56 @@ if type(args.n_wells)!=type(None):
     dict_kwargs.update({'n_wells':int(args.n_wells)})
 if type(args.n_dims)!=type(None): 
     dict_kwargs.update({'n_dims':int(args.n_dims)})
+if type(args.method)!=type(None): 
+    dict_kwargs.update({'method':args.method})
 
 print(dict_kwargs)
 
 start_time = time.time()
-dict_c=sweep_comparison(**dict_kwargs)
-if timeit:
-    print('\n')
-    print('-----------------------------------------------------')
-    print("total time: %s seconds" % np.round(time.time() - start_time, 1))
-    print('-----------------------------------------------------')
+
+if 'method' in dict_kwargs.keys():
+    if timeit:
+        print('\n')
+        print('-----------------------------------------------------')
+        print("total time: %s seconds" % np.round(time.time() - start_time, 1))
+        print('-----------------------------------------------------')
+    dict_c=single_method_sweep(**dict_kwargs)
+    if not dict_kwargs['inline_print']:
+        dict_c.update({'kwargs':dict_kwargs})
+
+        fpath=os.path.join(base_dir,'diff_'+str(differentiate))
+
+        if not os.path.exists(fpath):
+            os.makedirs(fpath)
+
+        full_dir=os.path.join(fpath,dict_kwargs['method']+'__'+str(start)+'-'+str(stop)+'_step'+str(step)+'.pk')
 
 
 
-dict_c.update({'kwargs':dict_kwargs})
 
-fpath=os.path.join(base_dir,'diff_'+str(differentiate))
+else:
+    dict_c=full_sweep_comparison(**dict_kwargs)
+    if timeit:
+        print('\n')
+        print('-----------------------------------------------------')
+        print("total time: %s seconds" % np.round(time.time() - start_time, 1))
+        print('-----------------------------------------------------')
 
-if not os.path.exists(fpath):
-    os.makedirs(fpath)
-
-full_dir=os.path.join(fpath,str(start)+'-'+str(stop)+'_step'+str(step)+'.pk')
 
 
+    dict_c.update({'kwargs':dict_kwargs})
 
-with open(full_dir, 'wb') as handle:
-    pickle.dump(dict_c, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    fpath=os.path.join(base_dir,'diff_'+str(differentiate))
+
+    if not os.path.exists(fpath):
+        os.makedirs(fpath)
+
+    full_dir=os.path.join(fpath,str(start)+'-'+str(stop)+'_step'+str(step)+'.pk')
+
+
+
+    with open(full_dir, 'wb') as handle:
+        pickle.dump(dict_c, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 

@@ -234,36 +234,72 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, **kwargs)->np.arra
 
     return(WA.T)
 
-def iterative_splitter(id_samps, id_positives, ratio, N_measurements=0):
+def iterative_splitter(id_samps, id_positives, ratio):
     
     if len(id_samps)<=ratio:
-        N_measurements=N_measurements+len(id_samps)
-        
+        return(len(id_samps))
     
-    else:
-        N_measurements=N_measurements+ratio
-
-    pools=list(split(range(id_samps), ratio))
+    pools=list(split(id_samps, ratio))
+    partials=0
     for pool in pools:
         if len(set(pool).intersection(id_positives))>0:
+            partials+=iterative_splitter(pool,id_positives,ratio)
+    return(ratio+partials)
+
+def iterative_uneven_splitter(id_samps, id_positives, ratios):
+    ratio=int(ratios[0])
+    ratios=ratios[1:]
+    if len(id_samps)<=ratio:
+        return(len(id_samps))
+
+    pools=list(split(id_samps, ratio))
+    partials=0
+    for pool in pools:
+        if len(set(pool).intersection(id_positives))>0:
+            partials+=iterative_splitter(pool,id_positives,ratio)
+    return(ratio+partials)
 
 
 
 
 
-def calculate_metrics_hierarchical(n_compounds:int,  differentiate:int,  **kwargs):
-    N=n_compounds
+
+
+def calculate_metrics_hierarchical(n_compounds,  differentiate:int,  **kwargs):
     keep_ratios_constant=kwargs['keep_ratios_constant']
+    id_samps=np.arange(n_compounds)
+    details={}
+    BM=[0,np.inf]
     if keep_ratios_constant:
-        for n_pos in np.arange(differentiate):
-            for id_pos in itertools.combinations(np.arange(N),n_pos):
-                posx=np.array(id_pos)
-                for ratios in np.arange(2,np.ceil(np.sqrt(n_compounds))):
-                    pools=list(split(range(11), 3))
+        for ratiof in np.arange(2,np.ceil(np.sqrt(n_compounds))):
+            ratio=np.int(ratiof)
+            NP=0
+            FM=0
+            for n_pos in np.arange(differentiate+1):
+                for id_pos in itertools.combinations(np.arange(n_compounds),n_pos):
+                    posx=np.array(id_pos)
+                    measures=iterative_splitter(id_samps,posx,ratio)
+                    FM+=measures
+                    NP+=1
+                    
+            layers=int(np.ceil(np.log(n_compounds)/np.log(ratio)))
+            MC=int(np.ceil(n_compounds/ratio))
+            details.update({ratio:[FM/NP,layers, MC]})
+            if FM/NP<BM[1]:
+                BM=[ratio,FM/NP]
+        layers=int(np.ceil(np.log(n_compounds)/np.log(BM[0])))
+        MC=int(np.ceil(n_compounds/BM[0]))
+        return([BM[0], BM[1],layers, MC, details ])
+        
+        
+            
 
 
 
+    #TODO
     else:
+        ratios=np.array(ratios)
+        rartios=np.append(ratios, np.inf)
 
 
 
@@ -502,6 +538,11 @@ def full_method_comparison(**kwargs):
         methods.append('Binary')
         WA_list.append(WA_bin)
 
+    #hierarchical
+        
+    Hier=calculate_metrics_hierarchical(**kwargs)
+    #return([BM[0], BM[1],layers, MC, details ])
+
     ls_met=[]
     ls_names_met=['mean_experiments', 'max_compounds_per_well', 'n_wells', 'percentage_check', 'mean_extra_exp']
     for method, WA in zip(methods, WA_list):
@@ -510,8 +551,9 @@ def full_method_comparison(**kwargs):
         M_exp=np.round(mean_exp, 2)
         max_comp=np.max(np.sum(WA, axis=0))
         ls_met.append([M_exp, max_comp, n_wells, perc_check,  extra_exp,])
-        
-    
+    ls_met.append([Hier[1], Hier[3], Hier[0],1,Hier[3]])
+    full_methods=methods.copy()
+    full_methods.append('Hierarchical_'+str(Hier[0]))
     df_met=pd.DataFrame(ls_met)
     idx_renamer={i:j for i,j in zip(df_met.index, methods)}
     col_renamer={i:j for i,j in zip(df_met.columns, ls_names_met)}
@@ -519,7 +561,7 @@ def full_method_comparison(**kwargs):
 
     dict_wa={method: WA for method, WA in zip(methods, WA_list)}
 
-    ret_wa= kwargs['return_wa'] if 'return_wa' in kwargs.keys() else False
+    ret_wa= kwargs['return_wa'] 
     if ret_wa:
         return df_met, dict_wa
     return df_met
@@ -540,12 +582,14 @@ def full_sweep_comparison(start=50, stop=150, step=10, **kwargs):
     return dict_comp
 
 def single_method_sweep(start=50, stop=150, step=10, **kwargs):
-    dict_comp={}
+    dict_comp={'metrics_key':['mean_experiments', 'max_compounds_per_well', 'n_wells', 'percentage_check', 'mean_extra_exp']}
     if kwargs['inline_print']:
         fpath=os.path.join(kwargs['base_dir'],kwargs['method'])
         if not os.path.exists(fpath):
             os.makedirs(fpath)
     current=start
+    if kwargs['method']=='hierarchical':
+        dict_comp={'metrics_key':['mean_experiments', 'max_compounds_per_well', 'best_ratio', 'percentage_check', 'layers']}
     while current<stop:
         time0=time.time()
         if kwargs['timeit']:
@@ -582,7 +626,7 @@ def single_method_sweep(start=50, stop=150, step=10, **kwargs):
                     dict_wa={'metrics':[WA, int(np.ceil(current/2)), WA, 0,  0,]}
 
             case 'random':
-                WA=assign_wells_random(**kwargs)
+                WA=assign_wells_random(n_compounds=current, **kwargs)
                 mean_exp, extra_exp,  _, perc_check= mean_metrics(WA, **kwargs)
                 n_wells=WA.shape[1]
                 M_exp=np.round(mean_exp, 2)
@@ -599,16 +643,22 @@ def single_method_sweep(start=50, stop=150, step=10, **kwargs):
 
             case 'multidim':
                 if 'n_dims' in kwargs.keys():
-                    WA=assign_wells_multidim(**kwargs)
+                    WA=assign_wells_multidim(n_compounds=current, **kwargs)
                     ndmin=kwargs['n_dims']
                 else:
                     ndmin= find_dims(**kwargs)
-                    WA=assign_wells_multidim(n_dims=ndmin, **kwargs)
+                    WA=assign_wells_multidim(n_dims=ndmin, n_compounds=current,**kwargs)
                 mean_exp, extra_exp,  _, perc_check= mean_metrics(WA, **kwargs)
                 n_wells=WA.shape[1]
                 M_exp=np.round(mean_exp, 2)
                 max_comp=np.max(np.sum(WA, axis=0))
                 dict_wa={'WA': WA, 'metrics':[M_exp, max_comp, n_wells, perc_check,  extra_exp,]}
+
+            case 'hierarchical':
+                Hier=calculate_metrics_hierarchical(n_compounds=current, **kwargs)
+                dict_wa={'WA': Hier[4], 'metrics':[Hier[1], Hier[3], Hier[0],1,Hier[3]]}
+
+
 
         current=current+step
         if kwargs['timeit']:

@@ -42,7 +42,7 @@ rand_guesses= 10 if type(args.rand_guesses)==type(None) else int(args.rand_guess
 return_wa= True if type(args.return_wa)==type(None) else args.return_wa=='True'
 timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
 inline_print= False if type(args.inline_print)==type(None) else args.inline_print=='True'
-keep_ratios_constant= False if type(args.keep_ratios_constant)==type(None) else args.keep_ratios_constant=='True' 
+keep_ratios_constant= True if type(args.keep_ratios_constant)==type(None) else args.keep_ratios_constant=='True' 
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':return_wa, 'timeit':timeit,
              'start':start, 'stop':stop,  'step':step, 'base_dir':base_dir, 'rand_guesses':rand_guesses,

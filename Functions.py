@@ -18,6 +18,9 @@ def IntegerToBinaryTF(num: int, ls_bn: list)-> list:
     ls_bn.append(num % 2==1)
     return(ls_bn)
 
+def split(a, n):
+    k, m = divmod(len(a), n)
+    return (a[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(n))
 
 # Function to assign each compound to its wells
 def well_selecter(compound: int, n_wells:int, differentiate=1) -> np.array:
@@ -230,6 +233,38 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, **kwargs)->np.arra
         past_primes=past_primes+prime
 
     return(WA.T)
+
+def iterative_splitter(id_samps, id_positives, ratio, N_measurements=0):
+    
+    if len(id_samps)<=ratio:
+        N_measurements=N_measurements+len(id_samps)
+        
+    
+    else:
+        N_measurements=N_measurements+ratio
+
+    pools=list(split(range(id_samps), ratio))
+    for pool in pools:
+        if len(set(pool).intersection(id_positives))>0:
+
+
+
+
+
+def calculate_metrics_hierarchical(n_compounds:int,  differentiate:int,  **kwargs):
+    N=n_compounds
+    keep_ratios_constant=kwargs['keep_ratios_constant']
+    if keep_ratios_constant:
+        for n_pos in np.arange(differentiate):
+            for id_pos in itertools.combinations(np.arange(N),n_pos):
+                posx=np.array(id_pos)
+                for ratios in np.arange(2,np.ceil(np.sqrt(n_compounds))):
+                    pools=list(split(range(11), 3))
+
+
+
+    else:
+
 
 
         

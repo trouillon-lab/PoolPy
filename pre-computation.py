@@ -27,6 +27,7 @@ parser.add_argument('--return_wa')
 parser.add_argument('--timeit')
 parser.add_argument('--method')
 parser.add_argument('--inline_print')
+parser.add_argument('--keep_ratios_constant')
 
 args = parser.parse_args()
 
@@ -41,11 +42,12 @@ rand_guesses= 10 if type(args.rand_guesses)==type(None) else int(args.rand_guess
 return_wa= True if type(args.return_wa)==type(None) else args.return_wa=='True'
 timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
 inline_print= False if type(args.inline_print)==type(None) else args.inline_print=='True'
-
+keep_ratios_constant= False if type(args.keep_ratios_constant)==type(None) else args.keep_ratios_constant=='True' 
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':return_wa, 'timeit':timeit,
              'start':start, 'stop':stop,  'step':step, 'base_dir':base_dir, 'rand_guesses':rand_guesses,
-             'inline_print':inline_print}
+             'inline_print':inline_print, 'keep_ratios_constant': keep_ratios_constant}
+
 if type(args.max_compounds)!=type(None): 
     dict_kwargs.update({'max_compounds':int(args.max_compounds)})
 if type(args.n_compounds_per_well)!=type(None): 

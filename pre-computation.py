@@ -73,12 +73,14 @@ if 'method' in dict_kwargs.keys():
     if not dict_kwargs['inline_print']:
         dict_c.update({'kwargs':dict_kwargs})
 
-        fpath=os.path.join(base_dir,'diff_'+str(differentiate))
+        fpath=os.path.join(base_dir,dict_kwargs['method'])
 
         if not os.path.exists(fpath):
             os.makedirs(fpath)
 
         full_dir=os.path.join(fpath,dict_kwargs['method']+'__'+str(start)+'-'+str(stop)+'_step'+str(step)+'.pk')
+        with open(full_dir, 'wb') as handle:
+            pickle.dump(dict_c, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
 

@@ -272,7 +272,7 @@ def calculate_metrics_hierarchical(n_compounds,  differentiate:int,  **kwargs):
     BM=[0,np.inf]
     if keep_ratios_constant:
         for ratiof in np.arange(2,np.ceil(np.sqrt(n_compounds))):
-            ratio=np.int(ratiof)
+            ratio=int(ratiof)
             NP=0
             FM=0
             for n_pos in np.arange(differentiate+1):
@@ -582,14 +582,14 @@ def full_sweep_comparison(start=50, stop=150, step=10, **kwargs):
     return dict_comp
 
 def single_method_sweep(start=50, stop=150, step=10, **kwargs):
-    dict_comp={'metrics_key':['mean_experiments', 'max_compounds_per_well', 'n_wells', 'percentage_check', 'mean_extra_exp']}
+    dict_comp={'metrics_reading_key':['mean_experiments', 'max_compounds_per_well', 'n_wells', 'percentage_check', 'mean_extra_exp']}
     if kwargs['inline_print']:
         fpath=os.path.join(kwargs['base_dir'],kwargs['method'])
         if not os.path.exists(fpath):
             os.makedirs(fpath)
     current=start
     if kwargs['method']=='hierarchical':
-        dict_comp={'metrics_key':['mean_experiments', 'max_compounds_per_well', 'best_ratio', 'percentage_check', 'layers']}
+        dict_comp={'metrics_reading_key':['mean_experiments', 'max_compounds_per_well', 'best_ratio', 'percentage_check', 'layers']}
     while current<stop:
         time0=time.time()
         if kwargs['timeit']:

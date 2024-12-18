@@ -1,3 +1,4 @@
+name: pooling_env
 channels:
   - defaults
   - conda-forge

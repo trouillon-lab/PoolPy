@@ -70,7 +70,7 @@ if 'method' in dict_kwargs.keys():
         print("total time: %s seconds" % np.round(time.time() - start_time, 1))
         print('-----------------------------------------------------')
     dict_c=single_method_sweep(**dict_kwargs)
-    if not dict_kwargs['inline_print']:
+    if not dict_kwargs['inline_print'] or dict_kwargs['method'] not in ['STD', 'CT']:
         dict_c.update({'kwargs':dict_kwargs})
 
         fpath=os.path.join(base_dir,dict_kwargs['method'])

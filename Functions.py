@@ -497,7 +497,20 @@ def output_table(well_assigner:np.array,output_file_name='output_table'):
     return(output_df)
 
 
-
+# Function to extracts metric values from a given file name generated with inline_print
+def extract_metrics(filename):
+    
+    pattern = r"diff_(\d+)_NS_(\d+)_NW_(\d+)_MS_(\d+)"
+    match = re.match(pattern, filename)
+    if match:
+        return {
+            "diff": int(match.group(1)),
+            "NS": int(match.group(2)),
+            "NW": int(match.group(3)),
+            "MS": int(match.group(4))
+        }
+    else:
+        raise ValueError(f"Filename '{filename}' does not match the expected format.")
 
 
 

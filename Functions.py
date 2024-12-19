@@ -56,7 +56,7 @@ def assign_wells_mat(n_compounds:int, **kwargs)->np.array:
     L2=L1-1 if L1*(L1-1)>=n_compounds else L1
     well_assigner=np.zeros((n_compounds, int(L1+L2)))==1
     for i in range(n_compounds):
-        cp_id=[int(i//L1), int(L1+i % L2)]
+        cp_id=[int(i//L2), int(L2+i % L1)]
         well_assigner[i,cp_id]=True
     return(well_assigner)
 
@@ -388,6 +388,8 @@ def from_compound_get_wells(compound: int, well_assigner: np.array)-> np.array:
 
 #
 def is_consistent(well_assigner:np.array, differentiate:int) -> list:
+    if differentiate==0:
+        return(True,well_assigner, np.array([1]*well_assigner.shape[0]))
     N=well_assigner.shape[0]
     for i in range(differentiate):
         diff=i+1

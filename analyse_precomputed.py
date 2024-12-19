@@ -24,12 +24,13 @@ cmap_pal= matplotlib.colors.LinearSegmentedColormap.from_list("", pal)
 
 """define paths"""
 dir_path=os.path.abspath(r'C:\Users\jtrouillon\Desktop\Python Scripts\pooling')
-dif_dir= dir_path +"\\diff_4"
-out_dir= dir_path +"\\precomputed"
+# dif_dir= dir_path +"\\diff_4"
+# out_dir= dir_path +"\\precomputed"
+plot_dir= dir_path +"\\plots"
 os.chdir(dir_path)
 
-dif_path=os.listdir(dif_dir)
-out_path=os.listdir(out_dir)
+# dif_path=os.listdir(dif_dir)
+# out_path=os.listdir(out_dir)
 
 #%% Concatenate all pickles into one df for each differentiate value
 # Needed only once
@@ -84,7 +85,7 @@ all_methods = ['matrix', 'multidim', 'random', 'STD', 'Chinese trick','Binary']
 #%% test plot
 
 # Function to generate the scatter plot
-def plot_specific_method(data, selected_method, to_plot='mean_experiments'):
+def plot_specific_method(data, selected_method, to_plot='mean_experiments',plot_prefix=''):
 
     plt.figure(figsize=(10, 6))
 
@@ -113,47 +114,54 @@ def plot_specific_method(data, selected_method, to_plot='mean_experiments'):
     plt.xlabel('Test Numbers',size=axis_label_fontsize)
     plt.ylabel(f'{to_plot.replace("_", " ").capitalize()}',size=axis_label_fontsize)
     plt.legend()
+    
+    os.chdir(plot_dir)
+    #plt.savefig(str(plot_prefix+selected_method+'_'+to_plot+'.png'), dpi=300)
+    os.chdir(dir_path)
+
     plt.show()
 
 
-def plot_specific_diff(data, diff, metrics=None):
-    if not metrics:
-        metrics = ['mean_experiments', 'max_compounds_per_well', 'n_wells', 'percentage_check', 'mean_extra_exp']
+def plot_specific_diff(data, diff, metrics,plot_prefix=''):
+
+    for metric in metrics:
+        plt.figure(figsize=(10, 6))
     
-    else:
-        for metric in metrics:
-            plt.figure(figsize=(10, 6))
+        main_dict = data['Differentiate '+str(diff)]
+        test_numbers = []
+        method_values = {}
         
-            main_dict = data['Differentiate '+str(diff)]
-            test_numbers = []
-            method_values = {}
-            
-            
         
-            for test_number, (df, _) in main_dict.items():
-                test_numbers.append(test_number)
-                for method in df.index:
-                    # Trim method name if it starts with 'multidim:'
-                    base_method = method.split(':')[0].strip()
-                    if base_method not in method_values:
-                        method_values[base_method] = []
-                    method_values[base_method].append(df.loc[method, metric])
-        
-            color_map = {method: pal[i % len(pal)] for i, method in enumerate(method_values.keys())}
-        
-            for method, values in method_values.items():
-                plt.scatter(test_numbers, values, label=method,color=color_map[method], alpha=0.7, s=80)
-                
-            plt.xticks(fontsize=tick_label_fontsize)
-            plt.yticks(fontsize=tick_label_fontsize)
-            plt.legend(edgecolor='black')
+    
+        for test_number, (df, _) in main_dict.items():
+            test_numbers.append(test_number)
+            for method in df.index:
+                # Trim method name if it starts with 'multidim:'
+                base_method = method.split(':')[0].strip()
+                if base_method not in method_values:
+                    method_values[base_method] = []
+                method_values[base_method].append(df.loc[method, metric])
+    
+        color_map = {method: pal[i % len(pal)] for i, method in enumerate(method_values.keys())}
+    
+        for method, values in method_values.items():
+            plt.scatter(test_numbers, values, label=method,color=color_map[method], alpha=0.7, s=80)
             
-            
-            plt.title(f'Differentiate {diff}',size=axis_label_fontsize)
-            plt.xlabel('Test Numbers',size=axis_label_fontsize)
-            plt.ylabel(f'{metric.replace("_", " ").capitalize()}',size=axis_label_fontsize)
-            plt.legend()
-            plt.show()
+        plt.xticks(fontsize=tick_label_fontsize)
+        plt.yticks(fontsize=tick_label_fontsize)
+        plt.legend(edgecolor='black')
+        
+        
+        plt.title(f'Differentiate {diff}',size=axis_label_fontsize)
+        plt.xlabel('Test Numbers',size=axis_label_fontsize)
+        plt.ylabel(f'{metric.replace("_", " ").capitalize()}',size=axis_label_fontsize)
+        plt.legend()
+        
+        os.chdir(plot_dir)
+        #plt.savefig(str(plot_prefix+'diff_'+str(diff)+'_'+metric+'.png'), dpi=300)
+        os.chdir(dir_path)
+        
+        plt.show()
     
 
 
@@ -165,11 +173,13 @@ for selected_method in all_methods:
 
 
 # Plot all methods for each diff
+metrics = ['mean_experiments', 'max_compounds_per_well', 'n_wells', 'percentage_check', 'mean_extra_exp']
+
 for diff in [1,2,3,4]:
-    plot_specific_diff(all_precomputed, diff)
+    plot_specific_diff(all_precomputed, diff,metrics)
 
 
 
 #single
-plot_specific_method(all_precomputed, 'STD','n_wells')
-plot_specific_diff(all_precomputed, 1,metrics=['n_wells'])
+plot_specific_method(all_precomputed, 'STD','n_wells',plot_prefix='STDonly_')
+plot_specific_diff(all_precomputed, 1,metrics=['n_wells','max_compounds_per_well'],plot_prefix='STDonly_')

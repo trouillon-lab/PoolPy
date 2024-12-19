@@ -600,15 +600,17 @@ def full_method_comparison(**kwargs):
         M_exp=np.round(mean_exp, 2)
         max_comp=np.max(np.sum(WA, axis=0))
         ls_met.append([M_exp, max_comp, n_wells, perc_check,  extra_exp,])
-    ls_met.append([Hier[1], Hier[3], Hier[0],1,Hier[3]])
+    ls_met.append([Hier[1], Hier[3], Hier[0],1,Hier[2]])
     full_methods=methods.copy()
-    full_methods.append('Hierarchical_'+str(Hier[0]))
+    full_methods.append('Hierarchical')
     df_met=pd.DataFrame(ls_met)
-    idx_renamer={i:j for i,j in zip(df_met.index, methods)}
-    col_renamer={i:j for i,j in zip(df_met.columns, ls_names_met)}
-    df_met.rename(index=idx_renamer, columns=col_renamer, inplace=True)
 
     dict_wa={method: WA for method, WA in zip(methods, WA_list)}
+    dict_wa.update({'Hierarchical':Hier[4]})
+
+    idx_renamer={i:j for i,j in zip(df_met.index, full_methods)}
+    col_renamer={i:j for i,j in zip(df_met.columns, ls_names_met)}
+    df_met.rename(index=idx_renamer, columns=col_renamer, inplace=True)
 
     ret_wa= kwargs['return_wa'] 
     if ret_wa:

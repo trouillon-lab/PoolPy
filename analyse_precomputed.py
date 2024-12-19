@@ -116,7 +116,7 @@ def plot_specific_method(data, selected_method, to_plot='mean_experiments',plot_
     plt.legend()
     
     os.chdir(plot_dir)
-    plt.savefig(str(plot_prefix+selected_method+'_'+to_plot+'.png'), dpi=300)
+    #plt.savefig(str(plot_prefix+selected_method+'_'+to_plot+'.png'), dpi=300)
     os.chdir(dir_path)
 
     plt.show()
@@ -158,7 +158,7 @@ def plot_specific_diff(data, diff, metrics,plot_prefix=''):
         plt.legend()
         
         os.chdir(plot_dir)
-        plt.savefig(str(plot_prefix+'diff_'+str(diff)+'_'+metric+'.png'), dpi=300)
+        #plt.savefig(str(plot_prefix+'diff_'+str(diff)+'_'+metric+'.png'), dpi=300)
         os.chdir(dir_path)
         
         plt.show()

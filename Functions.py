@@ -56,7 +56,7 @@ def assign_wells_mat(n_compounds:int, **kwargs)->np.array:
     L2=L1-1 if L1*(L1-1)>=n_compounds else L1
     well_assigner=np.zeros((n_compounds, int(L1+L2)))==1
     for i in range(n_compounds):
-        cp_id=[int(i//L2), int(L2+i % L1)]
+        cp_id=[int(i//L2), int(L1+i % L2)]
         well_assigner[i,cp_id]=True
     return(well_assigner)
 

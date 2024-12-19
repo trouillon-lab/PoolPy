@@ -291,8 +291,9 @@ def calculate_metrics_hierarchical(n_compounds,  differentiate:int,  **kwargs):
     keep_ratios_constant=kwargs['keep_ratios_constant']
     id_samps=np.arange(n_compounds)
     details={}
-    BM=[0,np.inf]
+    
     if keep_ratios_constant:
+        BM=[0,np.inf]
         for ratiof in np.arange(2,np.ceil(np.sqrt(n_compounds))):
             ratio=int(ratiof)
             NP=0
@@ -306,14 +307,16 @@ def calculate_metrics_hierarchical(n_compounds,  differentiate:int,  **kwargs):
                     
             layers=int(np.ceil(np.log(n_compounds)/np.log(ratio)))
             MC=int(np.ceil(n_compounds/ratio))
-            details.update({ratio:[FM/NP,layers, MC]})
+
+            details.update({ratio:[BM[1], MC, BM[0], int(np.round((NP-1)/(NP),2)*100), BM[1]-BM[0],layers]})
             if FM/NP<BM[1]:
                 BM=[ratio,FM/NP]
         layers=int(np.ceil(np.log(n_compounds)/np.log(BM[0])))
         MC=int(np.ceil(n_compounds/BM[0]))
-        return([BM[0], BM[1],layers, MC, details ])
+        return([BM[1], MC, BM[0], int(np.round((NP-1)/(NP),2)*100), BM[1]-BM[0],layers, details ]) 
 
     else:
+        BM=[[0],np.inf]
         list_splits=uneven_wrapper(n_compounds)
         ls_id=0
         for splito in list_splits:
@@ -328,13 +331,13 @@ def calculate_metrics_hierarchical(n_compounds,  differentiate:int,  **kwargs):
                     
             layers=len(splito)+1
             MC=int(np.ceil(n_compounds/splito[0]))
-            details.update({ls_id:[splito,FM/NP,layers, MC]})
+            details.update({ls_id:[BM[1], MC, BM[0], int(np.round((NP-1)/(NP),2)*100), BM[1]-BM[0][0],layers]})
             ls_id+=1
             if FM/NP<BM[1]:
                 BM=[splito,FM/NP]
         layers=len(BM[0])+1
         MC=int(np.ceil(n_compounds/BM[0][0]))
-        return([BM[0], BM[1],layers, MC, details ])
+        return([BM[1], MC, BM[0], int(np.round((NP-1)/(NP),2)*100), BM[1]-BM[0][0],layers, details ])
 
 
 
@@ -593,20 +596,20 @@ def full_method_comparison(**kwargs):
     #return([BM[0], BM[1],layers, MC, details ])
 
     ls_met=[]
-    ls_names_met=['mean_experiments', 'max_compounds_per_well', 'n_wells', 'percentage_check', 'mean_extra_exp']
+    ls_names_met=['mean_experiments', 'max_compounds_per_well', 'n_wells', 'percentage_check', 'mean_extra_exp', 'mean_steps']
     for method, WA in zip(methods, WA_list):
         mean_exp, extra_exp,  _, perc_check= mean_metrics(WA, **kwargs)
         n_wells=WA.shape[1]
         M_exp=np.round(mean_exp, 2)
         max_comp=np.max(np.sum(WA, axis=0))
-        ls_met.append([M_exp, max_comp, n_wells, perc_check,  extra_exp,])
-    ls_met.append([Hier[1], Hier[3], Hier[0],1,Hier[2]])
+        ls_met.append([M_exp, max_comp, n_wells, int(perc_check),  extra_exp,1+perc_check/100])
+    ls_met.append(Hier[:-1])
     full_methods=methods.copy()
     full_methods.append('Hierarchical')
     df_met=pd.DataFrame(ls_met)
 
     dict_wa={method: WA for method, WA in zip(methods, WA_list)}
-    dict_wa.update({'Hierarchical':Hier[4]})
+    dict_wa.update({'Hierarchical':Hier[5]})
 
     idx_renamer={i:j for i,j in zip(df_met.index, full_methods)}
     col_renamer={i:j for i,j in zip(df_met.columns, ls_names_met)}
@@ -633,14 +636,13 @@ def full_sweep_comparison(start=50, stop=150, step=10, **kwargs):
     return dict_comp
 
 def single_method_sweep(start=50, stop=150, step=10, **kwargs):
-    dict_comp={'metrics_reading_key':['mean_experiments', 'max_compounds_per_well', 'n_wells', 'percentage_check', 'mean_extra_exp']}
+    dict_comp={'metrics_reading_key':['mean_experiments', 'max_compounds_per_well', 'n_wells', 
+                                      'percentage_check', 'mean_extra_exp', 'mean_steps']}
     if kwargs['inline_print']:
         fpath=os.path.join(kwargs['base_dir'],kwargs['method'])
         if not os.path.exists(fpath):
             os.makedirs(fpath)
     current=start
-    if kwargs['method']=='hierarchical':
-        dict_comp={'metrics_reading_key':['mean_experiments', 'max_compounds_per_well', 'best_ratio', 'percentage_check', 'layers']}
     while current<stop:
         time0=time.time()
         if kwargs['timeit']:
@@ -707,7 +709,7 @@ def single_method_sweep(start=50, stop=150, step=10, **kwargs):
 
             case 'hierarchical':
                 Hier=calculate_metrics_hierarchical(n_compounds=current, **kwargs)
-                dict_wa={'WA': Hier[4], 'metrics':[Hier[1], Hier[3], Hier[0],1,Hier[2]]}
+                dict_wa={'WA': Hier[5], 'metrics':Hier[:-1]}
 
 
 

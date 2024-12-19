@@ -34,6 +34,9 @@ out_path=os.listdir(out_dir)
 #%% Concatenate all pickles into one df for each differentiate value
 # Needed only once
 
+''' deprecated, use file_merger '''
+
+
 # dfs = []
 # os.chdir(dif_dir)
 # for filename in dif_path:
@@ -59,29 +62,35 @@ out_path=os.listdir(out_dir)
 #%% Get data
 
 #Open all pickles
-os.chdir(out_dir)
-for filename in out_path:
-    if '.pk' in filename:
-        name=filename[:-3]
-        exec(name + "=pd.read_pickle(filename)")
+# os.chdir(out_dir)
+# for filename in out_path:
+#     if '.pk' in filename:
+#         name=filename[:-3]
+#         exec(name + "=pd.read_pickle(filename)")
         
-os.chdir(dir_path)
+# os.chdir(dir_path)
 
-all_precomputed=[diff_1,diff_2,diff_3,diff_4]
-diff_names=['diff_1','diff_2','diff_3','diff_4']
+# all_precomputed=[diff_1,diff_2,diff_3,diff_4]
+# diff_names=['diff_1','diff_2','diff_3','diff_4']
+
+
+data_file='Final_inline_precomputed_file.pk'
+#data_file='Final_precomputed_file.pk'
+all_precomputed=pd.read_pickle(data_file)
+
 
 all_methods = ['matrix', 'multidim', 'random', 'STD', 'Chinese trick','Binary']
 
 #%% test plot
 
 # Function to generate the scatter plot
-def plot_specific_method(data, selected_method):
+def plot_specific_method(data, selected_method, to_plot='mean_experiments'):
 
     plt.figure(figsize=(10, 6))
 
-    color_map = {diff: pal[i % len(pal)] for i, diff in enumerate(diff_names)}
+    color_map = {diff: pal[i % len(pal)] for i, (diff,v) in enumerate(data.items())}
 
-    for idx, main_dict in enumerate(data):
+    for i, (diff, main_dict) in enumerate(data.items()):
         test_numbers = []
         mean_values = []
 
@@ -91,9 +100,9 @@ def plot_specific_method(data, selected_method):
                 base_method = method.split(':')[0].strip()
                 if selected_method==base_method:
                     test_numbers.append(test_number)
-                    mean_values.append(df.loc[method, 'mean_experiments'])
+                    mean_values.append(df.loc[method, to_plot])
 
-        plt.scatter(test_numbers, mean_values, label=diff_names[idx],color=color_map[diff_names[idx]], alpha=0.7, s=80)
+        plt.scatter(test_numbers, mean_values, label=diff,color=color_map[diff], alpha=0.7, s=80)
 
 
     plt.xticks(fontsize=tick_label_fontsize)
@@ -102,48 +111,50 @@ def plot_specific_method(data, selected_method):
         
     plt.title(f'Method: {selected_method}',size=axis_label_fontsize)
     plt.xlabel('Test Numbers',size=axis_label_fontsize)
-    plt.ylabel('Mean Experiments',size=axis_label_fontsize)
+    plt.ylabel(f'{to_plot.replace("_", " ").capitalize()}',size=axis_label_fontsize)
     plt.legend()
     plt.show()
 
 
-def plot_specific_diff(data, diff):
-    metrics = ['mean_experiments', 'max_compounds_per_well', 'n_wells', 'percentage_check', 'mean_extra_exp']
-
-    for metric in metrics:
-        plt.figure(figsize=(10, 6))
+def plot_specific_diff(data, diff, metrics=None):
+    if not metrics:
+        metrics = ['mean_experiments', 'max_compounds_per_well', 'n_wells', 'percentage_check', 'mean_extra_exp']
     
-        main_dict = data[diff-1]
-        test_numbers = []
-        method_values = {}
+    else:
+        for metric in metrics:
+            plt.figure(figsize=(10, 6))
         
-        
-    
-        for test_number, (df, _) in main_dict.items():
-            test_numbers.append(test_number)
-            for method in df.index:
-                # Trim method name if it starts with 'multidim:'
-                base_method = method.split(':')[0].strip()
-                if base_method not in method_values:
-                    method_values[base_method] = []
-                method_values[base_method].append(df.loc[method, metric])
-    
-        color_map = {method: pal[i % len(pal)] for i, method in enumerate(method_values.keys())}
-    
-        for method, values in method_values.items():
-            plt.scatter(test_numbers, values, label=method,color=color_map[method], alpha=0.7, s=80)
+            main_dict = data['Differentiate '+str(diff)]
+            test_numbers = []
+            method_values = {}
             
-        plt.xticks(fontsize=tick_label_fontsize)
-        plt.yticks(fontsize=tick_label_fontsize)
-        plt.legend(edgecolor='black')
+            
         
+            for test_number, (df, _) in main_dict.items():
+                test_numbers.append(test_number)
+                for method in df.index:
+                    # Trim method name if it starts with 'multidim:'
+                    base_method = method.split(':')[0].strip()
+                    if base_method not in method_values:
+                        method_values[base_method] = []
+                    method_values[base_method].append(df.loc[method, metric])
         
-        plt.title(f'Differentiate {diff}',size=axis_label_fontsize)
-        plt.xlabel('Test Numbers',size=axis_label_fontsize)
-        plt.ylabel(f'{metric.replace("_", " ").capitalize()}',size=axis_label_fontsize)
-        plt.legend()
-        plt.show()
-
+            color_map = {method: pal[i % len(pal)] for i, method in enumerate(method_values.keys())}
+        
+            for method, values in method_values.items():
+                plt.scatter(test_numbers, values, label=method,color=color_map[method], alpha=0.7, s=80)
+                
+            plt.xticks(fontsize=tick_label_fontsize)
+            plt.yticks(fontsize=tick_label_fontsize)
+            plt.legend(edgecolor='black')
+            
+            
+            plt.title(f'Differentiate {diff}',size=axis_label_fontsize)
+            plt.xlabel('Test Numbers',size=axis_label_fontsize)
+            plt.ylabel(f'{metric.replace("_", " ").capitalize()}',size=axis_label_fontsize)
+            plt.legend()
+            plt.show()
+    
 
 
 #%% Plots
@@ -159,54 +170,6 @@ for diff in [1,2,3,4]:
 
 
 
-#%% TEST
-
-# To merge files generated with inline_print
-
-all_methods = ['matrix', 'multidim', 'random', 'STD', 'CT','Binary']
-
-results = {}
-
-for method_dir in all_methods:
-    filenames = next(os.walk(method_dir), (None, None, []))[2]
-    metrics_list = []
-    for file in filenames:
-        if file.endswith(".txt"):
-            try:
-                metrics = extract_metrics(file)
-                metrics_list.append(metrics)
-            except ValueError as e:
-                print(e)
-    
-    if metrics_list:
-        df = pd.DataFrame(metrics_list)
-        df = df.sort_values(by="NS")
-        for diff_value, group_df in df.groupby("diff"):
-            group_df = group_df.reset_index(drop=True)
-            if diff_value not in results:
-                results['Differentiate '+str(diff_value)] = {}
-            results['Differentiate '+str(diff_value)][method_dir] = group_df.drop(columns=["diff"])
-
-
-     
-#%%
-        
-import re
-
-def extract_metrics(filename):
-    """
-    Extracts metric values from a given file name generated with inline_print
-    """
-    
-    pattern = r"diff_(\d+)_NS_(\d+)_NW_(\d+)_MS_(\d+)"
-    match = re.match(pattern, filename)
-    if match:
-        return {
-            "diff": int(match.group(1)),
-            "NS": int(match.group(2)),
-            "NW": int(match.group(3)),
-            "MS": int(match.group(4))
-        }
-    else:
-        raise ValueError(f"Filename '{filename}' does not match the expected format.")
-    
+#single
+plot_specific_method(all_precomputed, 'STD','n_wells')
+plot_specific_diff(all_precomputed, 1,metrics=['n_wells'])

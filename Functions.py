@@ -318,6 +318,8 @@ def calculate_metrics_hierarchical(n_compounds,  differentiate:int,  **kwargs):
     else:
         BM=[[0],np.inf]
         list_splits=uneven_wrapper(n_compounds)
+        if 'ls_splits' in kwargs.keys():
+            list_splits=[kwargs['ls_splits']]
         ls_id=0
         for splito in list_splits:
             NP=0
@@ -728,4 +730,106 @@ def single_method_sweep(start=50, stop=150, step=10, **kwargs):
 
 
 
+
+######################################################################################################
+######################################################################################################
+###########################                                                ###########################
+###########################       BEGINNING OF PREVALENCE SECTION          ###########################
+###########################                                                ###########################
+######################################################################################################
+######################################################################################################
+
+
+
+
+
+
+
+def get_diff_from_prev(n_compounds, prev, p_cut=1e-4):
+    ls_p=[]
+    for i in range(n_compounds):
+        combinations=math.comb(n_compounds,i)
+        P=prev**i*(1-prev)**(n_compounds-i)*combinations
+        ls_p.append(P)
+        if np.sum(ls_p) > 1- p_cut:
+            break
+        
+    return(np.array(ls_p)/np.sum(ls_p))
+
+def prevalence_pooling(n_compounds, prev,  p_cut=1e-4, file='Final_precomputed_file.pk', **kwargs):
+    with open(file, 'rb') as handle:
+        f1=pickle.load(handle)
+    Ps=get_diff_from_prev(n_compounds, prev,  p_cut)
+    max_diff=len(Ps)-1
+    if max_diff > 4:
+        sys.exit(f'Maximum number of positives ({max_diff}) needed for requested prevalnce too high. The precomputed maximum is 4.')
+
+    else:
+        with open(file, 'rb') as handle:
+            f1=pickle.load(handle)
+        f2=f1['Differentiate '+str(max_diff)]
+        a2=np.array(list(f2))
+        md=np.max(a2)
+        if n_compounds>md:
+            sys.exit(f'Maximum number of samples ({n_compounds}) too high for the chosen number of positives \n Below are displayed the information for {md} samples and up to {max_diff} positives. \n You can run the code following the commands below for your specific case.')
+        elif np.sum(a2==n_compounds)==0:
+            print(f'There is no precomputed strategy for {n_compounds} samples. \n The closest precomputed strategy is for {md} samples with up to {max_diff} positives')
+            md=np.min(a2[a2>=n_compounds])
+        else:
+            md=n_compounds
+
+    CR=f2[md]
+    FCR=recalculate_full_metrics(CR, max_diff, Ps, n_compounds=n_compounds, **kwargs)
+    return(FCR)
+
+def recalculate_full_metrics(full_ls, differentiate, Ps, **kwargs):
+    summary=full_ls[0]
+    dict_WA=full_ls[1]
+    ls_met=[]
+    ls_names_met=['mean_experiments', 'max_compounds_per_well', 'percentage_check', 'mean_extra_exp', 'mean_steps']
+    methods=[]
+    dict_ps={}
+    final_df=pd.DataFrame()
+    if 'Hierarchical' in dict_WA.keys():
+        ls_split=summary.loc['Hierarchical', 'n_wells']
+    for diff in range (differentiate+1):
+        methods=[]
+        ls_met=[]
+        NW=[]
+        for i,j in dict_WA.items():
+            WA=j
+            if i=='Hierarchical':
+                Hier=calculate_metrics_hierarchical(differentiate= diff, ls_split=[ls_split],**kwargs)
+                H1=Hier[:2]
+                H2=Hier[3:-1]
+                H1.extend(H2)
+                ls_met.append(H1)
+                NW.append(Hier[2])
+            else:
+                mean_exp, extra_exp,  _, perc_check= mean_metrics(WA,differentiate= diff, **kwargs)
+                n_wells=WA.shape[1]
+                M_exp=np.round(mean_exp, 2)
+                max_comp=np.max(np.sum(WA, axis=0))
+                ls_met.append([M_exp, max_comp, perc_check,  extra_exp,1+perc_check/100])
+                NW.append(n_wells)
+            methods.append(i)
+
+        df_met=pd.DataFrame(ls_met)
+        idx_renamer={i:j for i,j in zip(df_met.index, methods)}
+        col_renamer={i:j for i,j in zip(df_met.columns, ls_names_met)}
+        df_met.rename(index=idx_renamer, columns=col_renamer, inplace=True)
+        if final_df.shape==df_met.shape:
+            final_df=final_df+(df_met*Ps[diff])
+        else:
+            final_df=(df_met*Ps[diff])
+
+        dict_ps.update({diff:[Ps[diff],df_met]})
+    final_df['n_wells']=NW
+    dict_ps.update({diff:[Ps[diff],df_met]})
+    dict_out={'Prevalence_scale':final_df}
+    dict_out.update(dict_ps)
+    dict_out.update({diff:[Ps[diff],df_met]})
+    return(dict_out)
+    
+    
 

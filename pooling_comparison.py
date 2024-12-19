@@ -53,7 +53,7 @@ if type(args.n_dims)!=type(None):
 print(dict_kwargs)
 
 start_time = time.time()
-dict_c=sweep_comparison(**dict_kwargs)
+dict_c=full_sweep_comparison(**dict_kwargs)
 if timeit:
     print('\n')
     print('-----------------------------------------------------')

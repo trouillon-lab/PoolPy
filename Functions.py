@@ -246,9 +246,31 @@ def iterative_splitter(id_samps, id_positives, ratio):
             partials+=iterative_splitter(pool,id_positives,ratio)
     return(ratio+partials)
 
+def uneven_wrapper(n_samps):
+    list_of_lists=[]
+    def uneven_splits_maker(n_samps, previous_l):
+        if n_samps<2:
+            pass
+        for ratio in np.arange(2,np.floor(n_samps/2)+1):
+            this_l=previous_l.copy()
+            this_l.append(int(ratio))
+            list_of_lists.append(this_l)
+            uneven_splits_maker(np.ceil(n_samps/ratio), this_l)
+
+    uneven_splits_maker(n_samps,[])
+    
+    
+    return(list_of_lists)
+        
+
 def iterative_uneven_splitter(id_samps, id_positives, ratios):
-    ratio=int(ratios[0])
-    ratios=ratios[1:]
+    if len(ratios)==1:
+        ratio=ratios[0]
+        ratios=[np.inf]
+    else:
+        ratio=ratios[0]
+        ratios=ratios[1:]
+
     if len(id_samps)<=ratio:
         return(len(id_samps))
 
@@ -256,7 +278,7 @@ def iterative_uneven_splitter(id_samps, id_positives, ratios):
     partials=0
     for pool in pools:
         if len(set(pool).intersection(id_positives))>0:
-            partials+=iterative_splitter(pool,id_positives,ratio)
+            partials+=iterative_uneven_splitter(pool,id_positives,ratios)
     return(ratio+partials)
 
 
@@ -290,16 +312,29 @@ def calculate_metrics_hierarchical(n_compounds,  differentiate:int,  **kwargs):
         layers=int(np.ceil(np.log(n_compounds)/np.log(BM[0])))
         MC=int(np.ceil(n_compounds/BM[0]))
         return([BM[0], BM[1],layers, MC, details ])
-        
-        
-            
-
-
 
     #TODO
     else:
-        ratios=np.array(ratios)
-        rartios=np.append(ratios, np.inf)
+        list_splits=uneven_wrapper(20)
+        for splito in list_splits:
+            NP=0
+            FM=0
+            for n_pos in np.arange(differentiate+1):
+                for id_pos in itertools.combinations(np.arange(n_compounds),n_pos):
+                    posx=np.array(id_pos)
+                    measures=iterative_uneven_splitter(id_samps,posx,ratio,splito)
+                    FM+=measures
+                    NP+=1
+                    
+            layers=len(splito)
+            MC=int(np.ceil(n_compounds/splito[0]))
+            details.update({ratio:[FM/NP,layers, MC]})
+            if FM/NP<BM[1]:
+                BM=[splito,FM/NP]
+        layers=len(splito)
+        MC=int(np.ceil(n_compounds/splito[0]))
+        return([BM[0], BM[1],layers, MC, details ])
+
 
 
 

@@ -313,26 +313,27 @@ def calculate_metrics_hierarchical(n_compounds,  differentiate:int,  **kwargs):
         MC=int(np.ceil(n_compounds/BM[0]))
         return([BM[0], BM[1],layers, MC, details ])
 
-    #TODO
     else:
-        list_splits=uneven_wrapper(20)
+        list_splits=uneven_wrapper(n_compounds)
+        ls_id=0
         for splito in list_splits:
             NP=0
             FM=0
             for n_pos in np.arange(differentiate+1):
                 for id_pos in itertools.combinations(np.arange(n_compounds),n_pos):
                     posx=np.array(id_pos)
-                    measures=iterative_uneven_splitter(id_samps,posx,ratio,splito)
+                    measures=iterative_uneven_splitter(id_samps,posx,splito)
                     FM+=measures
                     NP+=1
                     
-            layers=len(splito)
+            layers=len(splito)+1
             MC=int(np.ceil(n_compounds/splito[0]))
-            details.update({ratio:[FM/NP,layers, MC]})
+            details.update({ls_id:[splito,FM/NP,layers, MC]})
+            ls_id+=1
             if FM/NP<BM[1]:
                 BM=[splito,FM/NP]
-        layers=len(splito)
-        MC=int(np.ceil(n_compounds/splito[0]))
+        layers=len(BM[0])+1
+        MC=int(np.ceil(n_compounds/BM[0][0]))
         return([BM[0], BM[1],layers, MC, details ])
 
 
@@ -704,7 +705,7 @@ def single_method_sweep(start=50, stop=150, step=10, **kwargs):
 
             case 'hierarchical':
                 Hier=calculate_metrics_hierarchical(n_compounds=current, **kwargs)
-                dict_wa={'WA': Hier[4], 'metrics':[Hier[1], Hier[3], Hier[0],1,Hier[3]]}
+                dict_wa={'WA': Hier[4], 'metrics':[Hier[1], Hier[3], Hier[0],1,Hier[2]]}
 
 
 

@@ -28,6 +28,10 @@ parser.add_argument('--timeit')
 parser.add_argument('--method')
 parser.add_argument('--inline_print')
 parser.add_argument('--keep_ratios_constant')
+parser.add_argument('--all_dims')
+
+
+
 
 args = parser.parse_args()
 
@@ -43,10 +47,11 @@ return_wa= True if type(args.return_wa)==type(None) else args.return_wa=='True'
 timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
 inline_print= False if type(args.inline_print)==type(None) else args.inline_print=='True'
 keep_ratios_constant= False if type(args.keep_ratios_constant)==type(None) else args.keep_ratios_constant=='True' 
+all_dims= False if type(args.all_dims)==type(None) else args.all_dims=='True'
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':return_wa, 'timeit':timeit,
              'start':start, 'stop':stop,  'step':step, 'base_dir':base_dir, 'rand_guesses':rand_guesses,
-             'inline_print':inline_print, 'keep_ratios_constant': keep_ratios_constant}
+             'inline_print':inline_print, 'keep_ratios_constant': keep_ratios_constant, 'all_dims':all_dims}
 
 if type(args.max_compounds)!=type(None): 
     dict_kwargs.update({'max_compounds':int(args.max_compounds)})
@@ -73,12 +78,19 @@ if 'method' in dict_kwargs.keys():
     if not dict_kwargs['inline_print'] or dict_kwargs['method'] not in ['STD', 'CT']:
         dict_c.update({'kwargs':dict_kwargs})
 
-        fpath=os.path.join(base_dir,dict_kwargs['method'])
+
+        
+        method=dict_kwargs['method']
+        if 'n_dims' in dict_kwargs.keys() and dict_kwargs['method']=='multidim':
+            method=method+'_'+str(dict_kwargs['n_dims'])
+
+
+        fpath=os.path.join(base_dir,'single_method',method)
 
         if not os.path.exists(fpath):
             os.makedirs(fpath)
 
-        full_dir=os.path.join(fpath,dict_kwargs['method']+'__'+str(start)+'-'+str(stop)+'_step'+str(step)+'.pk')
+        full_dir=os.path.join(fpath,method+'__'+str(start)+'-'+str(stop)+'_step'+str(step)+'.pk')
         with open(full_dir, 'wb') as handle:
             pickle.dump(dict_c, handle, protocol=pickle.HIGHEST_PROTOCOL)
 

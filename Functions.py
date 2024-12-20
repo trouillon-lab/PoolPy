@@ -560,19 +560,43 @@ def extract_metrics(filename):
 ''' Method comparison '''
 
 def full_method_comparison(**kwargs):
-    methods=['matrix', 'multidim', 'random', 'STD', 'Chinese trick']
+    methods=['matrix', 'random', 'STD', 'Chinese trick']
     # matrix assignment
-    WA_mat=assign_wells_mat(**kwargs)
+    
 
     # multidimensional matrix
     if 'n_dims' in kwargs.keys():
         WA_mul=assign_wells_multidim(**kwargs)
         ndmin=kwargs['n_dims']
+        multi=['multidim: '+str(ndmin)]
+        WA_list=[WA_mul]
+    elif 'all_dims' in kwargs.keys():
+        if kwargs['all_dims']:
+            WA_list=[]
+            multi=[]
+            for i in np.arange(2,int(np.ceil(np.log(64)/np.log(2)))):
+                WA_mul=assign_wells_multidim(n_dims=i, **kwargs)
+                WA_list.append(WA_mul)
+                multi.append('multidim: '+str(i))
+
+        else:
+            ndmin= find_dims(**kwargs)
+            WA_mul=assign_wells_multidim(n_dims=ndmin, **kwargs)
+            multi=['multidim: '+str(ndmin)]
+            WA_list=[WA_mul]
+            
+
+
     else:
         ndmin= find_dims(**kwargs)
         WA_mul=assign_wells_multidim(n_dims=ndmin, **kwargs)
-        
-    methods[1]='multidim: '+str(ndmin)
+        multi=['multidim: '+str(ndmin)]
+        WA_list=[WA_mul]
+    
+    multi.extend(methods)
+    methods=multi.copy()
+
+    WA_mat=assign_wells_mat(**kwargs)
 
     # random assignment
 
@@ -587,7 +611,7 @@ def full_method_comparison(**kwargs):
     WA_chin=assign_wells_chinese(**kwargs)
 
 
-    WA_list=[WA_mat,WA_mul,WA_ran,WA_std, WA_chin]
+    WA_list.extend([WA_mat, WA_ran,WA_std, WA_chin])
 
     if kwargs['differentiate']<2:
         WA_bin=assign_wells_L(**kwargs)

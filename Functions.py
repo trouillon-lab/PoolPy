@@ -56,7 +56,7 @@ def assign_wells_mat(n_compounds:int, **kwargs)->np.array:
     L2=L1-1 if L1*(L1-1)>=n_compounds else L1
     well_assigner=np.zeros((n_compounds, int(L1+L2)))==1
     for i in range(n_compounds):
-        cp_id=[int(i//L2), int(L1+i % L2)]
+        cp_id=[int(i//L2), int(L1+(i % L2))]
         well_assigner[i,cp_id]=True
     return(well_assigner)
 
@@ -84,7 +84,7 @@ def assign_wells_L(n_compounds:int, differentiate=1, **kwargs) -> np.array:
 def assign_wells_multidim(n_compounds:int, n_dims:int, **kwargs)->np.array:
     L1=np.ceil(np.power(n_compounds, 1/n_dims))
     i=0
-    while np.power(L1, n_dims-i-1)*np.power(L1-1, i+1)>n_compounds:
+    while np.power(L1, n_dims-i-1)*np.power(L1-1, i+1)>=n_compounds:
         i=i+1
     ls_dim=[L1]*(n_dims-i)+[L1-1]*i
     up_samps=np.prod(np.array(ls_dim))

@@ -659,7 +659,7 @@ def single_method_sweep(start=50, stop=150, step=10, **kwargs):
                     n_wells=WA.shape[1]
                     M_exp=np.round(mean_exp, 2)
                     max_comp=np.max(np.sum(WA, axis=0))
-                    dict_wa={'WA': WA, 'metrics':[M_exp, max_comp, n_wells, perc_check,  extra_exp,]}
+                    dict_wa={'WA': WA, 'metrics':[M_exp, max_comp, n_wells, int(perc_check),  extra_exp,1+perc_check/100]}
 
                 elif kwargs['inline_print']:
                     full_file_dir=os.path.join(fpath,'diff_'+str(kwargs['differentiate'])+'_NS_'+
@@ -674,7 +674,7 @@ def single_method_sweep(start=50, stop=150, step=10, **kwargs):
                     n_wells=WA.shape[1]
                     M_exp=np.round(mean_exp, 2)
                     max_comp=np.max(np.sum(WA, axis=0))
-                    dict_wa={'WA': WA, 'metrics':[M_exp, max_comp, n_wells, perc_check,  extra_exp,]}
+                    dict_wa={'WA': WA, 'metrics':[M_exp, max_comp, n_wells, int(perc_check),  extra_exp,1+perc_check/100]}
                 elif kwargs['inline_print']:
                     full_file_dir=os.path.join(fpath,'diff_'+str(kwargs['differentiate'])+'_NS_'+str(current)+
                                                '_NW_'+str(WA)+ '_MS_'+str(int(np.ceil(current/2)))+".txt")
@@ -688,15 +688,15 @@ def single_method_sweep(start=50, stop=150, step=10, **kwargs):
                 n_wells=WA.shape[1]
                 M_exp=np.round(mean_exp, 2)
                 max_comp=np.max(np.sum(WA, axis=0))
-                dict_wa={'WA': WA, 'metrics':[M_exp, max_comp, n_wells, perc_check,  extra_exp,]}
+                dict_wa={'WA': WA, 'metrics':[M_exp, max_comp, n_wells, int(perc_check),  extra_exp,1+perc_check/100]}
 
             case 'matrix':
-                WA=assign_wells_mat(**kwargs)
+                WA=assign_wells_mat(n_compounds=current, **kwargs)
                 mean_exp, extra_exp,  _, perc_check= mean_metrics(WA, **kwargs)
                 n_wells=WA.shape[1]
                 M_exp=np.round(mean_exp, 2)
                 max_comp=np.max(np.sum(WA, axis=0))
-                dict_wa={'WA': WA, 'metrics':[M_exp, max_comp, n_wells, perc_check,  extra_exp,]}
+                dict_wa={'WA': WA, 'metrics':[M_exp, max_comp, n_wells, int(perc_check),  extra_exp,1+perc_check/100]}
 
             case 'multidim':
                 if 'n_dims' in kwargs.keys():
@@ -709,7 +709,7 @@ def single_method_sweep(start=50, stop=150, step=10, **kwargs):
                 n_wells=WA.shape[1]
                 M_exp=np.round(mean_exp, 2)
                 max_comp=np.max(np.sum(WA, axis=0))
-                dict_wa={'WA': WA, 'metrics':[M_exp, max_comp, n_wells, perc_check,  extra_exp,]}
+                dict_wa={'WA': WA, 'metrics':[M_exp, max_comp, n_wells, int(perc_check),  extra_exp,1+perc_check/100]}
 
             case 'hierarchical':
                 Hier=calculate_metrics_hierarchical(n_compounds=current, **kwargs)

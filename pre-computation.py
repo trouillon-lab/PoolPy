@@ -29,6 +29,7 @@ parser.add_argument('--method')
 parser.add_argument('--inline_print')
 parser.add_argument('--keep_ratios_constant')
 parser.add_argument('--all_dims')
+parser.add_argument('--max_dims')
 
 
 
@@ -48,10 +49,11 @@ timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
 inline_print= False if type(args.inline_print)==type(None) else args.inline_print=='True'
 keep_ratios_constant= False if type(args.keep_ratios_constant)==type(None) else args.keep_ratios_constant=='True' 
 all_dims= False if type(args.all_dims)==type(None) else args.all_dims=='True'
+max_dims= False if type(args.max_dims)==type(None) else args.max_dims=int(args.max_dims)
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':return_wa, 'timeit':timeit,
              'start':start, 'stop':stop,  'step':step, 'base_dir':base_dir, 'rand_guesses':rand_guesses,
-             'inline_print':inline_print, 'keep_ratios_constant': keep_ratios_constant, 'all_dims':all_dims}
+             'inline_print':inline_print, 'keep_ratios_constant': keep_ratios_constant, 'all_dims':all_dims,}
 
 if type(args.max_compounds)!=type(None): 
     dict_kwargs.update({'max_compounds':int(args.max_compounds)})

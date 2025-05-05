@@ -575,6 +575,8 @@ def full_method_comparison(**kwargs):
             WA_list=[]
             multi=[]
             for i in np.arange(2,int(np.ceil(np.log(kwargs['n_compounds'])/np.log(2)))):
+                if i>kwargs['max_dims']:
+                    continue
                 WA_mul=assign_wells_multidim(n_dims=i, **kwargs)
                 WA_list.append(WA_mul)
                 multi.append('multidim: '+str(i))

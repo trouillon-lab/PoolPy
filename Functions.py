@@ -337,7 +337,7 @@ def calculate_metrics_hierarchical(n_compounds,  differentiate:int,  **kwargs):
             ls_id+=1
             if FM/NP<BM[1]:
                 BM=[splito,FM/NP]
-        layers=len(BM[0])+1
+        layers=len(BM[0])#+1
         MC=int(np.ceil(n_compounds/BM[0][0]))
         return([BM[1], MC, BM[0], int(np.round((NP-1)/(NP),2)*100), BM[1]-BM[0][0],layers, details ])
 

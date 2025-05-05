@@ -53,7 +53,7 @@ max_dims= False if type(args.max_dims)==type(None) else args.max_dims=int(args.m
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':return_wa, 'timeit':timeit,
              'start':start, 'stop':stop,  'step':step, 'base_dir':base_dir, 'rand_guesses':rand_guesses,
-             'inline_print':inline_print, 'keep_ratios_constant': keep_ratios_constant, 'all_dims':all_dims,}
+             'inline_print':inline_print, 'keep_ratios_constant': keep_ratios_constant, 'all_dims':all_dims, 'max_dims':max_dims}
 
 if type(args.max_compounds)!=type(None): 
     dict_kwargs.update({'max_compounds':int(args.max_compounds)})

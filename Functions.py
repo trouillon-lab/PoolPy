@@ -745,11 +745,13 @@ def single_method_sweep(start=50, stop=150, step=10, **kwargs):
 
 
 
-        current=current+step
+        
         if kwargs['timeit']:
             print("segment time: %s seconds" % np.round(time.time() - time0, 1))
         if not kwargs['inline_print'] or kwargs['method'] not in ['STD', 'CT']:
             dict_comp.update({current:dict_wa})
+
+        current=current+step
 
 
     return(dict_comp)

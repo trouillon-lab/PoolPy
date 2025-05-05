@@ -317,9 +317,11 @@ def calculate_metrics_hierarchical(n_compounds,  differentiate:int,  **kwargs):
 
     else:
         BM=[[0],np.inf]
-        list_splits=uneven_wrapper(n_compounds)
+        
         if 'ls_splits' in kwargs.keys():
             list_splits=[kwargs['ls_splits']]
+        else:
+            list_splits=uneven_wrapper(n_compounds)
         ls_id=0
         for splito in list_splits:
             NP=0

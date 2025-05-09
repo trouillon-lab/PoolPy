@@ -46,12 +46,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--differentiate')
 parser.add_argument('--start')
 parser.add_argument('--stop')
-parser.add_argument('--base_dir')
+parser.add_argument('--save_dir')
 
 
 args = parser.parse_args()
 
-f1n=os.path.join(args.base_dir,'N_'+str(args.start)+'.pk')
+f1n=os.path.join(args.save_dir,'N_'+str(args.start)+'.pk')
 
 if os.path.isfile(f1n):
     with open(f1n, "rb") as input_file:
@@ -64,7 +64,7 @@ else:
     for j in range(2,args.differentiate+1):
         dct_cmbn.update({j:np.array(list(itertools.combinations(np.arange(N),j)))})
 
-iterative_add_N(dict_start=dct_cmbn, N_add=int(args.stop-args.start), save_dir=args.base_dir, return_last=False)
+iterative_add_N(dict_start=dct_cmbn, N_add=int(args.stop-args.start), save_dir=args.save_dir, return_last=False)
 
 
 

@@ -11,6 +11,16 @@ from Functions import *
 
 
 
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--differentiate')
+parser.add_argument('--start')
+parser.add_argument('--stop')
+parser.add_argument('--step')
+parser.add_argument('--base_dir')
+
+
+
 def add_1(combinantions_dictionary, ND=5):
     N=combinantions_dictionary[1][-1]+1
     new_cd={1:np.append(combinantions_dictionary[1],N)}

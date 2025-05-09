@@ -11,30 +11,6 @@ from Functions import *
 
 
 
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--differentiate')
-parser.add_argument('--start')
-parser.add_argument('--stop')
-parser.add_argument('--step')
-parser.add_argument('--base_dir')
-
-
-args = parser.parse_args()
-
-f1n=os.path.join(args.base_dir,)
-
-if os.path.isfile(f1n):
-
-
-else:
-    N=int(args.start)
-    dct_cmbn={}
-    dct_cmbn.update({1:np.arange(N)})
-    for j in range(2,5):
-        dct_cmbn.update({j:np.array(list(itertools.combinations(np.arange(N),j)))})
-
-
 def add_1(combinantions_dictionary, ND=5):
     N=combinantions_dictionary[1][-1]+1
     new_cd={1:np.append(combinantions_dictionary[1],N)}
@@ -64,6 +40,31 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/'):
         i+=1
 
     return(tmp_d)
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--differentiate')
+parser.add_argument('--start')
+parser.add_argument('--stop')
+parser.add_argument('--step')
+parser.add_argument('--base_dir')
+
+
+args = parser.parse_args()
+
+f1n=os.path.join(args.base_dir,)
+
+if os.path.isfile(f1n):
+    with open(f1n, "rb") as input_file:
+        scrambler = pickle.load(input_file)
+
+else:
+    N=int(args.start)
+    dct_cmbn={}
+    dct_cmbn.update({1:np.arange(N)})
+    for j in range(2,5):
+        dct_cmbn.update({j:np.array(list(itertools.combinations(np.arange(N),j)))})
+
 
 
 

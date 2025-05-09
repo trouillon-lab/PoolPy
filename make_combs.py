@@ -22,9 +22,10 @@ parser.add_argument('--base_dir')
 
 args = parser.parse_args()
 
-f1n=os.path.join(args.base_dir)
+f1n=os.path.join(args.base_dir,)
 
-if os.path.isfile(fname)
+if os.path.isfile(f1n):
+
 
 else:
     N=int(args.start)
@@ -54,10 +55,10 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/'):
     N_start=dict_start[1][-1]
     i=0
     while i<N_add:
-        print(i)
+        print(N_start+i+1)
         tmp_d=add_1(tmp_d)
         if save:
-            NM=save_dir+'N_'+str(N_start+i+1)+'.pk'
+            NM=os.path.join(save_dir,'N_'+str(N_start+i+1)+'.pk')
             with open(NM, 'wb') as handle:
                 pickle.dump(tmp_d, handle, protocol=pickle.HIGHEST_PROTOCOL)
         i+=1

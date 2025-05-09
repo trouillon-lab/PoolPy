@@ -46,17 +46,16 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--differentiate')
 parser.add_argument('--start')
 parser.add_argument('--stop')
-parser.add_argument('--step')
 parser.add_argument('--base_dir')
 
 
 args = parser.parse_args()
 
-f1n=os.path.join(args.base_dir,)
+f1n=os.path.join(args.base_dir,'N_'+str(args.start)+'.pk')
 
 if os.path.isfile(f1n):
     with open(f1n, "rb") as input_file:
-        scrambler = pickle.load(input_file)
+        dct_cmbn = pickle.load(input_file)
 
 else:
     N=int(args.start)
@@ -64,6 +63,10 @@ else:
     dct_cmbn.update({1:np.arange(N)})
     for j in range(2,5):
         dct_cmbn.update({j:np.array(list(itertools.combinations(np.arange(N),j)))})
+
+iterative_add_N(dct_cmbn, int())
+
+
 
 
 

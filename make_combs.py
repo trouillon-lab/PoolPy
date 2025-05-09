@@ -20,6 +20,19 @@ parser.add_argument('--step')
 parser.add_argument('--base_dir')
 
 
+args = parser.parse_args()
+
+f1n=os.path.join(args.base_dir)
+
+if os.path.isfile(fname)
+
+else:
+    N=int(args.start)
+    dct_cmbn={}
+    dct_cmbn.update({1:np.arange(N)})
+    for j in range(2,5):
+        dct_cmbn.update({j:np.array(list(itertools.combinations(np.arange(N),j)))})
+
 
 def add_1(combinantions_dictionary, ND=5):
     N=combinantions_dictionary[1][-1]+1

@@ -61,7 +61,7 @@ else:
     N=int(args.start)
     dct_cmbn={}
     dct_cmbn.update({1:np.arange(N)})
-    for j in range(2,args.differentiate+1):
+    for j in range(2,int(args.differentiate)+1):
         dct_cmbn.update({j:np.array(list(itertools.combinations(np.arange(N),j)))})
 
 iterative_add_N(dict_start=dct_cmbn, N_add=int(args.stop-args.start), save_dir=args.save_dir, return_last=False)

@@ -26,13 +26,14 @@ def add_1(combinantions_dictionary, ND=5):
     return(new_cd)
 
 
-def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/', return_last=True):
+def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
+                     return_last=True, differentiate=3):
     tmp_d=copy.deepcopy(dict_start)
     N_start=dict_start[1][-1]
     i=0
     while i<N_add:
         print(N_start+i+1)
-        tmp_d=add_1(tmp_d)
+        tmp_d=add_1(tmp_d, ND=differentiate)
         if save:
             NM=os.path.join(save_dir,'N_'+str(N_start+i+1)+'.pk')
             with open(NM, 'wb') as handle:
@@ -64,7 +65,9 @@ else:
     for j in range(2,int(args.differentiate)+1):
         dct_cmbn.update({j:np.array(list(itertools.combinations(np.arange(N),j)))})
 
-iterative_add_N(dict_start=dct_cmbn, N_add=int(args.stop-args.start), save_dir=args.save_dir, return_last=False)
+iterative_add_N(dict_start=dct_cmbn, N_add=int(args.stop)-int(args.start), 
+                save_dir=args.save_dir, return_last=False, 
+                differentiate=int(args.differentiate))
 
 
 

@@ -1,5 +1,8 @@
 # Pooling
 
+## Installation
+
+`conda env create --name pooling_env --file=environment.yml`
 
 ## In progress
 

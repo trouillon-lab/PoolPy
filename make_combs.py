@@ -32,10 +32,10 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
     N_start=dict_start[1][-1]
     i=0
     while i<N_add:
-        print(N_start+i+1)
+        print(N_start+i+2)
         tmp_d=add_1(tmp_d, ND=differentiate)
         if save:
-            NM=os.path.join(save_dir,'N_'+str(N_start+i+1)+'.pk')
+            NM=os.path.join(save_dir,'N_'+str(N_start+i+2)+'.pk')
             with open(NM, 'wb') as handle:
                 pickle.dump(tmp_d, handle, protocol=pickle.HIGHEST_PROTOCOL)
         i+=1

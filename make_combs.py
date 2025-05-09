@@ -26,7 +26,7 @@ def add_1(combinantions_dictionary, ND=5):
     return(new_cd)
 
 
-def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/'):
+def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/', return_last=True):
     tmp_d=copy.deepcopy(dict_start)
     N_start=dict_start[1][-1]
     i=0
@@ -38,8 +38,8 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/'):
             with open(NM, 'wb') as handle:
                 pickle.dump(tmp_d, handle, protocol=pickle.HIGHEST_PROTOCOL)
         i+=1
-
-    return(tmp_d)
+    if return_last:
+        return(tmp_d)
 
 
 parser = argparse.ArgumentParser()
@@ -64,7 +64,7 @@ else:
     for j in range(2,5):
         dct_cmbn.update({j:np.array(list(itertools.combinations(np.arange(N),j)))})
 
-iterative_add_N(dct_cmbn, int())
+iterative_add_N(dict_start=dct_cmbn, N_add=int(args.stop-args.start), save_dir=args.base_dir, return_last=False)
 
 
 

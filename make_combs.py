@@ -38,13 +38,11 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
         if not os.path.exists(diri):
             os.makedirs(diri)
   
-        print(N_start+i+2)
         tmp_d=add_1(tmp_d, ND=differentiate)
         if save:
             for ii in range(2,differentiate+1):
                 this_diri=os.path.join(diri,'N_'+str(N_start+i+2)+'_diff_'+str(ii)+'.npz')
                 this_diff=tmp_d[ii]
-                print(diri)
                 np.savez_compressed(file=this_diri,ii=this_diff, allow_pickle=False)
         i+=1
     if return_last:
@@ -62,7 +60,7 @@ args = parser.parse_args()
 
 f1n=os.path.join(args.save_dir,'N_'+str(args.start)+'.pk')
 
-if os.path.isfile(f1n):
+if os.path.isfile(f1n) and False:
     with open(f1n, "rb") as input_file:
         dct_cmbn = pickle.load(input_file)
 

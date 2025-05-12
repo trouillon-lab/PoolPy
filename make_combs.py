@@ -76,7 +76,7 @@ else:
 
 iterative_add_N(dict_start=dct_cmbn, N_add=int(args.stop)-int(args.start), 
                 save_dir=args.save_dir, return_last=False, 
-                differentiate=int(args.differentiate))
+                differentiate=diff)
 
 
 

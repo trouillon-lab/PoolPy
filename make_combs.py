@@ -70,7 +70,7 @@ else:
     N=int(args.start)
     diff=int(args.differentiate)
     dct_cmbn={}
-    dct_cmbn.update({N:np.arange(diff)})
+    dct_cmbn.update({1:np.arange(N)})
     for j in range(2,diff+1):
         dct_cmbn.update({j:np.array(list(itertools.combinations(np.arange(N),j)))})
 

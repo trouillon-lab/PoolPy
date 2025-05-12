@@ -37,12 +37,12 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
         print(N_start+i+2)
         tmp_d=add_1(tmp_d, ND=differentiate)
         if save:
-            for i in range(2,differentiate+1):
-                np.savez_compressed(
             diri=os.path.join(save_dir,'N_'+str(N_start+i+2)+'.pk')
             if not os.path.exists(diri):
                 os.makedirs(diri)
-
+            for ii in range(2,differentiate+1):
+                this_diff=tmp_d[i]
+                np.savez_compressed(this_diff, allow_pickle=False)
         i+=1
     if return_last:
         return(tmp_d)

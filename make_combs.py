@@ -68,9 +68,10 @@ if os.path.isfile(f1n):
 
 else:
     N=int(args.start)
+    diff=int(args.differentiate)
     dct_cmbn={}
-    dct_cmbn.update({1:np.arange(N)})
-    for j in range(2,int(args.differentiate)+1):
+    dct_cmbn.update({N:np.arange(diff)})
+    for j in range(2,diff+1):
         dct_cmbn.update({j:np.array(list(itertools.combinations(np.arange(N),j)))})
 
 iterative_add_N(dict_start=dct_cmbn, N_add=int(args.stop)-int(args.start), 

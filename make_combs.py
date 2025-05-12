@@ -42,9 +42,10 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
         tmp_d=add_1(tmp_d, ND=differentiate)
         if save:
             for ii in range(2,differentiate+1):
-                diri=os.path.join(diri,'N_'+str(N_start+i+2)+'_diff_'+str(ii))
+                this_diri=os.path.join(diri,'N_'+str(N_start+i+2)+'_diff_'+str(ii)+'.npz')
                 this_diff=tmp_d[ii]
-                np.savez_compressed(this_diff,diri, allow_pickle=False)
+                print(diri)
+                np.savez_compressed(file=this_diri,ii=this_diff, allow_pickle=False)
         i+=1
     if return_last:
         return(tmp_d)

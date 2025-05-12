@@ -28,6 +28,8 @@ def add_1(combinantions_dictionary, ND=5):
 
 def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
                      return_last=True, differentiate=3):
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
     tmp_d=copy.deepcopy(dict_start)
     N_start=dict_start[1][-1]
     i=0
@@ -35,9 +37,12 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
         print(N_start+i+2)
         tmp_d=add_1(tmp_d, ND=differentiate)
         if save:
-            NM=os.path.join(save_dir,'N_'+str(N_start+i+2)+'.pk')
-            with open(NM, 'wb') as handle:
-                pickle.dump(tmp_d, handle, protocol=pickle.HIGHEST_PROTOCOL)
+            for i in range(2,differentiate+1):
+                np.savez_compressed(
+            diri=os.path.join(save_dir,'N_'+str(N_start+i+2)+'.pk')
+            if not os.path.exists(diri):
+                os.makedirs(diri)
+
         i+=1
     if return_last:
         return(tmp_d)

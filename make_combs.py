@@ -42,8 +42,8 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
         tmp_d=add_1(tmp_d, ND=differentiate)
         if save:
             for ii in range(2,differentiate+1):
-                diri=os.path.join(diri,'N_'+str(N_start+i+2)+'_diff_'+str(i))
-                this_diff=tmp_d[i]
+                diri=os.path.join(diri,'N_'+str(N_start+i+2)+'_diff_'+str(ii))
+                this_diff=tmp_d[ii]
                 np.savez_compressed(this_diff,diri, allow_pickle=False)
         i+=1
     if return_last:

@@ -15,7 +15,7 @@ def add_1(combinantions_dictionary, ND=5):
     N=combinantions_dictionary[1][-1]+1
     new_cd={1:np.append(combinantions_dictionary[1],N)}
     diff=1
-    while diff<(ND-1):
+    while diff<(ND):
         new_part=np.vstack([combinantions_dictionary[diff].T,np.array([N]*len(combinantions_dictionary[diff]))])
         new_in=np.hstack([combinantions_dictionary[diff+1].T,new_part]).T
         new_cd.update({(diff+1):new_in})

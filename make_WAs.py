@@ -127,18 +127,9 @@ parser.add_argument('--start')
 parser.add_argument('--stop')
 parser.add_argument('--step')
 parser.add_argument('--base_dir')
-parser.add_argument('--rand_guesses')
-parser.add_argument('--max_compounds')
-parser.add_argument('--n_compounds_per_well')
-parser.add_argument('--n_wells')
-parser.add_argument('--n_dims')
-parser.add_argument('--return_wa')
+parser.add_argument('--max_diff')
 parser.add_argument('--timeit')
-parser.add_argument('--method')
-parser.add_argument('--inline_print')
-parser.add_argument('--keep_ratios_constant')
-parser.add_argument('--all_dims')
-parser.add_argument('--max_dims')
+
 
 
 

@@ -15,7 +15,6 @@ from Functions import *
 
 
 def make_all_deterministic_WAs(start=50, stop=150, step=10, **kwargs):
-    dict_comp={}
     current=start
     while current<stop:
         time0=time.time()
@@ -151,3 +150,6 @@ max_dims= np.inf if type(args.max_dims)==type(None) else int(args.max_dims)
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':return_wa, 'timeit':timeit,
              'start':start, 'stop':stop,  'step':step, 'base_dir':base_dir, 'max_diff': max_diff, 'max_dims':max_dims}
+
+
+make_all_deterministic_WAs(dict_kwargs)

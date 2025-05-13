@@ -56,18 +56,20 @@ def full_deterministic_WAS(**kwargs):
 
     if kwargs['max_diff']>1:
         for diffo in np.arange(kwargs['max_diff']):
-            diff=diffo+1
+
+
+            kwargs.update({'differentiate':int(diffo+1)})
 
             WA_listo=copy.deepcopy(WA_list)
             methodso=copy.deepcopy(methods)
 
             # STD asignment 
-            WA_std=assign_wells_STD(differentiate=diff,**kwargs)
+            WA_std=assign_wells_STD(**kwargs)
 
             
 
             # chinese trick assignment
-            WA_chin=assign_wells_chinese(differentiate=diff,**kwargs)
+            WA_chin=assign_wells_chinese(**kwargs)
 
 
             WA_listo.extend([ WA_std, WA_chin])
@@ -75,13 +77,13 @@ def full_deterministic_WAS(**kwargs):
 
 
 
-            this_dir=os.path.join(kwargs['save_dir'],'N_'+str(kwargs['n_compounds']), 'diff_'+str(diff), 'WAs')
+            this_dir=os.path.join(kwargs['save_dir'],'N_'+str(kwargs['n_compounds']), 'diff_'+str(kwargs['differentiate']), 'WAs')
 
             if not os.path.exists(this_dir):
                 os.makedirs(this_dir)
 
             for method, WA in zip(methods, WA_list):
-                thisfile=os.path.join(this_dir,'WA_'+ method+'_N_'+str(kwargs['n_compounds'])+'_diff_'+str(diff)+'.csv')
+                thisfile=os.path.join(this_dir,'WA_'+ method+'_N_'+str(kwargs['n_compounds'])+'_diff_'+str(kwargs['differentiate'])+'.csv')
                 np.savetxt(thisfile, WA.astype(bool), delimiter=",")
     
     else:
@@ -111,7 +113,7 @@ def full_deterministic_WAS(**kwargs):
             os.makedirs(this_dir)
 
         for method, WA in zip(methods, WA_list):
-            thisfile=os.path.join(this_dir,'WA_'+ method+'_N_'+str(kwargs['n_compounds'])+'_diff_'+str(kwargs['differentiate']+'.csv'))
+            thisfile=os.path.join(this_dir,'WA_'+ method+'_N_'+str(kwargs['n_compounds'])+'_diff_'+str(kwargs['differentiate'])+'.csv')
             np.savetxt(thisfile, WA.astype(bool), delimiter=",")
 
 
@@ -145,7 +147,7 @@ differentiate= 2 if type(args.differentiate)==type(None) else int(args.different
 start= 50 if type(args.start)==type(None) else int(args.start)
 stop= 110 if type(args.stop)==type(None) else int(args.stop)
 step= 10 if type(args.step)==type(None) else int(args.step)
-save_dir= os.getcwd() if type(args.save_dir)==type(None) else str(args.save_dir)
+save_dir= os.path.join(os.getcwd(),'outs') if type(args.save_dir)==type(None) else str(args.save_dir)
 timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
 max_diff= 4 if type(args.max_diff)==type(None) else int(args.max_diff)
 max_dims= 4 if type(args.max_dims)==type(None) else int(args.max_dims)

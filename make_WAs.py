@@ -15,7 +15,9 @@ from Functions import *
 
 
 def make_all_deterministic_WAs(start=50, stop=150, step=10, **kwargs):
+    
     current=start
+
     while current<stop:
         time0=time.time()
         if kwargs['timeit']:
@@ -127,6 +129,7 @@ parser.add_argument('--stop')
 parser.add_argument('--step')
 parser.add_argument('--save_dir')
 parser.add_argument('--max_diff')
+parser.add_argument('--max_dims')
 parser.add_argument('--timeit')
 
 
@@ -145,10 +148,12 @@ step= 10 if type(args.step)==type(None) else int(args.step)
 save_dir= os.getcwd() if type(args.save_dir)==type(None) else str(args.save_dir)
 timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
 max_diff= 4 if type(args.max_diff)==type(None) else int(args.max_diff)
+max_dims= 4 if type(args.max_dims)==type(None) else int(args.max_dims)
+
 
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,
-             'start':start, 'stop':stop,  'step':step, 'save_dir':save_dir, 'max_diff': max_diff}
+             'start':start, 'stop':stop,  'step':step, 'save_dir':save_dir, 'max_diff': max_diff, 'max_dims':max_dims}
 
 
-make_all_deterministic_WAs(dict_kwargs)
+make_all_deterministic_WAs(**dict_kwargs)

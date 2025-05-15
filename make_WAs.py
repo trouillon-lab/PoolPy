@@ -82,7 +82,7 @@ def full_deterministic_WAS(**kwargs):
             if not os.path.exists(this_dir):
                 os.makedirs(this_dir)
 
-            for method, WA in zip(methods, WA_list):
+            for method, WA in zip(methodso, WA_listo):
                 thisfile=os.path.join(this_dir,'WA_'+ method+'_N_'+str(kwargs['n_compounds'])+'_diff_'+str(kwargs['differentiate'])+'.csv')
                 np.savetxt(thisfile, WA.astype(bool), delimiter=",")
     

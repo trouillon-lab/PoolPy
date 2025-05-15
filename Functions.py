@@ -79,6 +79,17 @@ def assign_wells_L(n_compounds:int, differentiate=1, **kwargs) -> np.array:
         well_assigner[i,:]=well_selecter(i+1, n_wells, differentiate)
     return(well_assigner)
 
+''' Method 2: Pooling using binary design'''
+# This functions also identifies the minimum number of wells needed for the compounds and level of detail (differentiate) selected
+def assign_wells_bin(n_compounds:int, differentiate=1, **kwargs) -> np.array:
+
+    n_wells=int(np.ceil(np.log2(n_compounds +1)))
+        
+    well_assigner=np.zeros((n_compounds, n_wells))==1
+    for i in range(n_compounds):
+        well_assigner[i,:]=well_selecter(i+1, n_wells, differentiate=1)
+    return(well_assigner)
+
 
 ''' Method 3: Pooling using multidimensional matrix design'''
 def assign_wells_multidim(n_compounds:int, n_dims:int, **kwargs)->np.array:

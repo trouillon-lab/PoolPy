@@ -88,7 +88,8 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                     WApath=os.path.join(dpath,'WAs')
                     filenames = next(os.walk(WApath), (None, None, []))[2]
                     for fname in filenames:
-                        WA=np.genfromtxt(fname, delimiter=",")
+                        fdir=os.path.join(WApath,fname)
+                        WA=np.genfromtxt(fdir, delimiter=",")
                         mean_exp, extra_exp,  _, perc_check= mean_metrics_precomp(WA=WA,scrambler=scrambler, 
                                                                                   differentiate=diff, **kwargs)
                         n_wells=WA.shape[1]

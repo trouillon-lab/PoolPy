@@ -81,7 +81,7 @@ if os.path.isfile(f1n) and False:
 
 else:
     N=dict_kwargs['start']
-    diff=int(args.differentiate)
+    diff=dict_kwargs['differentiate']
     dct_cmbn={}
     dct_cmbn.update({1:np.arange(N)})
     for j in range(2,diff+1):

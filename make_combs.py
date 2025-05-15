@@ -88,9 +88,7 @@ else:
     for j in range(2,diff+1):
         dct_cmbn.update({j:np.array(list(itertools.combinations(np.arange(N),j)))})
 
-iterative_add_N(dict_start=dct_cmbn, N_add=int(args.stop)-int(args.start), 
-                save_dir=args.save_dir, return_last=False, 
-                differentiate=diff, **dict_kwargs)
+iterative_add_N(dict_start=dct_cmbn, N_add=int(args.stop)-int(args.start), return_last=False, **dict_kwargs)
 
 
 

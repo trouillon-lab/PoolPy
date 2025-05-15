@@ -52,7 +52,7 @@ def full_deterministic_WAS(**kwargs):
     WA_list.append(WA_mat)
     methods.append('Matrix')
 
-    WA_bin=assign_wells_L(**kwargs)
+    WA_bin=assign_wells_bin(**kwargs)
     methods.append('Binary')
     WA_list.append(WA_bin)
 

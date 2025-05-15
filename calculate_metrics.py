@@ -102,7 +102,7 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                         full_methods.append(method)
                         
                     Hier=calculate_metrics_hierarchical(n_compounds=N, differentiate=diff, **kwargs)
-                    ls_met.append(['Hierarchical']+ [Hier[:-1]])
+                    ls_met.append(['Hierarchical']+ np.round(Hier[:-1],2))
                     full_methods.append('Hierarchical')
                     df_met=pd.DataFrame(ls_met)
                     #dft=pd.DataFrame({'Method':[a[0] for a in ls_met], 'Mean Experiments':[a[1] for a in ls_met],
@@ -122,7 +122,7 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
 
 
                 else:
-                    
+                    print(diff)
                     this_sc_file=os.path.join(dir_scramblers, 'N_'+str(N),  'N_'+str(N)+'_diff_'+str(diff)+'.npz')
                     scrambler.update({diff:this_sc_file})
                     dpath=os.path.join(Npath,'diff_'+str(diff),'WAs')
@@ -140,7 +140,7 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                         ls_met.append([method, M_exp, max_comp, n_wells, int(perc_check),  extra_exp,1+perc_check/100])
                         full_methods.append(method)
                     Hier=calculate_metrics_hierarchical(n_compounds=N, differentiate=diff, **kwargs)
-                    ls_met.append(['Hierarchical']+ [Hier[:-1]])
+                    ls_met.append(['Hierarchical']+ np.round(Hier[:-1],2))
                     full_methods.append('Hierarchical')
                     df_met=pd.DataFrame(ls_met)
                     #dft=pd.DataFrame({'Method':[a[0] for a in ls_met], 'Mean Experiments':[a[1] for a in ls_met],

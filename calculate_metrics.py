@@ -184,7 +184,7 @@ args = parser.parse_args()
 
 
 
-differentiate= 2 if type(args.differentiate)==type(None) else int(args.differentiate)
+differentiate= 3 if type(args.differentiate)==type(None) else int(args.differentiate)
 start= 50 if type(args.start)==type(None) else int(args.start)
 stop= 110 if type(args.stop)==type(None) else int(args.stop)
 step= 10 if type(args.step)==type(None) else int(args.step)

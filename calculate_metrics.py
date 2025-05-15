@@ -149,12 +149,51 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                     df_met.rename(index=idx_renamer, columns=col_renamer, inplace=True)
                     metname=os.path.join(dpath, 'Metrics_N_'+str(N)+'_diff_'+str(diff)+'.csv')
                     df_met.to_csv(metname)
+
+
+            N+=step
                     
 
         elif max_diff==1:
-            continue
+            N+=step
         else:
-            continue
+             N+=step
 
 
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--differentiate')
+parser.add_argument('--start')
+parser.add_argument('--stop')
+parser.add_argument('--step')
+parser.add_argument('--dir_scramblers')
+parser.add_argument('--dir_WAs')
+parser.add_argument('--max_diff')
+parser.add_argument('--max_dims')
+parser.add_argument('--timeit')
+
+
+
+
+
+
+args = parser.parse_args()
+
+
+
+differentiate= 2 if type(args.differentiate)==type(None) else int(args.differentiate)
+start= 50 if type(args.start)==type(None) else int(args.start)
+stop= 110 if type(args.stop)==type(None) else int(args.stop)
+step= 10 if type(args.step)==type(None) else int(args.step)
+save_dir= os.path.join(os.getcwd(),'outs') if type(args.save_dir)==type(None) else str(args.save_dir)
+timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
+max_diff= 4 if type(args.max_diff)==type(None) else int(args.max_diff)
+max_dims= np.inf if type(args.max_dims)==type(None) else int(args.max_dims)
+
+
+
+dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,
+             'start':start, 'stop':stop,  'step':step, 'save_dir':save_dir, 'max_diff': max_diff, 'max_dims':max_dims}
+
+
+sweep_metrics_precomp(**dict_kwargs)

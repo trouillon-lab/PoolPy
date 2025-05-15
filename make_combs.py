@@ -70,7 +70,7 @@ timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
 
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,
-             'start':start, 'stop':stop, 'save_dir':save_dir,}
+             'start':start, 'stop':stop, 'save_dir':save_dir,'N_add':stop-start+1}
 
 
 f1n=os.path.join(args.save_dir,'N_'+str(args.start)+'.pk')
@@ -87,7 +87,7 @@ else:
     for j in range(2,diff+1):
         dct_cmbn.update({j:np.array(list(itertools.combinations(np.arange(N),j)))})
 
-iterative_add_N(dict_start=dct_cmbn, N_add=int(args.stop)-int(args.start), return_last=False, **dict_kwargs)
+iterative_add_N(dict_start=dct_cmbn, return_last=False, **dict_kwargs)
 
 
 

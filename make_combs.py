@@ -56,7 +56,7 @@ parser.add_argument('--differentiate')
 parser.add_argument('--start')
 parser.add_argument('--stop')
 parser.add_argument('--save_dir')
-parser.add_argument('--Timeit')
+parser.add_argument('--timeit')
 
 
 args = parser.parse_args()
@@ -80,7 +80,7 @@ if os.path.isfile(f1n) and False:
         dct_cmbn = pickle.load(input_file)
 
 else:
-    N=int(args.start)
+    N=dict_kwargs['start']
     diff=int(args.differentiate)
     dct_cmbn={}
     dct_cmbn.update({1:np.arange(N)})

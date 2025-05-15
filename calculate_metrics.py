@@ -74,6 +74,7 @@ def mean_metrics_precomp_alldiff(well_assigner, max_diff, scrambler, **kwargs):
 def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150, step=10, diff=2, **kwargs):
     N=start
     ls_names_met=['Method', 'Mean experiments', 'Max compunds per well', 'N wells', 'Percentage check', 'Mean extra experiments', 'Mean steps']
+    
     while N<stop:
         Npath=os.path.join(dir_WAs,'N_'+str(N))
         diff=1
@@ -81,6 +82,7 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
             del kwargs['differentiate']
             
             while diff<=max_diff:
+                start_time = time.time()
                 dpath=os.path.join(Npath,'diff_'+str(diff))
                 ls_met=[]
                 full_methods=[]
@@ -120,6 +122,11 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
 
                     diff+=1
 
+                    print('\n')
+                    print('-----------------------------------------------------')
+                    print("%s seconds required for N= %s and differentiate %s" % (np.round(time.time() - start_time, 1),N,diff))
+                    print('-----------------------------------------------------')
+
 
                 else:
                     print(diff)
@@ -158,6 +165,11 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                     df_met.to_csv(metname)
                     
                     diff+=1
+
+                    print('\n')
+                    print('-----------------------------------------------------')
+                    print("%s seconds required for N= %s and differentiate %s" % (np.round(time.time() - start_time, 1),N,diff))
+                    print('-----------------------------------------------------')
 
             N+=step
                     

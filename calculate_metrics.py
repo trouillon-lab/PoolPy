@@ -23,8 +23,9 @@ def is_consistent_precomp(well_assigner:np.array, differentiate:int, scrambler:d
             full_well_assigner=well_assigner.copy()
         else:
             this_sc=scrambler[diff]
-            print(this_sc)
-            print(diff)
+            #print(this_sc)
+            #print(well_assigner)
+            #print(diff)
             full_well_assigner=np.concatenate((full_well_assigner,np.bool_(np.sum(well_assigner[this_sc], axis=1))))
     _, counts=np.unique(full_well_assigner, axis=0, return_counts=True)
     if len(counts)<full_well_assigner.shape[0]:
@@ -96,6 +97,8 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                     col_renamer={i:j for i,j in zip(df_met.columns, ls_names_met)}
                     df_met.rename(index=idx_renamer, columns=col_renamer, inplace=True)
                     metname=os.path.join(dpath, 'Metrics_N_'+str(N)+'_diff_'+str(diff)+'.csv')
+                    #if not os.path.exists(dpath):
+                    #    os.makedirs(dpath)
                     df_met.to_csv(metname)
 
                     diff+=1
@@ -107,7 +110,7 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
 
 
                 else:
-                    print(diff)
+                    #print(diff)
                     this_sc_file=os.path.join(dir_scramblers, 'N_'+str(N),  'N_'+str(N)+'_diff_'+str(diff)+'.npz')
                     this_scrambler=np.load(this_sc_file)['sc']
                     scrambler.update({diff:this_scrambler})
@@ -115,6 +118,7 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                     WApath=os.path.join(dpath,'WAs')
                     filenames = next(os.walk(WApath), (None, None, []))[2]
                     for fname in filenames:
+                        #print(fname)
                         fdir=os.path.join(WApath,fname)
                         WA=np.genfromtxt(fdir, delimiter=",")
                         mean_exp, extra_exp,  _, perc_check= mean_metrics_precomp(well_assigner=WA,scrambler=scrambler, 
@@ -124,6 +128,7 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                         max_comp=np.max(np.sum(WA, axis=0))
                         method=re.sub('^WA_', '', fname)
                         method=re.sub('_.*$', '', method)
+                        #print(method)
                         ls_met.append([method, M_exp, max_comp, n_wells, int(perc_check),  extra_exp,1+perc_check/100])
                         full_methods.append(method)
                     Hier=calculate_metrics_hierarchical(n_compounds=N, differentiate=diff, **kwargs)

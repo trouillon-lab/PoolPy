@@ -196,7 +196,7 @@ max_dims= np.inf if type(args.max_dims)==type(None) else int(args.max_dims)
 
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,
-             'start':start, 'stop':stop,  'step':step, 'save_dir':save_dir, 'max_diff': max_diff, 'max_dims':max_dims}
+             'start':start, 'stop':stop,  'step':step, 'dir_WAs':args.dir_WAs, 'dir_scramblers':args.dir_scramblers, 'max_diff': max_diff, 'max_dims':max_dims}
 
 
 sweep_metrics_precomp(**dict_kwargs)

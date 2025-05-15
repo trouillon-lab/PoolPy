@@ -45,7 +45,7 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
                 this_diri=os.path.join(diri,'N_'+str(N_start+i+2)+'_diff_'+str(ii)+'.npz')
                 this_diff=tmp_d[ii]
                 #print(diri)
-                np.savez_compressed(file=this_diri,ii=this_diff, allow_pickle=False)
+                np.savez_compressed(file=this_diri,sc=this_diff, allow_pickle=False)
         i+=1
     if return_last:
         return(tmp_d)
@@ -80,7 +80,7 @@ if os.path.isfile(f1n) and False:
         dct_cmbn = pickle.load(input_file)
 
 else:
-    N=dict_kwargs['start']
+    N=dict_kwargs['start']-1
     diff=dict_kwargs['differentiate']
     dct_cmbn={}
     dct_cmbn.update({1:np.arange(N)})

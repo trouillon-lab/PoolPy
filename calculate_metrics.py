@@ -109,7 +109,7 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                 else:
                     print(diff)
                     this_sc_file=os.path.join(dir_scramblers, 'N_'+str(N),  'N_'+str(N)+'_diff_'+str(diff)+'.npz')
-                    this_scrambler=np.load(this_sc_file)
+                    this_scrambler=np.load(this_sc_file)['sc']
                     scrambler.update({diff:this_scrambler})
                     dpath=os.path.join(Npath,'diff_'+str(diff))
                     WApath=os.path.join(dpath,'WAs')

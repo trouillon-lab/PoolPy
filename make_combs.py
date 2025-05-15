@@ -65,13 +65,12 @@ args = parser.parse_args()
 differentiate= 2 if type(args.differentiate)==type(None) else int(args.differentiate)
 start= 50 if type(args.start)==type(None) else int(args.start)
 stop= 110 if type(args.stop)==type(None) else int(args.stop)
-step= 10 if type(args.step)==type(None) else int(args.step)
 save_dir= os.path.join(os.getcwd(),'outs') if type(args.save_dir)==type(None) else str(args.save_dir)
 timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
 
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,
-             'start':start, 'stop':stop,  'step':step, 'save_dir':save_dir,}
+             'start':start, 'stop':stop, 'save_dir':save_dir,}
 
 
 f1n=os.path.join(args.save_dir,'N_'+str(args.start)+'.pk')

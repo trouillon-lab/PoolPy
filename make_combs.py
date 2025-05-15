@@ -70,7 +70,7 @@ timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
 
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,
-             'start':start, 'stop':stop, 'save_dir':save_dir,'N_add':stop-start+1}
+             'start':start, 'stop':stop, 'save_dir':save_dir,'N_add':stop-start}
 
 
 f1n=os.path.join(args.save_dir,'N_'+str(args.start)+'.pk')

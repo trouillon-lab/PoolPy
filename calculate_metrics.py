@@ -151,7 +151,8 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                     df_met.rename(index=idx_renamer, columns=col_renamer, inplace=True)
                     metname=os.path.join(dpath, 'Metrics_N_'+str(N)+'_diff_'+str(diff)+'.csv')
                     df_met.to_csv(metname)
-
+                    
+                    diff+=1
 
             N+=step
                     

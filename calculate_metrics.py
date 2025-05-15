@@ -132,7 +132,7 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                     print(diff)
                     this_sc_file=os.path.join(dir_scramblers, 'N_'+str(N),  'N_'+str(N)+'_diff_'+str(diff)+'.npz')
                     scrambler.update({diff:this_sc_file})
-                    dpath=os.path.join(Npath,'diff_'+str(diff),'WAs')
+                    dpath=os.path.join(Npath,'diff_'+str(diff))
                     WApath=os.path.join(dpath,'WAs')
                     filenames = next(os.walk(WApath), (None, None, []))[2]
                     for fname in filenames:

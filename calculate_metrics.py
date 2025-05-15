@@ -78,6 +78,7 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
         Npath=os.path.join(dir_WAs,'N_'+str(N))
         diff=1
         if max_diff>1:
+            del kwargs['differentiate']
             
             while diff<=max_diff:
                 dpath=os.path.join(Npath,'diff_'+str(diff))
@@ -90,7 +91,7 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                     for fname in filenames:
                         fdir=os.path.join(WApath,fname)
                         WA=np.genfromtxt(fdir, delimiter=",")
-                        mean_exp, extra_exp,  _, perc_check= mean_metrics_precomp(WA=WA,scrambler=scrambler, 
+                        mean_exp, extra_exp,  _, perc_check= mean_metrics_precomp(well_assigner=WA,scrambler=scrambler, 
                                                                                   differentiate=diff, **kwargs)
                         n_wells=WA.shape[1]
                         M_exp=np.round(mean_exp, 2)
@@ -166,7 +167,7 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--max_diff')
+parser.add_argument('--differentiate')
 parser.add_argument('--start')
 parser.add_argument('--stop')
 parser.add_argument('--step')
@@ -185,7 +186,7 @@ args = parser.parse_args()
 
 
 
-max_diff= 3 if type(args.max_diff)==type(None) else int(args.max_diff)
+differentiate= 3 if type(args.differentiate)==type(None) else int(args.differentiate)
 start= 50 if type(args.start)==type(None) else int(args.start)
 stop= 110 if type(args.stop)==type(None) else int(args.stop)
 step= 10 if type(args.step)==type(None) else int(args.step)
@@ -196,7 +197,7 @@ max_dims= np.inf if type(args.max_dims)==type(None) else int(args.max_dims)
 
 
 
-dict_kwargs={'max_diff':max_diff, 'return_wa':True, 'timeit':timeit,
+dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,
              'start':start, 'stop':stop,  'step':step, 'dir_WAs':args.dir_WAs, 'dir_scramblers':args.dir_scramblers, 'max_diff': max_diff, 'max_dims':max_dims}
 
 

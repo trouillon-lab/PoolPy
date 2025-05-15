@@ -23,6 +23,8 @@ def is_consistent_precomp(well_assigner:np.array, differentiate:int, scrambler:d
             full_well_assigner=well_assigner.copy()
         else:
             this_sc=scrambler[diff]
+            print(this_sc)
+            print(diff)
             full_well_assigner=np.concatenate((full_well_assigner,np.bool_(np.sum(well_assigner[this_sc], axis=1))))
     _, counts=np.unique(full_well_assigner, axis=0, return_counts=True)
     if len(counts)<full_well_assigner.shape[0]:
@@ -33,22 +35,6 @@ def is_consistent_precomp(well_assigner:np.array, differentiate:int, scrambler:d
         print("Something is fishy")
         return(-1)
     
-def is_consistent_precomp_alldiff(well_assigner:np.array, max_diff:int, scrambler:dict) -> list:
-    if max_diff==0:
-        return(True,well_assigner, np.array([1]*well_assigner.shape[0]))
-    N=well_assigner.shape[0]
-    dict_counts={}
-    for i in range(max_diff):
-        diff=i+1
-        if diff ==1:
-            full_well_assigner=well_assigner.copy()
-        else:
-            this_sc=scrambler[diff]
-            full_well_assigner=np.concatenate((full_well_assigner,np.bool_(np.sum(well_assigner[this_sc], axis=1))))
-
-        _, counts=np.unique(full_well_assigner, axis=0, return_counts=True)
-        dict_counts.update({diff:counts})
-    return dict_counts
 
 def mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs):
     BT=well_assigner.shape[1]
@@ -59,16 +45,7 @@ def mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs):
     return BT+ET, ET,  rounds, p_check
     
 #
-def mean_metrics_precomp_alldiff(well_assigner, max_diff, scrambler, **kwargs):
-    BT=well_assigner.shape[1]
-    dict_counts= is_consistent_precomp_alldiff(well_assigner, max_diff, scrambler) 
-    dict_res={}
-    for difo, counts in dict_counts.items():
-        ET=extra_tests(counts)   
-        rounds=np.sum(counts>1)/np.sum(counts>0)+1
-        p_check=np.round(np.sum(counts[counts>1])/np.sum(counts)*100)
-        dict_res.update({difo:[BT+ET, ET,  rounds, p_check]})
-    return dict_res
+
 
 
 def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150, step=10, diff=2, **kwargs):
@@ -132,7 +109,8 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                 else:
                     print(diff)
                     this_sc_file=os.path.join(dir_scramblers, 'N_'+str(N),  'N_'+str(N)+'_diff_'+str(diff)+'.npz')
-                    scrambler.update({diff:this_sc_file})
+                    this_scrambler=np.load(this_sc_file)
+                    scrambler.update({diff:this_scrambler})
                     dpath=os.path.join(Npath,'diff_'+str(diff))
                     WApath=os.path.join(dpath,'WAs')
                     filenames = next(os.walk(WApath), (None, None, []))[2]

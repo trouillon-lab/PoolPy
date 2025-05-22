@@ -25,6 +25,27 @@ def get_min_W(n_compounds):
     return int(2*np.sqrt(n_compounds))
 
 
+def is_consistent_precomp(well_assigner:np.array, differentiate:int, scrambler:dict) -> list:
+    if differentiate==0:
+        return(True,well_assigner, np.array([1]*well_assigner.shape[0]))
+    N=well_assigner.shape[0]
+    for i in range(differentiate):
+        diff=i+1
+        if diff ==1:
+            full_well_assigner=well_assigner.copy()
+        else:
+            this_sc=scrambler[diff]
+            full_well_assigner=np.concatenate((full_well_assigner,np.bool(np.sum(well_assigner[this_sc], axis=1))))
+    _, counts=np.unique(full_well_assigner, axis=0, return_counts=True)
+    if len(counts)<full_well_assigner.shape[0]:
+        return(False, full_well_assigner, counts)
+    elif len(counts)==full_well_assigner.shape[0]:
+        return(True,full_well_assigner, counts)
+    else:
+        print("Something is fishy")
+        return(-1)
+
+
 def mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs):
     BT=well_assigner.shape[1]
     _,_, counts= is_consistent_precomp(well_assigner, differentiate, scrambler) 

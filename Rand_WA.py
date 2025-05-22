@@ -124,6 +124,7 @@ def assign_wells_random_precomp(n_compounds:int,  differentiate:int,scrambler:di
     if Evaluate:
         second_axis=np.tile(np.arange(n_wells),n_compounds_per_well).reshape(n_compounds_per_well,-1)
         for i in range(guesses):
+            print(i)
             idt=np.random.randint(0,n_compounds,size=(n_compounds_per_well,n_wells) )
             well_assigner=np.zeros((n_compounds,n_wells))==1
             well_assigner[idt, second_axis]=True
@@ -174,7 +175,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                 WApath=os.path.join(dpath,'WAs')
                 scrambler={1:np.arange(n_compounds)}
                 WA_rand,  min_tests, perc_check=assign_wells_random_precomp(n_compounds=n_compounds, 
-                                                                differentiate=diff,scrambler=scrambler, return_me=True )
+                                                                differentiate=diff,scrambler=scrambler, return_me=True, **kwargs )
                 extra_exp=WA_rand.shape[1]+min_tests
                 #.append(['Random', min_tests, np.max(np.sum(WA_rand, axis=0)), WA_rand.shape[0], int(perc_check),  extra_exp,1+perc_check/100])
                 full_file_dir=os.path.join(dpath,'Random_diff_'+str(diff)+'_NS_'+
@@ -197,7 +198,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                 this_scrambler=np.load(this_sc_file)['sc']
                 scrambler.update({diff:this_scrambler})
                 WA_rand,  min_tests, perc_check=assign_wells_random_precomp(n_compounds=n_compounds, 
-                                                                differentiate=diff,scrambler=scrambler, return_me=True )
+                                                                differentiate=diff,scrambler=scrambler, return_me=True, **kwargs  )
                 extra_exp=WA_rand.shape[1]+min_tests
                 #.append(['Random', min_tests, np.max(np.sum(WA_rand, axis=0)), WA_rand.shape[0], int(perc_check),  extra_exp,1+perc_check/100])
                 full_file_dir=os.path.join(dpath,'Random_diff_'+str(diff)+'_NS_'+

@@ -213,7 +213,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                                       '_ME_'+str(np.round(min_tests,2))+'.csv')
                 np.savetxt(thisfile, WA_rand.astype(bool), delimiter=",")
 
-            DTS=(time.time() - start_time)
+            DTS=np.round((time.time() - start_time),2)
             DTD=DTS//86400
             DTH=DTS/3600-DTD*24
             DTM=DTS//60-DTH*60-DTD*24*60
@@ -231,7 +231,7 @@ def rand_N_sweep(start, stop, step,dir_WAs, **kwargs):
         start_time = time.time()
         Npath=os.path.join(dir_WAs,'N_'+str(n_compounds))
         rand_sweep_diff(n_compounds=n_compounds, Npath=Npath, **kwargs)
-        DTS=(time.time() - start_time)
+        DTS=np.round((time.time() - start_time),2)
         DTD=DTS//86400
         DTH=DTS/3600-DTD*24
         DTM=DTS//60-DTH*60-DTD*24*60

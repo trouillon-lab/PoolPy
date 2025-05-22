@@ -264,7 +264,7 @@ rand_guesses= 10 if type(args.rand_guesses)==type(None) else int(args.rand_guess
 
 
 
-dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,
+dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,'rand_guesses':rand_guesses,
              'start':start, 'stop':stop,  'step':step, 'dir_WAs':args.dir_WAs, 'dir_scramblers':args.dir_scramblers, 'max_diff': max_diff,}
 
 if type(args.max_compounds)!=type(None): 

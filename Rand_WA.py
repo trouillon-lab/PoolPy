@@ -107,6 +107,7 @@ def find_rand_params_precomp(n_compounds:int, n_compounds_per_well=0, n_wells=0,
     print('\n')
     print('-----------------------------------------------------')
     print("Evaluated %s different random designs each with %s assignments " % (N_tries, guesses+1))
+    print('-----------------------------------------------------')
 
     return Comp, Wells, min_tests, min_wa, min_pcheck
 

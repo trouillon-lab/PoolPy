@@ -234,7 +234,6 @@ parser.add_argument('--step')
 parser.add_argument('--dir_scramblers')
 parser.add_argument('--dir_WAs')
 parser.add_argument('--max_diff')
-parser.add_argument('--max_dims')
 parser.add_argument('--timeit')
 
 

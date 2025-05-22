@@ -286,7 +286,7 @@ timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
 max_diff= 4 if type(args.max_diff)==type(None) else int(args.max_diff)
 rand_guesses= 10 if type(args.rand_guesses)==type(None) else int(args.rand_guesses)
 max_redundancy= 4 if type(args.max_redundancy)==type(None) else int(args.max_redundancy)
-min_redundancy= 10 if type(args.min_redundancy)==type(None) else int(args.min_redundancy)
+min_redundancy= 0.5 if type(args.min_redundancy)==type(None) else int(args.min_redundancy)
 
 
 

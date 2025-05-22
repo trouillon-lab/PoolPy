@@ -176,3 +176,10 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                     os.makedirs(WApath)
                 thisfile=os.path.join(WApath,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+'.csv')
                 np.savetxt(thisfile, WA_rand.astype(bool), delimiter=",")
+
+
+
+
+def rand_N_sweep(N_min, N_max, **kwargs):
+    for n_compounds in np.arange(N_min, N_max+1):
+        rand_sweep_diff(n_compounds=n_compounds, **kwargs)

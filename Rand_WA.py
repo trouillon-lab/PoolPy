@@ -291,7 +291,8 @@ min_redundancy= 10 if type(args.min_redundancy)==type(None) else int(args.min_re
 
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,'guesses':rand_guesses,
-             'start':start, 'stop':stop,  'step':step, 'dir_WAs':args.dir_WAs, 'dir_scramblers':args.dir_scramblers, 'max_diff': max_diff,}
+             'start':start, 'stop':stop,  'step':step, 'dir_WAs':args.dir_WAs, 'dir_scramblers':args.dir_scramblers, 
+             'max_diff': max_diff,'max_redundancy':max_redundancy,'min_redundancy':min_redundancy}
 
 if type(args.max_compounds)!=type(None): 
     dict_kwargs.update({'max_compounds':int(args.max_compounds)})

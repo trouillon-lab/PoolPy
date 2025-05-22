@@ -23,3 +23,53 @@ def get_max_W(n_compounds):
     return int(np.log2(n_compounds))
 def get_min_W(n_compounds):
     return int(2*np.sqrt(n_compounds))
+
+
+
+def find_rand_params_precomp(n_compounds:int, n_compounds_per_well=0, n_wells=0, guesses=0, 
+                     max_compounds=0, max_redundancy=4, min_redundancy=1,**kwargs):
+    skip_compounds=True
+    skip_wells=True
+    if n_compounds_per_well==0:
+        skip_compounds=False
+    if n_wells==0:
+        skip_wells=False
+    if guesses==0:
+        guesses=n_compounds
+
+    MC= get_max_C(n_compounds, max_compounds)
+    mc=get_min_C(n_compounds, MC)
+    arr_comp=np.arange(int(mc),int(MC+1))
+    mw=get_min_W(n_compounds)
+    MW=get_max_W(n_compounds)
+    while MW-mw<10:
+        mw=int(abs(mw-1))
+        MW=int(MW+1)
+
+    arr_wells=np.arange(mw,MW)
+    min_tests=np.inf
+    for comp in arr_comp:
+        if skip_compounds:
+            comp=n_compounds_per_well
+
+        for wells in arr_wells:
+            if skip_wells:
+                if skip_compounds:
+                    
+                    return n_compounds_per_well, n_wells, assign_wells_random_precomp( Evaluate=True, **kwargs)
+                wells=n_wells
+                
+            if comp*wells>max_redundancy*n_compounds*np.log2(n_compounds) or comp*wells<min_redundancy*n_compounds: continue 
+            WA_tmp, mean_exp, p_check=assign_wells_random_precomp(Evaluate=True, return_me=True, **kwargs)
+            if mean_exp<min_tests:
+                Comp=comp
+                Wells=wells
+                min_tests=mean_exp
+                min_wa=WA_tmp
+                min_pcheck=p_check
+            if skip_wells:
+                break
+        if skip_compounds:
+            break
+
+    return Comp, Wells, min_tests, min_wa, min_pcheck

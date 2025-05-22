@@ -179,7 +179,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                 full_file_dir=os.path.join(dpath,'Random_diff_'+str(diff)+'_NS_'+
                                                str(n_compounds)+'_NW_'+str(WA_rand.shape[0])+
                                                '_MS_'+str(np.max(np.sum(WA_rand, axis=0)))+
-                                                '_PC_'+ str(int(perc_check)) +'_EE_'+str(extra_exp)+".txt")
+                                                '_PC_'+ str(int(perc_check)) +'_EE_'+str(np.rounbd(extra_exp,2))+".txt")
                 if not os.path.exists(dpath):
                     os.makedirs(dpath)
                 open(full_file_dir, 'a').close()
@@ -202,7 +202,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                 full_file_dir=os.path.join(dpath,'Random_diff_'+str(diff)+'_NS_'+
                                                str(n_compounds)+'_NW_'+str(WA_rand.shape[0])+
                                                '_MS_'+str(np.max(np.sum(WA_rand, axis=0)))+
-                                                '_PC_'+ str(int(perc_check)) +'_EE_'+str(extra_exp)+".txt")
+                                                '_PC_'+ str(int(perc_check)) +'_EE_'+str(np.rounbd(extra_exp,2))+".txt")
                 if not os.path.exists(dpath):
                     os.makedirs(dpath)
                 open(full_file_dir, 'a').close()

@@ -200,7 +200,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                                                                 differentiate=diff,scrambler=scrambler, return_me=True )
                 extra_exp=WA_rand.shape[1]+min_tests
                 #.append(['Random', min_tests, np.max(np.sum(WA_rand, axis=0)), WA_rand.shape[0], int(perc_check),  extra_exp,1+perc_check/100])
-                full_file_dir=os.path.join(dpath,'RAND_diff_'+str(diff)+'_NS_'+
+                full_file_dir=os.path.join(dpath,'Random_diff_'+str(diff)+'_NS_'+
                                                str(n_compounds)+'_NW_'+str(WA_rand.shape[0])+
                                                '_MS_'+str(np.max(np.sum(WA_rand, axis=0)))+
                                                 '_PC_'+ str(int(perc_check)) +'_EE_'+str(extra_exp)+".txt")

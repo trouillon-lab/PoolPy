@@ -124,7 +124,7 @@ def assign_wells_random_precomp(n_compounds:int,  differentiate:int,scrambler:di
     if Evaluate:
         second_axis=np.tile(np.arange(n_wells),n_compounds_per_well).reshape(n_compounds_per_well,-1)
         for i in range(guesses):
-            print(i)
+            #print(i)
             idt=np.random.randint(0,n_compounds,size=(n_compounds_per_well,n_wells) )
             well_assigner=np.zeros((n_compounds,n_wells))==1
             well_assigner[idt, second_axis]=True

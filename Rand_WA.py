@@ -311,7 +311,7 @@ print('*************************************************************************
 print('**********************************************************************************************************')
 print('**********************************************************************************************************')
 print('\n')
-print("%s days %s hours %s minutes and %s seconds overall required for N= %s" % (DTD, DTH, DTM, DTS))
+print("%s days %s hours %s minutes and %s seconds overall required for run" % (DTD, DTH, DTM, DTS))
 print('\n')
 print('\n')
 

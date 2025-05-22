@@ -78,6 +78,7 @@ def find_rand_params_precomp(n_compounds:int, n_compounds_per_well=0, n_wells=0,
 
     arr_wells=np.arange(mw,MW)
     min_tests=np.inf
+    N_tries=0
     for comp in arr_comp:
         if skip_compounds:
             comp=n_compounds_per_well
@@ -91,6 +92,7 @@ def find_rand_params_precomp(n_compounds:int, n_compounds_per_well=0, n_wells=0,
                 
             if comp*wells>max_redundancy*n_compounds*np.log2(n_compounds) or comp*wells<min_redundancy*n_compounds: continue 
             WA_tmp, mean_exp, p_check=assign_wells_random_precomp(n_compounds=n_compounds,n_wells=wells,n_compounds_per_well=comp, Evaluate=True, return_me=True, guesses=guesses, **kwargs)
+            N_tries+=1
             if mean_exp<min_tests:
                 Comp=comp
                 Wells=wells
@@ -107,17 +109,18 @@ def find_rand_params_precomp(n_compounds:int, n_compounds_per_well=0, n_wells=0,
 
 def assign_wells_random_precomp(n_compounds:int,  differentiate:int,scrambler:dict, n_compounds_per_well=0, 
                         n_wells=0, guesses=0, Evaluate=False, return_me=False, **kwargs)->np.array:
-    if guesses==0:
-        guesses=n_compounds
-    min_tests=np.inf
+    if False:
+        if guesses==0:
+            guesses=n_compounds
+        min_tests=np.inf
 
-    if n_compounds_per_well==0 or n_wells==0:
-        _,_, min_tests, WA_rand, p_check=find_rand_params_precomp(n_compounds=n_compounds,  differentiate=differentiate,scrambler=scrambler, n_compounds_per_well=n_compounds_per_well, 
-                        n_wells=n_wells, guesses=guesses,**kwargs)
-        if return_me:
-            return WA_rand,  min_tests, p_check
-        
-        return WA_rand
+        if n_compounds_per_well==0 or n_wells==0:
+            _,_, min_tests, WA_rand, p_check=find_rand_params_precomp(n_compounds=n_compounds,  differentiate=differentiate,scrambler=scrambler, n_compounds_per_well=n_compounds_per_well, 
+                            n_wells=n_wells, guesses=guesses,**kwargs)
+            if return_me:
+                return WA_rand,  min_tests, p_check
+            
+            return WA_rand
         
 
 

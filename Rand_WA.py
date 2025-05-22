@@ -113,7 +113,7 @@ def find_rand_params_precomp(n_compounds:int, n_compounds_per_well=0, n_wells=0,
 
 def evaluate_rand_design(n_compounds:int,  differentiate:int,scrambler:dict, n_compounds_per_well=0, 
                         n_wells=0, guesses=0,  return_me=False, **kwargs):
-
+    min_tests=np.inf
     second_axis=np.tile(np.arange(n_wells),n_compounds_per_well).reshape(n_compounds_per_well,-1)
     for i in range(guesses):
         #print(i)

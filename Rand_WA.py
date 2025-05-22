@@ -104,6 +104,9 @@ def find_rand_params_precomp(n_compounds:int, n_compounds_per_well=0, n_wells=0,
         if skip_compounds:
             break
 
+    print('\n')
+    print('-----------------------------------------------------')
+
     return Comp, Wells, min_tests, min_wa, min_pcheck
 
 
@@ -205,7 +208,6 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                 thisfile=os.path.join(WApath,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+'.csv')
                 np.savetxt(thisfile, WA_rand.astype(bool), delimiter=",")
 
-            print('\n')
             print('-----------------------------------------------------')
             print("%s seconds required for N= %s and differentiate %s" % (np.round(time.time() - start_time, 1),n_compounds,diff))
             print('-----------------------------------------------------')

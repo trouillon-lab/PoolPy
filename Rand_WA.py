@@ -216,10 +216,12 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
 
 
 
-def rand_N_sweep(N_min, N_max,dir_WAs, **kwargs):
-    for n_compounds in np.arange(N_min, N_max+1):
+def rand_N_sweep(start, stop, step,dir_WAs, **kwargs):
+    n_compounds=start
+    while n_compounds<=stop:
         Npath=os.path.join(dir_WAs,'N_'+str(n_compounds))
         rand_sweep_diff(n_compounds=n_compounds, Npath=Npath **kwargs)
+        n_compounds+=step
 
 
 
@@ -268,3 +270,5 @@ if type(args.n_compounds_per_well)!=type(None):
     dict_kwargs.update({'n_compounds_per_well':int(args.n_compounds_per_well)})
 if type(args.n_wells)!=type(None): 
     dict_kwargs.update({'n_wells':int(args.n_wells)})
+
+rand_N_sweep()

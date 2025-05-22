@@ -112,8 +112,8 @@ def assign_wells_random_precomp(n_compounds:int,  differentiate:int,scrambler:di
     min_tests=np.inf
 
     if n_compounds_per_well==0 or n_wells==0:
-        _,_, min_tests, WA_rand, p_check=find_rand_params_precomp(n_compounds:int,  differentiate:int,scrambler:dict, n_compounds_per_well=0, 
-                        n_wells=0, guesses=0, Evaluate=False, return_me=False, **kwargs)
+        _,_, min_tests, WA_rand, p_check=find_rand_params_precomp(n_compounds=n_compounds,  differentiate=differentiate,scrambler=scrambler, n_compounds_per_well=n_compounds_per_well, 
+                        n_wells=n_wells, guesses=guesses, Evaluate=Evaluate, return_me=return_me, **kwargs)
         if return_me:
             return WA_rand,  min_tests, p_check
         

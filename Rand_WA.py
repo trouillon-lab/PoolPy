@@ -235,6 +235,9 @@ parser.add_argument('--dir_scramblers')
 parser.add_argument('--dir_WAs')
 parser.add_argument('--max_diff')
 parser.add_argument('--timeit')
+parser.add_argument('--max_compounds')
+parser.add_argument('--n_compounds_per_well')
+parser.add_argument('--n_wells')
 
 
 
@@ -258,3 +261,10 @@ max_diff= 4 if type(args.max_diff)==type(None) else int(args.max_diff)
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,
              'start':start, 'stop':stop,  'step':step, 'dir_WAs':args.dir_WAs, 'dir_scramblers':args.dir_scramblers, 'max_diff': max_diff,}
+
+if type(args.max_compounds)!=type(None): 
+    dict_kwargs.update({'max_compounds':int(args.max_compounds)})
+if type(args.n_compounds_per_well)!=type(None): 
+    dict_kwargs.update({'n_compounds_per_well':int(args.n_compounds_per_well)})
+if type(args.n_wells)!=type(None): 
+    dict_kwargs.update({'n_wells':int(args.n_wells)})

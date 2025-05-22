@@ -220,7 +220,7 @@ def rand_N_sweep(start, stop, step,dir_WAs, **kwargs):
     n_compounds=start
     while n_compounds<=stop:
         Npath=os.path.join(dir_WAs,'N_'+str(n_compounds))
-        rand_sweep_diff(n_compounds=n_compounds, Npath=Npath **kwargs)
+        rand_sweep_diff(n_compounds=n_compounds, Npath=Npath, **kwargs)
         n_compounds+=step
 
 

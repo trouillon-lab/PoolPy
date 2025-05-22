@@ -191,6 +191,8 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
 
 
             else:
+                dpath=os.path.join(Npath,'diff_'+str(diff))
+                WApath=os.path.join(dpath,'WAs')
                 this_sc_file=os.path.join(dir_scramblers, 'N_'+str(N),  'N_'+str(N)+'_diff_'+str(diff)+'.npz')
                 this_scrambler=np.load(this_sc_file)['sc']
                 scrambler.update({diff:this_scrambler})

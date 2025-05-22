@@ -180,9 +180,9 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
 
 
 
-def rand_N_sweep(N_min, N_max, **kwargs):
+def rand_N_sweep(N_min, N_max,dir_WAs, **kwargs):
     for n_compounds in np.arange(N_min, N_max+1):
-        Npath=
+        Npath=os.path.join(dir_WAs,'N_'+str(N))
         rand_sweep_diff(n_compounds=n_compounds, Npath=Npath **kwargs)
 
 

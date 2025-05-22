@@ -105,7 +105,7 @@ def find_rand_params_precomp(n_compounds:int, n_compounds_per_well=0, n_wells=0,
             break
 
     print('\n')
-    print('----------------------------------------------------------------------------------------------------------')
+    print('-----------------------------------------------------------------')
     print("Evaluated %s different random designs each with %s configurations " % (N_tries, guesses+1))
     print('\n')
 
@@ -212,7 +212,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                 np.savetxt(thisfile, WA_rand.astype(bool), delimiter=",")
 
             print("%s seconds required for N= %s and differentiate %s" % (np.round(time.time() - start_time, 1),n_compounds,diff))
-            print('----------------------------------------------------------------------------------------------------------')
+            print('-----------------------------------------------------------------') 
 
 
 

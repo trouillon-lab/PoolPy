@@ -162,10 +162,11 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
     if 'differentiate' in kwargs.keys():
         del kwargs['differentiate']
     N=n_compounds
-    start_time = time.time()
+    
     if max_diff>1:
 
         for di in range(max_diff):
+            start_time = time.time()
             diff=di+1
             if diff==1:
                 dpath=os.path.join(Npath,'diff_'+str(diff))

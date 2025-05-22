@@ -106,7 +106,7 @@ def find_rand_params_precomp(n_compounds:int, n_compounds_per_well=0, n_wells=0,
 
     print('\n')
     print('----------------------------------------------------------------------------------------------------------')
-    print("Evaluated %s different random designs each with %s configurations " % (N_tries, guesses+1))
+    print("Evaluated %s different random designs each with %s configurations " % (N_tries, guesses))
     print('\n')
 
     return Comp, Wells, min_tests, min_wa, min_pcheck
@@ -121,7 +121,7 @@ def evaluate_rand_design(n_compounds:int,  differentiate:int,scrambler:dict, n_c
         idt=np.random.randint(0,n_compounds,size=(n_compounds_per_well,n_wells) )
         well_assigner=np.zeros((n_compounds,n_wells))==1
         well_assigner[idt, second_axis]=True
-        if guesses==1:
+        if guesses==1 and False:
             if return_me:
                 mean_exp, _, _, p_check= mean_metrics_precomp(well_assigner=well_assigner, 
                                                             differentiate=differentiate,scrambler=scrambler,**kwargs)

@@ -310,7 +310,7 @@ DTS=np.round((time.time() - start_time),2)
 DTD=DTS//86400
 DTH=DTS//3600-DTD*24
 DTM=DTS//60-DTH*60-DTD*24*60
-DTS=DTS-(DTM+DTH*60+DTD*24*60)*60
+DTS=np.round(DTS-(DTM+DTH*60+DTD*24*60)*60,2)
 
 print('\n')
 print('\n')

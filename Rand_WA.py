@@ -264,8 +264,8 @@ parser.add_argument('--max_compounds')
 parser.add_argument('--n_compounds_per_well')
 parser.add_argument('--n_wells')
 parser.add_argument('--rand_guesses')
-parser.add_argument('--n_wells')
-parser.add_argument('--rand_guesses')
+parser.add_argument('--max_redundancy')
+parser.add_argument('--min_redundancy')
 
 
 
@@ -285,6 +285,8 @@ step= 10 if type(args.step)==type(None) else int(args.step)
 timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
 max_diff= 4 if type(args.max_diff)==type(None) else int(args.max_diff)
 rand_guesses= 10 if type(args.rand_guesses)==type(None) else int(args.rand_guesses)
+max_redundancy= 4 if type(args.max_redundancy)==type(None) else int(args.max_redundancy)
+min_redundancy= 10 if type(args.rand_guesses)==type(None) else int(args.rand_guesses)
 
 
 

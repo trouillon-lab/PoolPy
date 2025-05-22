@@ -200,7 +200,7 @@ parser.add_argument('--dir_WAs')
 parser.add_argument('--max_diff')
 parser.add_argument('--max_dims')
 parser.add_argument('--timeit')
-parser.add_argument('--keep_ratios_constant')
+
 
 
 

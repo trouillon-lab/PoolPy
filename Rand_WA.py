@@ -125,3 +125,54 @@ def assign_wells_random_precomp(n_compounds:int,  differentiate:int,scrambler:di
         return WA_rand,  min_tests, p_check
     
     return WA_rand
+
+
+
+
+def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
+    if 'differentiate' in kwargs.keys():
+        del kwargs['differentiate']
+    if max_diff>1:
+
+        for di in range(max_diff):
+            diff=di+1
+            if diff==1:
+                dpath=os.path.join(Npath,'diff_'+str(diff))
+                WApath=os.path.join(dpath,'WAs')
+                scrambler={1:np.arange(n_compounds)}
+                WA_rand,  min_tests, perc_check=assign_wells_random_precomp(n_compounds=n_compounds, 
+                                                                differentiate=diff,scrambler=scrambler, return_me=True )
+                extra_exp=WA_rand.shape[1]+min_tests
+                #.append(['Random', min_tests, np.max(np.sum(WA_rand, axis=0)), WA_rand.shape[0], int(perc_check),  extra_exp,1+perc_check/100])
+                full_file_dir=os.path.join(dpath,'Random_diff_'+str(diff)+'_NS_'+
+                                               str(n_compounds)+'_NW_'+str(WA_rand.shape[0])+
+                                               '_MS_'+str(np.max(np.sum(WA_rand, axis=0)))+
+                                                '_PC_'+ str(int(perc_check)) +'_EE_'+str(extra_exp)+".txt")
+                if not os.path.exists(dpath):
+                    os.makedirs(dpath)
+                open(full_file_dir, 'a').close()
+                if not os.path.exists(WApath):
+                    os.makedirs(WApath)
+                thisfile=os.path.join(WApath,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+'.csv')
+                np.savetxt(thisfile, WA_rand.astype(bool), delimiter=",")
+
+
+            else:
+                this_sc_file=os.path.join(dir_scramblers, 'N_'+str(N),  'N_'+str(N)+'_diff_'+str(diff)+'.npz')
+                this_scrambler=np.load(this_sc_file)['sc']
+                scrambler.update({diff:this_scrambler})
+                WA_rand,  min_tests, perc_check=assign_wells_random_precomp(n_compounds=n_compounds, 
+                                                                differentiate=diff,scrambler=scrambler, return_me=True )
+                extra_exp=WA_rand.shape[1]+min_tests
+                #.append(['Random', min_tests, np.max(np.sum(WA_rand, axis=0)), WA_rand.shape[0], int(perc_check),  extra_exp,1+perc_check/100])
+                full_file_dir=os.path.join(dpath,'RAND_diff_'+str(diff)+'_NS_'+
+                                               str(n_compounds)+'_NW_'+str(WA_rand.shape[0])+
+                                               '_MS_'+str(np.max(np.sum(WA_rand, axis=0)))+
+                                                '_PC_'+ str(int(perc_check)) +'_EE_'+str(extra_exp)+".txt")
+                if not os.path.exists(dpath):
+                    os.makedirs(dpath)
+                open(full_file_dir, 'a').close()
+                if not os.path.exists(WApath):
+                    os.makedirs(WApath)
+                thisfile=os.path.join(WApath,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+'.csv')
+                np.savetxt(thisfile, WA_rand.astype(bool), delimiter=",")

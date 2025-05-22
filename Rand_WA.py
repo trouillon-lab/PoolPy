@@ -182,4 +182,29 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
 
 def rand_N_sweep(N_min, N_max, **kwargs):
     for n_compounds in np.arange(N_min, N_max+1):
-        rand_sweep_diff(n_compounds=n_compounds, **kwargs)
+        Npath=
+        rand_sweep_diff(n_compounds=n_compounds, Npath=Npath **kwargs)
+
+
+
+
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--differentiate')
+parser.add_argument('--start')
+parser.add_argument('--stop')
+parser.add_argument('--step')
+parser.add_argument('--dir_scramblers')
+parser.add_argument('--dir_WAs')
+parser.add_argument('--max_diff')
+parser.add_argument('--max_dims')
+parser.add_argument('--timeit')
+parser.add_argument('--keep_ratios_constant')
+
+
+
+
+
+
+args = parser.parse_args()

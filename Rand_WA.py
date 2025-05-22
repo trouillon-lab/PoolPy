@@ -241,6 +241,7 @@ parser.add_argument('--timeit')
 parser.add_argument('--max_compounds')
 parser.add_argument('--n_compounds_per_well')
 parser.add_argument('--n_wells')
+parser.add_argument('--rand_guesses')
 
 
 
@@ -259,6 +260,7 @@ stop= 110 if type(args.stop)==type(None) else int(args.stop)
 step= 10 if type(args.step)==type(None) else int(args.step)
 timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
 max_diff= 4 if type(args.max_diff)==type(None) else int(args.max_diff)
+rand_guesses= 10 if type(args.rand_guesses)==type(None) else int(args.rand_guesses)
 
 
 

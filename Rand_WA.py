@@ -254,9 +254,8 @@ step= 10 if type(args.step)==type(None) else int(args.step)
 keep_ratios_constant= False if type(args.keep_ratios_constant)==type(None) else args.keep_ratios_constant=='True' 
 timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
 max_diff= 4 if type(args.max_diff)==type(None) else int(args.max_diff)
-max_dims= np.inf if type(args.max_dims)==type(None) else int(args.max_dims)
 
 
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,'keep_ratios_constant': keep_ratios_constant,
-             'start':start, 'stop':stop,  'step':step, 'dir_WAs':args.dir_WAs, 'dir_scramblers':args.dir_scramblers, 'max_diff': max_diff, 'max_dims':max_dims}
+             'start':start, 'stop':stop,  'step':step, 'dir_WAs':args.dir_WAs, 'dir_scramblers':args.dir_scramblers, 'max_diff': max_diff,}

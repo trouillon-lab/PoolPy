@@ -163,7 +163,7 @@ def assign_wells_random_precomp(n_compounds:int,  differentiate:int,scrambler:di
 def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
     if 'differentiate' in kwargs.keys():
         del kwargs['differentiate']
-
+    N=n_compounds
     start_time = time.time()
     if max_diff>1:
 

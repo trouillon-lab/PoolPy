@@ -274,7 +274,7 @@ parser.add_argument('--rand_guesses')
 args = parser.parse_args()
 
 
-
+start_time = time.time()
 
 differentiate= 3 if type(args.differentiate)==type(None) else int(args.differentiate)
 start= 50 if type(args.start)==type(None) else int(args.start)
@@ -297,5 +297,23 @@ if type(args.n_wells)!=type(None):
     dict_kwargs.update({'n_wells':int(args.n_wells)})
 
 rand_N_sweep(**dict_kwargs)
+
+
+DTS=np.round((time.time() - start_time),2)
+DTD=DTS//86400
+DTH=DTS//3600-DTD*24
+DTM=DTS//60-DTH*60-DTD*24*60
+DTS=DTS-(DTM+DTH*60+DTD*24*60)*60
+
+print('\n')
+print('\n')
+print('**********************************************************************************************************')
+print('**********************************************************************************************************')
+print('**********************************************************************************************************')
+print('\n')
+print("%s days %s hours %s minutes and %s seconds overall required for N= %s" % (DTD, DTH, DTM, DTS))
+print('\n')
+print('\n')
+
 
 

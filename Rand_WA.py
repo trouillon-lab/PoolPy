@@ -217,7 +217,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
             DTD=DTS//86400
             DTH=DTS//3600-DTD*24
             DTM=DTS//60-DTH*60-DTD*24*60
-            DTS=DTS-(DTM+DTH*60+DTD*24*60)*60
+            DTS=np.round(DTS-(DTM+DTH*60+DTD*24*60)*60,2)
             print("%s days %s hours %s minutes and %s seconds required for N= %s and differentiate %s" % 
                   (DTD, DTH, DTM, DTS, n_compounds, diff))
             print('----------------------------------------------------------------------------------------------------------') 
@@ -235,7 +235,7 @@ def rand_N_sweep(start, stop, step,dir_WAs, **kwargs):
         DTD=DTS//86400
         DTH=DTS//3600-DTD*24
         DTM=DTS//60-DTH*60-DTD*24*60
-        DTS=DTS-(DTM+DTH*60+DTD*24*60)*60
+        DTS=np.round(DTS-(DTM+DTH*60+DTD*24*60)*60,2)
         print('\n')
         print('\n')
         print('##########################################################################################################')

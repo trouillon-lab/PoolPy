@@ -90,7 +90,7 @@ def find_rand_params_precomp(n_compounds:int, n_compounds_per_well=0, n_wells=0,
                     return 0
                 wells=n_wells
                 
-            if comp*wells>max_redundancy*n_compounds*np.log2(n_compounds) or comp*wells<min_redundancy*n_compounds: continue 
+            if comp*wells>max_redundancy*n_compounds*np.log2(n_compounds) or comp*wells<min_redundancy*n_compounds*np.log2(n_compounds): continue 
             WA_tmp, mean_exp, p_check=evaluate_rand_design(n_compounds=n_compounds,n_wells=wells,n_compounds_per_well=comp, return_me=True, guesses=guesses, **kwargs)
             N_tries+=1
             if mean_exp<min_tests:
@@ -262,6 +262,8 @@ parser.add_argument('--max_diff')
 parser.add_argument('--timeit')
 parser.add_argument('--max_compounds')
 parser.add_argument('--n_compounds_per_well')
+parser.add_argument('--n_wells')
+parser.add_argument('--rand_guesses')
 parser.add_argument('--n_wells')
 parser.add_argument('--rand_guesses')
 

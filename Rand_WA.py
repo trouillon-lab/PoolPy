@@ -185,7 +185,8 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                 open(full_file_dir, 'a').close()
                 if not os.path.exists(WApath):
                     os.makedirs(WApath)
-                thisfile=os.path.join(WApath,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+'.csv')
+                thisfile=os.path.join(WApath,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+
+                                      '_ME_'+str(np.round(min_tests,2))+'.csv')
                 np.savetxt(thisfile, WA_rand.astype(bool), delimiter=",")
 
 
@@ -208,7 +209,8 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                 open(full_file_dir, 'a').close()
                 if not os.path.exists(WApath):
                     os.makedirs(WApath)
-                thisfile=os.path.join(WApath,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+'.csv')
+                thisfile=os.path.join(WApath,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+
+                                      '_ME_'+str(np.round(min_tests,2))+'.csv')
                 np.savetxt(thisfile, WA_rand.astype(bool), delimiter=",")
 
             print("%s seconds required for N= %s and differentiate %s" % (np.round(time.time() - start_time, 1),n_compounds,diff))

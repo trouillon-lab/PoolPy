@@ -25,6 +25,15 @@ def get_min_W(n_compounds):
     return int(2*np.sqrt(n_compounds))
 
 
+def mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs):
+    BT=well_assigner.shape[1]
+    _,_, counts= is_consistent_precomp(well_assigner, differentiate, scrambler) 
+    ET=extra_tests(counts)   
+    rounds=np.sum(counts>1)/np.sum(counts>0)+1
+    p_check=np.round(np.sum(counts[counts>1])/np.sum(counts)*100)
+    return BT+ET, ET,  rounds, p_check
+
+
 
 def find_rand_params_precomp(n_compounds:int, n_compounds_per_well=0, n_wells=0, guesses=0, 
                      max_compounds=0, max_redundancy=4, min_redundancy=1,**kwargs):
@@ -132,6 +141,8 @@ def assign_wells_random_precomp(n_compounds:int,  differentiate:int,scrambler:di
 def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
     if 'differentiate' in kwargs.keys():
         del kwargs['differentiate']
+
+    start_time = time.time()
     if max_diff>1:
 
         for di in range(max_diff):

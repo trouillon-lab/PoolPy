@@ -213,7 +213,13 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                                       '_ME_'+str(np.round(min_tests,2))+'.csv')
                 np.savetxt(thisfile, WA_rand.astype(bool), delimiter=",")
 
-            print("%s seconds required for N= %s and differentiate %s" % (np.round(time.time() - start_time, 1),n_compounds,diff))
+            DTS=(time.time() - start_time)
+            DTD=DTS//86400
+            DTH=DTS/3600-DTD*24
+            DTM=DTS//60-DTH*60-DTD*24*60
+            DTS=DTS-(DTM+DTH*60+DTD*24*60)*60
+            print("%s days %s hours %s minutes and %s seconds required for N= %s and differentiate %s" % 
+                  (DTD, DTH, DTM, DTS, n_compounds, diff))
             print('-----------------------------------------------------------------') 
 
 
@@ -225,12 +231,16 @@ def rand_N_sweep(start, stop, step,dir_WAs, **kwargs):
         start_time = time.time()
         Npath=os.path.join(dir_WAs,'N_'+str(n_compounds))
         rand_sweep_diff(n_compounds=n_compounds, Npath=Npath, **kwargs)
-        
+        DTS=(time.time() - start_time)
+        DTD=DTS//86400
+        DTH=DTS/3600-DTD*24
+        DTM=DTS//60-DTH*60-DTD*24*60
+        DTS=DTS-(DTM+DTH*60+DTD*24*60)*60
         print('\n')
         print('\n')
         print('----------------------------------------------------------------------------------------------------------')
         print('----------------------------------------------------------------------------------------------------------')
-        print("%s seconds overall required for N= %s" % (np.round(time.time() - start_time, 1),n_compounds))
+        print("%s days %s hours %s minutes and %s seconds overall required for N= %s" % (DTD, DTH, DTM, DTS, n_compounds))
         print('----------------------------------------------------------------------------------------------------------')
         print('----------------------------------------------------------------------------------------------------------')
 

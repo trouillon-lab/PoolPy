@@ -86,11 +86,11 @@ def find_rand_params_precomp(n_compounds:int, n_compounds_per_well=0, n_wells=0,
             if skip_wells:
                 if skip_compounds:
                     
-                    return n_compounds_per_well, n_wells, assign_wells_random_precomp( Evaluate=True, **kwargs)
+                    return 0
                 wells=n_wells
                 
             if comp*wells>max_redundancy*n_compounds*np.log2(n_compounds) or comp*wells<min_redundancy*n_compounds: continue 
-            WA_tmp, mean_exp, p_check=assign_wells_random_precomp(Evaluate=True, return_me=True, **kwargs)
+            WA_tmp, mean_exp, p_check=assign_wells_random_precomp(n_compounds=n_compounds,n_wells=wells,n_compounds_per_well=comp, Evaluate=True, return_me=True, **kwargs)
             if mean_exp<min_tests:
                 Comp=comp
                 Wells=wells

@@ -217,11 +217,16 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
 
 
 def rand_N_sweep(start, stop, step,dir_WAs, **kwargs):
+    
     n_compounds=start
     while n_compounds<=stop:
+        start_time = time.time()
         Npath=os.path.join(dir_WAs,'N_'+str(n_compounds))
         rand_sweep_diff(n_compounds=n_compounds, Npath=Npath, **kwargs)
         n_compounds+=step
+
+        print("%s seconds overall required for N= %s" % (np.round(time.time() - start_time, 1),n_compounds))
+        print('----------------------------------------------------------------------------------------------------------')
 
 
 

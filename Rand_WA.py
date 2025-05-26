@@ -204,6 +204,13 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                                                str(n_compounds)+'_NW_'+str(WA_rand.shape[1])+
                                                '_MS_'+str(np.max(np.sum(WA_rand, axis=0)))+
                                                 '_PC_'+ str(int(perc_check)) +'_ME_'+str(np.round(min_tests,2))+".txt")
+                
+                if kwargs['cleanup']:
+                    filenames = next(os.walk(WApath), (None, None, []))[2]
+                    for fname in filenames:
+                        if fname.startswith('WA_Random_N_'):
+                            os.remove(os.path.join(WApath,fname))
+
                 if not os.path.exists(dpath):
                     os.makedirs(dpath)
                 open(full_file_dir, 'a').close()

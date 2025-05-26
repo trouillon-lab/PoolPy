@@ -200,7 +200,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                                                                 differentiate=diff,scrambler=scrambler, return_me=True, **kwargs  )
                 extra_exp=WA_rand.shape[1]+min_tests
 
-                if kwargs['cleanup']=='one_liner' or kwargs['cleanup']=='full' or kwargs['cleanup']:
+                if kwargs['cleanup']=='one_liner' or kwargs['cleanup']=='full' or kwargs['cleanup']=='True':
                     filenames = next(os.walk(WApath), (None, None, []))[2]
                     for fname in filenames:
                         if fname.startswith('WA_Random_N_'):
@@ -252,7 +252,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
         #.append(['Random', min_tests, np.max(np.sum(WA_rand, axis=0)), WA_rand.shape[0], int(perc_check),  extra_exp,1+perc_check/100])
         
         
-        if kwargs['cleanup']=='one_liner' or kwargs['cleanup']=='full' or kwargs['cleanup']:
+        if kwargs['cleanup']=='one_liner' or kwargs['cleanup']=='full' or kwargs['cleanup']=='True':
             filenames = next(os.walk(WApath), (None, None, []))[2]
             for fname in filenames:
                 if fname.startswith('WA_Random_N_'):

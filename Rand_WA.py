@@ -182,7 +182,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                         if fname.startswith('WA_Random_N_'):
                             os.remove(os.path.join(WApath,fname))
 
-                if kwargs['cleanup']=='WA' or kwargs['cleanup']=='full' or kwargs['cleanup']:
+                if kwargs['cleanup']=='WA' or kwargs['cleanup']=='full' or kwargs['cleanup']=='True':
                     filenames = next(os.walk(dpath), (None, None, []))[2]
                     for fname in filenames:
                         if fname.startswith('Random_diff_'):
@@ -221,7 +221,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                         if fname.startswith('WA_Random_N_'):
                             os.remove(os.path.join(WApath,fname))
 
-                if kwargs['cleanup']=='WA' or kwargs['cleanup']=='full' or kwargs['cleanup']:
+                if kwargs['cleanup']=='WA' or kwargs['cleanup']=='full' or kwargs['cleanup']=='True':
                     filenames = next(os.walk(dpath), (None, None, []))[2]
                     for fname in filenames:
                         if fname.startswith('Random_diff_'):
@@ -275,7 +275,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                 if fname.startswith('WA_Random_N_'):
                     os.remove(os.path.join(WApath,fname))
 
-        if kwargs['cleanup']=='WA' or kwargs['cleanup']=='full' or kwargs['cleanup']:
+        if kwargs['cleanup']=='WA' or kwargs['cleanup']=='full' or kwargs['cleanup']=='True':
             filenames = next(os.walk(dpath), (None, None, []))[2]
             for fname in filenames:
                 if fname.startswith('Random_diff_'):
@@ -291,7 +291,8 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
 
         if not os.path.exists(dpath):
             os.makedirs(dpath)
-        open(full_file_dir, 'a').close()
+        if kwargs['one_liner']:
+            open(full_file_dir, 'a').close()
         if not os.path.exists(WApath):
             os.makedirs(WApath)
         thisfile=os.path.join(WApath,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+

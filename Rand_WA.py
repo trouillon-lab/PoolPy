@@ -296,6 +296,7 @@ parser.add_argument('--dir_scramblers')
 parser.add_argument('--dir_WAs')
 parser.add_argument('--max_diff')
 parser.add_argument('--timeit')
+parser.add_argument('--one_liner')
 parser.add_argument('--max_compounds')
 parser.add_argument('--n_compounds_per_well')
 parser.add_argument('--n_wells')
@@ -323,6 +324,8 @@ max_diff= 4 if type(args.max_diff)==type(None) else int(args.max_diff)
 rand_guesses= 10 if type(args.rand_guesses)==type(None) else int(args.rand_guesses)
 max_redundancy= 4 if type(args.max_redundancy)==type(None) else int(args.max_redundancy)
 min_redundancy= 0.1 if type(args.min_redundancy)==type(None) else int(args.min_redundancy)
+one_liner= True if type(args.timeit)==type(None) else args.timeit=='True'
+
 
 
 

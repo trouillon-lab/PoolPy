@@ -109,7 +109,7 @@ def full_deterministic_WAS(**kwargs):
 
 
 
-        this_dir=os.path.join(kwargs['save_dir'],'N_'+str(kwargs['n_compounds']), 'diff_'+str(kwargs['differentiate']), 'WAs')
+        this_dir=os.path.join(kwargs['save_dir'],'N_'+str(kwargs['n_compounds']), 'diff_1', 'WAs')
 
         if not os.path.exists(this_dir):
             os.makedirs(this_dir)

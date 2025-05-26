@@ -238,7 +238,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
 
                 if not os.path.exists(dpath):
                     os.makedirs(dpath)
-                    
+
                 if kwargs['one_liner']:
                     open(full_file_dir, 'a').close()
                 if not os.path.exists(WApath):
@@ -377,7 +377,7 @@ max_diff= 4 if type(args.max_diff)==type(None) else int(args.max_diff)
 rand_guesses= 10 if type(args.rand_guesses)==type(None) else int(args.rand_guesses)
 max_redundancy= 4 if type(args.max_redundancy)==type(None) else int(args.max_redundancy)
 min_redundancy= 0.1 if type(args.min_redundancy)==type(None) else int(args.min_redundancy)
-one_liner= True if type(args.one_liner)==type(None) else args.one_liner=='True'
+one_liner= False if type(args.one_liner)==type(None) else args.one_liner=='True'
 cleanup= False if type(args.cleanup)==type(None) else args.cleanup
 
 

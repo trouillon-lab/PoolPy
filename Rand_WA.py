@@ -238,6 +238,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
 
                 if not os.path.exists(dpath):
                     os.makedirs(dpath)
+                    
                 if kwargs['one_liner']:
                     open(full_file_dir, 'a').close()
                 if not os.path.exists(WApath):

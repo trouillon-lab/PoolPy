@@ -239,7 +239,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                                         '_PC_'+ str(int(perc_check)) +'_ME_'+str(np.round(min_tests,2))+".txt")
         
 
-        if kwargs['cleanup':]
+        if kwargs['cleanup']:
             filenames = next(os.walk(WApath), (None, None, []))[2]
             for fname in filenames:
                 if fname.startswith('WA_Random_N_'):

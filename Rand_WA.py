@@ -186,7 +186,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                     filenames = next(os.walk(dpath), (None, None, []))[2]
                     for fname in filenames:
                         if fname.startswith('Random_diff_'):
-                            os.remove(os.path.join(WApath,fname))
+                            os.remove(os.path.join(dpath,fname))
 
                 #.append(['Random', min_tests, np.max(np.sum(WA_rand, axis=0)), WA_rand.shape[0], int(perc_check),  extra_exp,1+perc_check/100])
                 full_file_dir=os.path.join(dpath,'Random_diff_'+str(diff)+'_NS_'+
@@ -197,7 +197,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                     os.makedirs(dpath)
                 if kwargs['one_liner']:
                     open(full_file_dir, 'a').close()
-                    
+
                 if not os.path.exists(WApath):
                     os.makedirs(WApath)
                 thisfile=os.path.join(WApath,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+

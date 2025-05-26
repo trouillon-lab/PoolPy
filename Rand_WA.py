@@ -225,7 +225,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
                     filenames = next(os.walk(dpath), (None, None, []))[2]
                     for fname in filenames:
                         if fname.startswith('Random_diff_'):
-                            os.remove(os.path.join(WApath,fname))
+                            os.remove(os.path.join(dpath,fname))
 
 
                 #.append(['Random', min_tests, np.max(np.sum(WA_rand, axis=0)), WA_rand.shape[0], int(perc_check),  extra_exp,1+perc_check/100])

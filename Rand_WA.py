@@ -224,37 +224,37 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
 
     elif max_diff==1:
 
-            start_time = time.time()
-            diff=1
-            dpath=os.path.join(Npath,'diff_'+str(diff))
-            WApath=os.path.join(dpath,'WAs')
-            scrambler={1:np.arange(n_compounds)}
-            WA_rand,  min_tests, perc_check=assign_wells_random_precomp(n_compounds=n_compounds, 
-                                                            differentiate=diff,scrambler=scrambler, return_me=True, **kwargs )
-            extra_exp=WA_rand.shape[1]+min_tests
-            #.append(['Random', min_tests, np.max(np.sum(WA_rand, axis=0)), WA_rand.shape[0], int(perc_check),  extra_exp,1+perc_check/100])
-            full_file_dir=os.path.join(dpath,'Random_diff_'+str(diff)+'_NS_'+
-                                            str(n_compounds)+'_NW_'+str(WA_rand.shape[1])+
-                                            '_MS_'+str(np.max(np.sum(WA_rand, axis=0)))+
-                                            '_PC_'+ str(int(perc_check)) +'_ME_'+str(np.round(min_tests,2))+".txt")
-            if not os.path.exists(dpath):
-                os.makedirs(dpath)
-            open(full_file_dir, 'a').close()
-            if not os.path.exists(WApath):
-                os.makedirs(WApath)
-            thisfile=os.path.join(WApath,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+
-                                    '_ME_'+str(np.round(min_tests,2))+'.csv')
-            np.savetxt(thisfile, WA_rand.astype(bool), delimiter=",")
+        start_time = time.time()
+        diff=1
+        dpath=os.path.join(Npath,'diff_'+str(diff))
+        WApath=os.path.join(dpath,'WAs')
+        scrambler={1:np.arange(n_compounds)}
+        WA_rand,  min_tests, perc_check=assign_wells_random_precomp(n_compounds=n_compounds, 
+                                                        differentiate=diff,scrambler=scrambler, return_me=True, **kwargs )
+        extra_exp=WA_rand.shape[1]+min_tests
+        #.append(['Random', min_tests, np.max(np.sum(WA_rand, axis=0)), WA_rand.shape[0], int(perc_check),  extra_exp,1+perc_check/100])
+        full_file_dir=os.path.join(dpath,'Random_diff_'+str(diff)+'_NS_'+
+                                        str(n_compounds)+'_NW_'+str(WA_rand.shape[1])+
+                                        '_MS_'+str(np.max(np.sum(WA_rand, axis=0)))+
+                                        '_PC_'+ str(int(perc_check)) +'_ME_'+str(np.round(min_tests,2))+".txt")
+        if not os.path.exists(dpath):
+            os.makedirs(dpath)
+        open(full_file_dir, 'a').close()
+        if not os.path.exists(WApath):
+            os.makedirs(WApath)
+        thisfile=os.path.join(WApath,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+
+                                '_ME_'+str(np.round(min_tests,2))+'.csv')
+        np.savetxt(thisfile, WA_rand.astype(bool), delimiter=",")
 
 
-            DTS=np.round((time.time() - start_time),2)
-            DTD=DTS//86400
-            DTH=DTS//3600-DTD*24
-            DTM=DTS//60-DTH*60-DTD*24*60
-            DTS=np.round(DTS-(DTM+DTH*60+DTD*24*60)*60,2)
-            print("%s days %s hours %s minutes and %s seconds required for N= %s and differentiate %s" % 
-                  (DTD, DTH, DTM, DTS, n_compounds, diff))
-            print('----------------------------------------------------------------------------------------------------------') 
+        DTS=np.round((time.time() - start_time),2)
+        DTD=DTS//86400
+        DTH=DTS//3600-DTD*24
+        DTM=DTS//60-DTH*60-DTD*24*60
+        DTS=np.round(DTS-(DTM+DTH*60+DTD*24*60)*60,2)
+        print("%s days %s hours %s minutes and %s seconds required for N= %s and differentiate %s" % 
+                (DTD, DTH, DTM, DTS, n_compounds, diff))
+        print('----------------------------------------------------------------------------------------------------------') 
 
 
 

@@ -56,7 +56,7 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
     while N<stop:
         Npath=os.path.join(dir_WAs,'N_'+str(N))
         diff=1
-        if max_diff>1:
+        if max_diff>=1:
             if 'differentiate' in kwargs.keys():
                 del kwargs['differentiate']
             
@@ -156,10 +156,7 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                     print('-----------------------------------------------------')
                     diff+=1
             N+=step
-                    
-
-        elif max_diff==1:
-            N+=step
+                
         else:
              N+=step
 

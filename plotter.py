@@ -198,7 +198,6 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
             continue
         diff=min_diff
         while diff<=max_diff:
-            start_time = time.time()
             dpath=os.path.join(Npath,'diff_'+str(diff))
             if not os.path.exists(dpath):
                 continue

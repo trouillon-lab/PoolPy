@@ -13,11 +13,13 @@ import cmcrameri.cm as cmc
 
 
 
-def plot_data(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='both', y_axis='all', **kwargs):
+def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='both', y_axis='all', save_df=False, **kwargs):
     N=start
-    ls_names_met=['Method', 'Mean experiments', 'Max compunds per well', 'N wells', 'Percentage check', 'Mean extra experiments', 'Mean steps', 'N', 'diff' ]
+    #ls_names_met=['Method', 'Mean experiments', 'Max compunds per well', 'N wells', 'Percentage check', 'Mean extra experiments', 'Mean steps', 'N', 'diff' ]
     
-    full_df_met=pd.DataFrame(columns=ls_names_met)
+    #full_df_met=pd.DataFrame(columns=ls_names_met)
+
+    ls_metrics=[]
 
     while N<stop:
         Npath=os.path.join(dir_WAs,'N_'+str(N))
@@ -34,9 +36,20 @@ def plot_data(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis=
             df_met['N']=N
             df_met['diff']=diff
 
+            ls_metrics.append(df_met)
+
             diff+=1
 
 
         N+=step
+    full_df_met=pd.concat(ls_metrics)
+
+    if save_df:
+        full_df_met.to_csv(metname)
+
+
+
+
+    
                 
 

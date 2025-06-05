@@ -9,7 +9,7 @@ import pickle
 import copy
 from Functions import *
 import cmcrameri.cm as cmc
-
+from datetime import date
 
 
 
@@ -57,9 +57,11 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
     else:
         y_as=[y_axis]
 
-    plt_path=os.path.join(dir_WAs,'plots')
+    today = date.today()
+
+    plt_path=os.path.join(dir_WAs,'plots',str(today))
     for x_a in x_as:
-        plt_patho=os.path.join(plt_path,'N_'+str(N))
+        plt_patho=os.path.join(plt_path,x_a)
 
 
 

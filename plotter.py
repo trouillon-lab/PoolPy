@@ -10,6 +10,7 @@ import copy
 from Functions import *
 import cmcrameri.cm as cmc
 from datetime import date
+import matplotlib.pyplot as plt
 
 
 
@@ -60,8 +61,13 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
     today = date.today()
 
     plt_path=os.path.join(dir_WAs,'plots',str(today))
+
     for x_a in x_as:
         plt_patho=os.path.join(plt_path,x_a)
+        if not os.path.exists(plt_patho):
+            os.makedirs(plt_patho)
+
+        plt.close()
 
 
 

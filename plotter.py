@@ -1,16 +1,13 @@
+import sys
+print(sys.executable)
+
 import numpy as np
-import math
-import re
-import itertools
 import pandas as pd
-import time
 import os
-import pickle
-import copy
-from Functions import *
 import cmcrameri.cm as cmc
 from datetime import date
 import matplotlib.pyplot as plt
+import argparse
 
 
 def plot_with_custom_labels(
@@ -191,28 +188,35 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
     #full_df_met=pd.DataFrame(columns=ls_names_met)
 
     ls_metrics=[]
-
+    print(stop)
     while N<stop:
         Npath=os.path.join(dir_WAs,'N_'+str(N))
         if not os.path.exists(Npath):
+            N+=step
             continue
-        diff=min_diff
+        diff=int(min_diff)
         while diff<=max_diff:
             dpath=os.path.join(Npath,'diff_'+str(diff))
             if not os.path.exists(dpath):
+                diff+=1
                 continue
             metname=os.path.join(dpath, 'Metrics_N_'+str(N)+'_diff_'+str(diff)+'.csv')
-            df_met=pd.read_csv(metname, header=True, index=True)
+            df_met=pd.read_csv(metname, header=0)
             df_met['N']=N
             df_met['diff']=diff
 
             ls_metrics.append(df_met)
+            
 
             diff+=1
 
 
         N+=step
+    
+        
     full_df_met=pd.concat(ls_metrics)
+    
+    print(full_df_met.shape)
 
     if save_df:
         full_df_met.to_csv(metname)
@@ -249,9 +253,9 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
 
 parser = argparse.ArgumentParser(description="Run the plotter utility for experiment metrics.")
 
-parser.add_argument("dir_WAs", type=str, help="Root directory containing N_x/diff_y folders.")
-parser.add_argument("max_diff", type=float, help="Maximum diff value to process.")
-parser.add_argument("min_diff", type=float, help="Minimum diff value to process.")
+parser.add_argument("--dir_WAs", type=str, default=' ./',  help="Root directory containing N_x/diff_y folders.")
+parser.add_argument("--max_diff", type=float,  default=3, help="Maximum diff value to process.")
+parser.add_argument("--min_diff", type=float, default=1, help="Minimum diff value to process.")
 
 parser.add_argument("--start", type=int, default=0, help="Start value for N (default: 0)")
 parser.add_argument("--stop", type=float, default=np.inf, help="Stop value for N (default: infinity)")

@@ -13,7 +13,7 @@ import cmcrameri.cm as cmc
 
 
 
-def plot_data(dir_WAs, max_diff, min_N, start=0, stop=np.inf, step=1, **kwargs):
+def plot_data(dir_WAs, max_diff, min_N, start=0, stop=np.inf, step=1, x_axis='both', y_axis='all', **kwargs):
     N=start
     ls_names_met=['Method', 'Mean experiments', 'Max compunds per well', 'N wells', 'Percentage check', 'Mean extra experiments', 'Mean steps']
     
@@ -27,8 +27,10 @@ def plot_data(dir_WAs, max_diff, min_N, start=0, stop=np.inf, step=1, **kwargs):
             if not os.path.exists(dpath):
                 continue
             metname=os.path.join(dpath, 'Metrics_N_'+str(N)+'_diff_'+str(diff)+'.csv')
+            df_met=pd.read_csv(metname, header=True, index=True)
+            df_met['N']=N
+            df_met['diff']=diff
 
-            
             ls_met=[]
             full_methods=[]
             if diff==1:

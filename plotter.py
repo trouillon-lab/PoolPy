@@ -237,17 +237,36 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
         y_as=y_as,
         x_as=x_as,
         cmap=cmc.batlow,
-        save_path=plt_path,
         xlabel_dict={'N': 'Sample Size', 'diff': 'Maximun number of positives'},
         base_title="Method Comparison",
         label_fontsize=14,
         tick_fontsize=12,
-        save_dir='results',
+        save_dir=plt_path,
         scatter_size=80,      # Larger points
         scatter_alpha=0.5     # More transparent
     )
         
 
+
+parser = argparse.ArgumentParser(description="Run the plotter utility for experiment metrics.")
+
+parser.add_argument("dir_WAs", type=str, help="Root directory containing N_x/diff_y folders.")
+parser.add_argument("max_diff", type=float, help="Maximum diff value to process.")
+parser.add_argument("min_diff", type=float, help="Minimum diff value to process.")
+
+parser.add_argument("--start", type=int, default=0, help="Start value for N (default: 0)")
+parser.add_argument("--stop", type=float, default=np.inf, help="Stop value for N (default: infinity)")
+parser.add_argument("--step", type=int, default=1, help="Step for N (default: 1)")
+parser.add_argument("--x_axis", type=str, default='both', choices=['N', 'diff', 'both'], help="Which x axis to use (default: both)")
+parser.add_argument("--y_axis", type=str, default='all', help="Which y axis to use (default: all)")
+parser.add_argument("--save_df", action='store_true', help="Whether to save the combined DataFrame (default: False)")
+
+# Parse arguments and convert to dictionary
+args = parser.parse_args()
+args_dict = vars(args)
+
+# Call your function using the dictionary of arguments
+plotter(**args_dict)
 
 
 

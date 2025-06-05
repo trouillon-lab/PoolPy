@@ -47,6 +47,19 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
     if save_df:
         full_df_met.to_csv(metname)
 
+    if x_axis=='both':
+        x_as=['N', 'diff']
+    else:
+        x_as=[x_axis]
+
+    if y_axis=='all':
+        y_as=['Mean experiments', 'Max compunds per well', 'N wells', 'Percentage check', 'Mean extra experiments', 'Mean steps']
+    else:
+        y_as=[y_axis]
+
+    plt_path=os.path.join(dir_WAs,'plots')
+    for x_a in x_as:
+        plt_patho=os.path.join(plt_path,'N_'+str(N))
 
 
 

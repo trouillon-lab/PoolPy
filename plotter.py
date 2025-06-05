@@ -26,6 +26,9 @@ def plot_data(dir_WAs, max_diff, min_N, start=0, stop=np.inf, step=1, **kwargs):
             dpath=os.path.join(Npath,'diff_'+str(diff))
             if not os.path.exists(dpath):
                 continue
+            metname=os.path.join(dpath, 'Metrics_N_'+str(N)+'_diff_'+str(diff)+'.csv')
+
+            
             ls_met=[]
             full_methods=[]
             if diff==1:

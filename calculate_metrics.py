@@ -104,12 +104,20 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                     #    os.makedirs(dpath)
                     df_met.to_csv(metname)
 
+                    DTS=np.round((time.time() - start_time),2)
+                    DTD=DTS//86400
+                    DTH=DTS//3600-DTD*24
+                    DTM=DTS//60-DTH*60-DTD*24*60
+                    DTS=np.round(DTS-(DTM+DTH*60+DTD*24*60)*60,2)
                     
-
+                    
                     print('\n')
-                    print('-----------------------------------------------------')
-                    print("%s seconds required for N= %s and differentiate %s" % (np.round(time.time() - start_time, 1),N,diff))
-                    print('-----------------------------------------------------')
+                    print('----------------------------------------------------------------------------------------------------------') 
+                    print("%s days %s hours %s minutes and %s seconds required for N= %s and differentiate %s" % 
+                          (DTD, DTH, DTM, DTS, N, diff))
+                    print('----------------------------------------------------------------------------------------------------------') 
+
+
                     diff+=1
 
                 else:
@@ -151,12 +159,18 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                     metname=os.path.join(dpath, 'Metrics_N_'+str(N)+'_diff_'+str(diff)+'.csv')
                     df_met.to_csv(metname)
                     
+                    DTS=np.round((time.time() - start_time),2)
+                    DTD=DTS//86400
+                    DTH=DTS//3600-DTD*24
+                    DTM=DTS//60-DTH*60-DTD*24*60
+                    DTS=np.round(DTS-(DTM+DTH*60+DTD*24*60)*60,2)
                     
-
+                    
                     print('\n')
-                    print('-----------------------------------------------------')
-                    print("%s seconds required for N= %s and differentiate %s" % (np.round(time.time() - start_time, 1),N,diff))
-                    print('-----------------------------------------------------')
+                    print('----------------------------------------------------------------------------------------------------------') 
+                    print("%s days %s hours %s minutes and %s seconds required for N= %s and differentiate %s" % 
+                          (DTD, DTH, DTM, DTS, N, diff))
+                    print('----------------------------------------------------------------------------------------------------------') 
                     diff+=1
             N+=step
                 

@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 import argparse
 
 
-
 def plot_with_custom_labels(
     full_df_met,
     y_col,
@@ -30,23 +29,9 @@ def plot_with_custom_labels(
     """
     Plots a scatter plot grouped by 'Method' from a DataFrame, using a cmcrameri colormap,
     with options for x-axis as 'N' or 'diff', custom labels/font sizes, and saves the plot.
-
-    Parameters:
-        full_df_met (pd.DataFrame): The data source.
-        y_col (str): Column name for y-axis.
-        cmap (matplotlib colormap): Colormap to use for methods.
-        diff_val (scalar, optional): The diff value to filter on (if x-axis is 'N').
-        plot_diff_on_x (bool): If True, use 'diff' as x-axis; else use 'N'.
-        selected_N (scalar, optional): The N value to filter on (if x-axis is 'diff').
-        xlabel (str): Label for x-axis.
-        ylabel (str, optional): Label for y-axis.
-        title (str, optional): Plot title.
-        label_fontsize (int): Font size for axis labels and legend.
-        tick_fontsize (int): Font size for tick labels.
-        save_path (str, optional): Path to save the plot image.
-        scatter_size (int): Size of scatter points.
-        scatter_alpha (float): Alpha (transparency) of scatter points (0.0 to 1.0).
     """
+    import numpy as np
+
     # Filter data based on x-axis mode
     if plot_diff_on_x:
         df_filtered = full_df_met[full_df_met['N'] == selected_N]
@@ -64,7 +49,6 @@ def plot_with_custom_labels(
     color_dict = dict(zip(methods, colors))
 
     for method, grp in df_filtered.groupby('Method'):
-        # Use the same group for both x and y
         ax.scatter(
             grp[x_col], grp[y_col],
             label=method,
@@ -77,11 +61,19 @@ def plot_with_custom_labels(
     ax.set_ylabel(ylabel if ylabel else y_col, fontsize=label_fontsize)
     if title:
         ax.set_title(title, fontsize=label_fontsize + 2)
-    ax.legend(title='Method', fontsize=label_fontsize)
     ax.tick_params(axis='both', labelsize=tick_fontsize)
     for spine in ax.spines.values():
         spine.set_visible(False)
     plt.tight_layout()
+
+    # Place legend outside the plot
+    ax.legend(
+        title='Method',
+        fontsize=label_fontsize,
+        bbox_to_anchor=(1.05, 1),
+        loc='upper left',
+        borderaxespad=0.
+    )
 
     if save_path:
         plt.savefig(save_path, bbox_inches='tight')

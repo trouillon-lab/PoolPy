@@ -9,7 +9,6 @@ from datetime import date
 import matplotlib.pyplot as plt
 import argparse
 
-
 def plot_with_custom_labels(
     full_df_met,
     y_col,
@@ -24,11 +23,13 @@ def plot_with_custom_labels(
     tick_fontsize=10,
     save_path=None,
     scatter_size=40,
-    scatter_alpha=0.8
+    scatter_alpha=0.8,
+    jitter=0.1  # Amount of jitter on x-axis (default 0.1)
 ):
     """
     Plots a scatter plot grouped by 'Method' from a DataFrame, using a cmcrameri colormap,
     with options for x-axis as 'N' or 'diff', custom labels/font sizes, and saves the plot.
+    Optionally adds jitter to x-axis for readability.
     """
     import numpy as np
 
@@ -48,9 +49,13 @@ def plot_with_custom_labels(
     colors = [cmap(x) for x in np.linspace(0, 1, n_methods)]
     color_dict = dict(zip(methods, colors))
 
+    rng = np.random.default_rng(seed=42)  # For reproducibility
+
     for method, grp in df_filtered.groupby('Method'):
+        # Add jitter to x values
+        x_vals = grp[x_col].values + rng.uniform(-jitter, jitter, size=len(grp)) if jitter > 0 else grp[x_col].values
         ax.scatter(
-            grp[x_col], grp[y_col],
+            x_vals, grp[y_col].values,
             label=method,
             color=color_dict[method],
             s=scatter_size,
@@ -80,7 +85,6 @@ def plot_with_custom_labels(
         plt.close()
     else:
         plt.show()
-
 
 def plot_all_combinations(
     full_df_met,

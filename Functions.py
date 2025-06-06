@@ -453,8 +453,8 @@ def extra_tests(counts:np.array)->float:
 
 def extra_test_corrected(counts:np.array, N:int)->float:
     MC=np.array([N]*len(counts))
-    max_c=np.maximum(counts,MC)
-    return(np.sum(counts*(max_c)*(bool(counts)-1))/np.sum(counts))
+    max_c=np.minimum(counts,MC)
+    return(np.sum(counts*(max_c)*((counts-1)>0))/np.sum(counts))
     
 def mean_tests(well_assigner, differentiate, **kwargs):
     BT=well_assigner.shape[1]

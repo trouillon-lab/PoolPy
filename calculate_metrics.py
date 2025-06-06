@@ -171,6 +171,9 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                     print("%s days %s hours %s minutes and %s seconds required for N= %s and differentiate %s" % 
                           (DTD, DTH, DTM, DTS, N, diff))
                     print('----------------------------------------------------------------------------------------------------------') 
+
+                    
+                    
                     diff+=1
             N+=step
                 

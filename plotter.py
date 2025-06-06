@@ -58,8 +58,9 @@ def plot_with_custom_labels(
         x_label = xlabel
 
     fig, ax = plt.subplots(figsize=(8, 6))
-    methods = df_filtered['Method'].unique()
-    colors = cmap(range(len(methods)))
+    methods = list(df_filtered['Method'].unique())
+    n_methods = len(methods)
+    colors = [cmap(x) for x in np.linspace(0, 1, n_methods)]
     color_dict = dict(zip(methods, colors))
 
     for method, grp in df_filtered.groupby('Method'):

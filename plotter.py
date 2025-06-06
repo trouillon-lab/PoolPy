@@ -7,7 +7,6 @@ from datetime import date
 import matplotlib.pyplot as plt
 import argparse
 
-
 def plot_with_custom_labels(
     full_df_met,
     y_col,
@@ -31,7 +30,8 @@ def plot_with_custom_labels(
     """
     Plots a scatter plot grouped by 'Method' from a DataFrame, using a cmcrameri colormap,
     with options for x-axis as 'N' or 'diff', custom labels/font sizes, and saves the plot.
-    Optionally adds jitter to x-axis for readability and connects dots with a line.
+    Optionally adds jitter to x-axis for readability and connects dots with a line
+    that passes through the jittered points.
     """
     import numpy as np
 
@@ -55,21 +55,25 @@ def plot_with_custom_labels(
 
     for method in methods:
         grp = df_filtered[df_filtered['Method'] == method]
-        # Sort by x_col for line plotting
-        grp_sorted = grp.sort_values(by=x_col)
-        # Line: no jitter, connects true data points
+        y_vals = grp[y_col].values
+        # Jitter x values
+        x_vals = grp[x_col].values + rng.uniform(-jitter, jitter, size=len(grp)) if jitter > 0 else grp[x_col].values
+        # Sort by jittered x for line plotting
+        sort_idx = np.argsort(x_vals)
+        x_sorted = x_vals[sort_idx]
+        y_sorted = y_vals[sort_idx]
+        # Line: through jittered points
         if connect_line:
             ax.plot(
-                grp_sorted[x_col].values, grp_sorted[y_col].values,
+                x_sorted, y_sorted,
                 color=color_dict[method],
                 alpha=line_alpha,
                 linewidth=line_width,
                 zorder=1
             )
         # Scatter: with jitter
-        x_vals = grp[x_col].values + rng.uniform(-jitter, jitter, size=len(grp)) if jitter > 0 else grp[x_col].values
         ax.scatter(
-            x_vals, grp[y_col].values,
+            x_vals, y_vals,
             label=method,
             color=color_dict[method],
             s=scatter_size,

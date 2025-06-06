@@ -226,7 +226,7 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
 
     today = date.today()
 
-    plt_path=os.path.join(dir_WAs,'plots',str(today))
+    plt_path=os.path.join(dir_WAs,'A_plots',str(today))
 
     plot_all_combinations(
         full_df_met=full_df_met,

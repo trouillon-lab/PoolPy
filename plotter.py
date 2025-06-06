@@ -239,7 +239,7 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
         tick_fontsize=12,
         save_dir=plt_path,
         scatter_size=80,      # Larger points
-        scatter_alpha=0.5     # More transparent
+        scatter_alpha=0.8     # More transparent
     )
         
 

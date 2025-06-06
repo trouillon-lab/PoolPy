@@ -1,16 +1,14 @@
+import sys
+print(sys.executable)
+
 import numpy as np
-import math
-import re
-import itertools
 import pandas as pd
-import time
 import os
-import pickle
-import copy
-from Functions import *
 import cmcrameri.cm as cmc
 from datetime import date
 import matplotlib.pyplot as plt
+import argparse
+
 
 def plot_with_custom_labels(
     full_df_met,
@@ -31,15 +29,31 @@ def plot_with_custom_labels(
     """
     Plots a scatter plot grouped by 'Method' from a DataFrame, using a cmcrameri colormap,
     with options for x-axis as 'N' or 'diff', custom labels/font sizes, and saves the plot.
+
+    Parameters:
+        full_df_met (pd.DataFrame): The data source.
+        y_col (str): Column name for y-axis.
+        cmap (matplotlib colormap): Colormap to use for methods.
+        diff_val (scalar, optional): The diff value to filter on (if x-axis is 'N').
+        plot_diff_on_x (bool): If True, use 'diff' as x-axis; else use 'N'.
+        selected_N (scalar, optional): The N value to filter on (if x-axis is 'diff').
+        xlabel (str): Label for x-axis.
+        ylabel (str, optional): Label for y-axis.
+        title (str, optional): Plot title.
+        label_fontsize (int): Font size for axis labels and legend.
+        tick_fontsize (int): Font size for tick labels.
+        save_path (str, optional): Path to save the plot image.
+        scatter_size (int): Size of scatter points.
+        scatter_alpha (float): Alpha (transparency) of scatter points (0.0 to 1.0).
     """
     # Filter data based on x-axis mode
     if plot_diff_on_x:
         df_filtered = full_df_met[full_df_met['N'] == selected_N]
-        x_col = 'diff'
+        x_vals = df_filtered['diff']
         x_label = xlabel
     else:
         df_filtered = full_df_met[full_df_met['diff'] == diff_val]
-        x_col = 'N'
+        x_vals = df_filtered['N']
         x_label = xlabel
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -47,10 +61,10 @@ def plot_with_custom_labels(
     colors = cmap(range(len(methods)))
     color_dict = dict(zip(methods, colors))
 
+    # Plot each method group
     for method, grp in df_filtered.groupby('Method'):
-        # Use the same group for both x and y
         ax.scatter(
-            grp[x_col], grp[y_col],
+            x_vals[grp.index], grp[y_col],
             label=method,
             color=color_dict[method],
             s=scatter_size,
@@ -174,29 +188,35 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
     #full_df_met=pd.DataFrame(columns=ls_names_met)
 
     ls_metrics=[]
-
+    print(stop)
     while N<stop:
         Npath=os.path.join(dir_WAs,'N_'+str(N))
         if not os.path.exists(Npath):
+            N+=step
             continue
-        diff=min_diff
+        diff=int(min_diff)
         while diff<=max_diff:
-            start_time = time.time()
             dpath=os.path.join(Npath,'diff_'+str(diff))
             if not os.path.exists(dpath):
+                diff+=1
                 continue
             metname=os.path.join(dpath, 'Metrics_N_'+str(N)+'_diff_'+str(diff)+'.csv')
-            df_met=pd.read_csv(metname, header=True, index=True)
+            df_met=pd.read_csv(metname, header=0)
             df_met['N']=N
             df_met['diff']=diff
 
             ls_metrics.append(df_met)
+            
 
             diff+=1
 
 
         N+=step
+    
+        
     full_df_met=pd.concat(ls_metrics)
+    
+    print(full_df_met.shape)
 
     if save_df:
         full_df_met.to_csv(metname)
@@ -230,6 +250,26 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
     )
         
 
+
+parser = argparse.ArgumentParser(description="Run the plotter utility for experiment metrics.")
+
+parser.add_argument("--dir_WAs", type=str, default=' ./',  help="Root directory containing N_x/diff_y folders.")
+parser.add_argument("--max_diff", type=float,  default=3, help="Maximum diff value to process.")
+parser.add_argument("--min_diff", type=float, default=1, help="Minimum diff value to process.")
+
+parser.add_argument("--start", type=int, default=0, help="Start value for N (default: 0)")
+parser.add_argument("--stop", type=float, default=np.inf, help="Stop value for N (default: infinity)")
+parser.add_argument("--step", type=int, default=1, help="Step for N (default: 1)")
+parser.add_argument("--x_axis", type=str, default='both', choices=['N', 'diff', 'both'], help="Which x axis to use (default: both)")
+parser.add_argument("--y_axis", type=str, default='all', help="Which y axis to use (default: all)")
+parser.add_argument("--save_df", action='store_true', help="Whether to save the combined DataFrame (default: False)")
+
+# Parse arguments and convert to dictionary
+args = parser.parse_args()
+args_dict = vars(args)
+
+# Call your function using the dictionary of arguments
+plotter(**args_dict)
 
 
 

@@ -183,7 +183,6 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
     #full_df_met=pd.DataFrame(columns=ls_names_met)
 
     ls_metrics=[]
-    print(stop)
     while N<stop:
         Npath=os.path.join(dir_WAs,'N_'+str(N))
         if not os.path.exists(Npath):
@@ -211,7 +210,6 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
         
     full_df_met=pd.concat(ls_metrics)
     
-    print(full_df_met.shape)
 
     if save_df:
         full_df_met.to_csv(metname)

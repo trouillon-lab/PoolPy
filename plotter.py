@@ -1,3 +1,6 @@
+import sys
+print(sys.executable)
+
 import numpy as np
 import pandas as pd
 import os
@@ -5,6 +8,7 @@ import cmcrameri.cm as cmc
 from datetime import date
 import matplotlib.pyplot as plt
 import argparse
+
 
 def plot_with_custom_labels(
     full_df_met,
@@ -21,12 +25,15 @@ def plot_with_custom_labels(
     save_path=None,
     scatter_size=40,
     scatter_alpha=0.8,
-    jitter=0.1  # Amount of jitter on x-axis (default 0.1)
+    jitter=0.1,  # Amount of jitter on x-axis (default 0.1)
+    connect_line=True,  # Whether to connect the dots with a line
+    line_alpha=0.7,     # Transparency for the line
+    line_width=2        # Line width
 ):
     """
     Plots a scatter plot grouped by 'Method' from a DataFrame, using a cmcrameri colormap,
     with options for x-axis as 'N' or 'diff', custom labels/font sizes, and saves the plot.
-    Optionally adds jitter to x-axis for readability.
+    Optionally adds jitter to x-axis for readability and connects dots with a line.
     """
     import numpy as np
 
@@ -48,15 +55,28 @@ def plot_with_custom_labels(
 
     rng = np.random.default_rng(seed=42)  # For reproducibility
 
-    for method, grp in df_filtered.groupby('Method'):
-        # Add jitter to x values
+    for method in methods:
+        grp = df_filtered[df_filtered['Method'] == method]
+        # Sort by x_col for line plotting
+        grp_sorted = grp.sort_values(by=x_col)
+        # Line: no jitter, connects true data points
+        if connect_line:
+            ax.plot(
+                grp_sorted[x_col].values, grp_sorted[y_col].values,
+                color=color_dict[method],
+                alpha=line_alpha,
+                linewidth=line_width,
+                zorder=1
+            )
+        # Scatter: with jitter
         x_vals = grp[x_col].values + rng.uniform(-jitter, jitter, size=len(grp)) if jitter > 0 else grp[x_col].values
         ax.scatter(
             x_vals, grp[y_col].values,
             label=method,
             color=color_dict[method],
             s=scatter_size,
-            alpha=scatter_alpha
+            alpha=scatter_alpha,
+            zorder=2
         )
 
     ax.set_xlabel(x_label, fontsize=label_fontsize)

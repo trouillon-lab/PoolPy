@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import argparse
 
 
+
 def plot_with_custom_labels(
     full_df_met,
     y_col,
@@ -49,11 +50,11 @@ def plot_with_custom_labels(
     # Filter data based on x-axis mode
     if plot_diff_on_x:
         df_filtered = full_df_met[full_df_met['N'] == selected_N]
-        x_vals = df_filtered['diff']
+        x_col = 'diff'
         x_label = xlabel
     else:
         df_filtered = full_df_met[full_df_met['diff'] == diff_val]
-        x_vals = df_filtered['N']
+        x_col = 'N'
         x_label = xlabel
 
     fig, ax = plt.subplots(figsize=(8, 6))
@@ -61,10 +62,10 @@ def plot_with_custom_labels(
     colors = cmap(range(len(methods)))
     color_dict = dict(zip(methods, colors))
 
-    # Plot each method group
     for method, grp in df_filtered.groupby('Method'):
+        # Use the same group for both x and y
         ax.scatter(
-            x_vals[grp.index], grp[y_col],
+            grp[x_col], grp[y_col],
             label=method,
             color=color_dict[method],
             s=scatter_size,
@@ -86,6 +87,7 @@ def plot_with_custom_labels(
         plt.close()
     else:
         plt.show()
+
 
 def plot_all_combinations(
     full_df_met,

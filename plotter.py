@@ -218,6 +218,9 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
                 diff+=1
                 continue
             metname=os.path.join(dpath, 'Metrics_N_'+str(N)+'_diff_'+str(diff)+'.csv')
+            if not os.path.isfile(metname):
+                diff +=1
+                continue
             df_met=pd.read_csv(metname, header=0)
             df_met['N']=N
             df_met['diff']=diff

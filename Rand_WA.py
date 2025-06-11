@@ -226,7 +226,7 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
 
                 if not kwargs['overwrite'] and check_Rand_in_WApath(WApath):
                     continue
-                
+
                 this_sc_file=os.path.join(dir_scramblers, 'N_'+str(N),  'N_'+str(N)+'_diff_'+str(diff)+'.npz')
                 this_scrambler=np.load(this_sc_file)['sc']
                 scrambler.update({diff:this_scrambler})
@@ -281,6 +281,10 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
         diff=1
         dpath=os.path.join(Npath,'diff_'+str(diff))
         WApath=os.path.join(dpath,'WAs')
+
+        if not kwargs['overwrite'] and check_Rand_in_WApath(WApath):
+            return
+
         scrambler={1:np.arange(n_compounds)}
         WA_rand,  min_tests, perc_check=assign_wells_random_precomp(n_compounds=n_compounds, 
                                                         differentiate=diff,scrambler=scrambler, return_me=True, **kwargs )

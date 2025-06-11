@@ -155,6 +155,17 @@ def assign_wells_random_precomp(n_compounds:int,  differentiate:int,scrambler:di
     
     return WA_rand
 
+def check_Rand_in_WApath(WApath):
+    try:
+        # List all files in the directory
+        files = os.listdir(WApath)
+        # Check if any file starts with 'WA_Random_N_'
+        for file in files:
+            if file.startswith('WA_Random_N_'):
+                return True
+        return False
+    except Exception as e:
+        return str(e)
 
 
 
@@ -171,6 +182,10 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
             if diff==1:
                 dpath=os.path.join(Npath,'diff_'+str(diff))
                 WApath=os.path.join(dpath,'WAs')
+
+                if not kwargs['overwrite'] and check_Rand_in_WApath(WApath):
+                    continue
+
                 scrambler={1:np.arange(n_compounds)}
                 WA_rand,  min_tests, perc_check=assign_wells_random_precomp(n_compounds=n_compounds, 
                                                                 differentiate=diff,scrambler=scrambler, return_me=True, **kwargs )
@@ -208,6 +223,10 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
             else:
                 dpath=os.path.join(Npath,'diff_'+str(diff))
                 WApath=os.path.join(dpath,'WAs')
+
+                if not kwargs['overwrite'] and check_Rand_in_WApath(WApath):
+                    continue
+                
                 this_sc_file=os.path.join(dir_scramblers, 'N_'+str(N),  'N_'+str(N)+'_diff_'+str(diff)+'.npz')
                 this_scrambler=np.load(this_sc_file)['sc']
                 scrambler.update({diff:this_scrambler})

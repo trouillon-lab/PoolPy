@@ -175,18 +175,25 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
     N=n_compounds
     
     if max_diff>1:
-
+        
+        dpath=os.path.join(Npath,'diff_'+str(max_diff))
+        WApath=os.path.join(dpath,'WAs')
+        if not kwargs['overwrite'] and check_Rand_in_WApath(WApath):
+            return
+        
+        
         for di in range(max_diff):
             start_time = time.time()
             diff=di+1
             if diff==1:
                 dpath=os.path.join(Npath,'diff_'+str(diff))
                 WApath=os.path.join(dpath,'WAs')
+                scrambler={1:np.arange(n_compounds)}
 
                 if not kwargs['overwrite'] and check_Rand_in_WApath(WApath):
                     continue
 
-                scrambler={1:np.arange(n_compounds)}
+                
                 WA_rand,  min_tests, perc_check=assign_wells_random_precomp(n_compounds=n_compounds, 
                                                                 differentiate=diff,scrambler=scrambler, return_me=True, **kwargs )
                 extra_exp=WA_rand.shape[1]+min_tests
@@ -223,13 +230,14 @@ def rand_sweep_diff(n_compounds, max_diff, dir_scramblers, Npath, **kwargs):
             else:
                 dpath=os.path.join(Npath,'diff_'+str(diff))
                 WApath=os.path.join(dpath,'WAs')
+                this_sc_file=os.path.join(dir_scramblers, 'N_'+str(N),  'N_'+str(N)+'_diff_'+str(diff)+'.npz')
+                this_scrambler=np.load(this_sc_file)['sc']
+                scrambler.update({diff:this_scrambler})
 
                 if not kwargs['overwrite'] and check_Rand_in_WApath(WApath):
                     continue
 
-                this_sc_file=os.path.join(dir_scramblers, 'N_'+str(N),  'N_'+str(N)+'_diff_'+str(diff)+'.npz')
-                this_scrambler=np.load(this_sc_file)['sc']
-                scrambler.update({diff:this_scrambler})
+
                 WA_rand,  min_tests, perc_check=assign_wells_random_precomp(n_compounds=n_compounds, 
                                                                 differentiate=diff,scrambler=scrambler, return_me=True, **kwargs  )
                 extra_exp=WA_rand.shape[1]+min_tests

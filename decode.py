@@ -71,7 +71,8 @@ def decode_precomp(well_assigner:np.array, differentiate:int,
 
             else:
                 idxs=np.prod(readout==full_well_assigner, axis=1)
-            return itertools.compress(sc_list,idxs)
+            full_od.update({diff:itertools.compress(sc_list,idxs)})
+        return full_od
     
 def decode(well_assigner:np.ndarray, readout:np.ndarray, 
            differentiate:int, sweep=False) -> list:

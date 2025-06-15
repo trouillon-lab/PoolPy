@@ -13,10 +13,12 @@ import copy
 from Functions import *
 
 
-def decode_precomp(well_assigner:np.array, differentiate:int, scrambler:dict, readout:np.ndarray) -> list:
+def decode_precomp(well_assigner:np.array, differentiate:int, max_differentiate:int, 
+                   scrambler:dict, readout:np.ndarray, sweep=False) -> list:
     if differentiate==0:
         return(True,well_assigner, np.array([1]*well_assigner.shape[0]))
     N=well_assigner.shape[0]
+    sc_list=[range(N)]
     for i in range(differentiate):
         diff=i+1
         if diff ==1:
@@ -27,16 +29,21 @@ def decode_precomp(well_assigner:np.array, differentiate:int, scrambler:dict, re
             #print(well_assigner)
             #print(diff)
             full_well_assigner=np.concatenate((full_well_assigner,np.bool_(np.sum(well_assigner[this_sc], axis=1))))
-    _, counts=np.unique(full_well_assigner, axis=0, return_counts=True)
-    if len(counts)<full_well_assigner.shape[0]:
-        return(False, full_well_assigner, counts)
-    elif len(counts)==full_well_assigner.shape[0]:
-        return(True,full_well_assigner, counts)
-    else:
-        print("Something is fishy")
-        return(-1)
+            sc_list.extend(list(this_sc))
+    #outcomes,_=np.unique(full_well_assigner, axis=0, return_counts=True)
     
-def decode(well_assigner:np.ndarray, readout:np.ndarray, differentiate:int) -> list:
+    if sweep:
+        outcome_dict={}
+        outcomes,_=np.unique(full_well_assigner, axis=0, return_counts=True)
+        for outcome in outcomes:
+            idxs=np.prod(outcome==full_well_assigner, axis=1)
+            outcome_dict.update({tuple(outcome):itertools.compress(sc_list,idxs)})
+
+    else:
+        idxs=np.prod(readout==full_well_assigner, axis=1)
+        return itertools.compress(sc_list,idxs)
+    
+def decode(well_assigner:np.ndarray, readout:np.ndarray, differentiate:int,  readout:np.ndarray, sweep=False) -> list:
     N=well_assigner.shape[0]
     for i in range(differentiate):
         resulti=[]

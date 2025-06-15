@@ -12,31 +12,8 @@ import copy
 
 from Functions import *
 
-
-def is_consistent_precomp(well_assigner:np.array, differentiate:int, scrambler:dict) -> list:
-    if differentiate==0:
-        return(True,well_assigner, np.array([1]*well_assigner.shape[0]))
-    N=well_assigner.shape[0]
-    for i in range(differentiate):
-        diff=i+1
-        if diff ==1:
-            full_well_assigner=well_assigner.copy()
-        else:
-            this_sc=scrambler[diff]
-            #print(this_sc)
-            #print(well_assigner)
-            #print(diff)
-            full_well_assigner=np.concatenate((full_well_assigner,np.bool_(np.sum(well_assigner[this_sc], axis=1))))
-    _, counts=np.unique(full_well_assigner, axis=0, return_counts=True)
-    if len(counts)<full_well_assigner.shape[0]:
-        return(False, full_well_assigner, counts)
-    elif len(counts)==full_well_assigner.shape[0]:
-        return(True,full_well_assigner, counts)
-    else:
-        print("Something is fishy")
-        return(-1)
     
-def decode(well_assigner:np.ndarray, readout:np.ndarray, differentiate:int) -> list:
+def decode_precomp(well_assigner:np.ndarray, readout:np.ndarray, differentiate:int) -> list:
     N=well_assigner.shape[0]
     for i in range(differentiate):
         resulti=[]
@@ -55,6 +32,28 @@ def decode(well_assigner:np.ndarray, readout:np.ndarray, differentiate:int) -> l
     if len(idxs)==0:
         print('No match')
         return(-1)
+    return [resulti[i] for i in idxs]
+
+def decode_sweep_precomp(well_assigner:np.ndarray, readout:np.ndarray, differentiate:int) -> list:
+    N=well_assigner.shape[0]
+    for i in range(differentiate):
+        resulti=[]
+        diff=i+1
+        if diff ==1:
+            resulti.extend(list(range(well_assigner.shape[0])))
+            full_well_assigner=well_assigner.copy()
+        else:
+            N_cmbn=math.comb(N,diff)
+            temp_well_assigner=np.zeros((N_cmbn, well_assigner.shape[1]))==1
+            for l,k in enumerate(itertools.combinations(np.arange(N),diff)):
+                resulti.append(k)
+                temp_well_assigner[l,:]=np.sum(well_assigner[k,:], axis=0).reshape(1,-1)
+            full_well_assigner=np.concatenate((full_well_assigner,temp_well_assigner))
+    idxs=[i for i in range(full_well_assigner.shape[0]) if np.array_equal(full_well_assigner[i,:],readout)]
+    if len(idxs)==0:
+        print('No match')
+        return(-1)
+    return [resulti[i] for i in idxs]
     
 
 def mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs):

@@ -38,12 +38,14 @@ def decode_precomp(well_assigner:np.array, differentiate:int, max_differentiate:
         for outcome in outcomes:
             idxs=np.prod(outcome==full_well_assigner, axis=1)
             outcome_dict.update({tuple(outcome):itertools.compress(sc_list,idxs)})
+        return outcome_dict
 
     else:
         idxs=np.prod(readout==full_well_assigner, axis=1)
         return itertools.compress(sc_list,idxs)
     
-def decode(well_assigner:np.ndarray, readout:np.ndarray, differentiate:int,  readout:np.ndarray, sweep=False) -> list:
+def decode(well_assigner:np.ndarray, readout:np.ndarray, 
+           differentiate:int, sweep=False) -> list:
     N=well_assigner.shape[0]
     for i in range(differentiate):
         resulti=[]

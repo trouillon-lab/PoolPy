@@ -78,7 +78,40 @@ def decode_sweep(dir_scramblers,dir_WAs, readout:np.ndarray, differentiate:int,
             max_differentiate=-1,
             start=50, stop=150, step=10,
             sweep=False, **kwargs) -> list:
-    if N>0:
+    N=start
+    while N<stop:
+        Npath=os.path.join(dir_WAs,'N_'+str(N))
+    diff=1
+    if max_diff>=1:
+        if 'differentiate' in kwargs.keys():
+            del kwargs['differentiate']
+        while diff<=max_diff:
+            start_time = time.time()
+            dpath=os.path.join(Npath,'diff_'+str(diff))
+            ls_met=[]
+            full_methods=[]
+            if diff==1:
+                scrambler={1:np.arange(N)}
+                WApath=os.path.join(dpath,'WAs')
+                filenames = next(os.walk(WApath), (None, None, []))[2]
+                for fname in filenames:
+                    fdir=os.path.join(WApath,fname)
+                    WA=np.genfromtxt(fdir, delimiter=",")
+                    decode_precomp(well_assigner=WA, differentiate=diff, 
+                    scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
+
+            else:
+                this_sc_file=os.path.join(dir_scramblers, 'N_'+str(N),  'N_'+str(N)+'_diff_'+str(diff)+'.npz')
+                this_scrambler=np.load(this_sc_file)['sc']
+                scrambler.update({diff:this_scrambler})
+                dpath=os.path.join(Npath,'diff_'+str(diff))
+                WApath=os.path.join(dpath,'WAs')
+                filenames = next(os.walk(WApath), (None, None, []))[2]
+                for fname in filenames:
+                    fdir=os.path.join(WApath,fname)
+                    WA=np.genfromtxt(fdir, delimiter=",")
+                    decode_precomp(well_assigner=WA, differentiate=diff, 
+                    scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
 
     for i in range(differentiate):
         resulti=[]
@@ -106,7 +139,7 @@ def decode_single( WA, readout:np.ndarray,
             dir_scramblers=False, **kwargs) -> list:
     well_assigner=WA
     if dir_scramblers==False:
-        
+
     resulti=[]
     diff=differentiate
     if diff ==1:

@@ -125,28 +125,21 @@ def decode_sweep(dir_scramblers,dir_WAs, readout:np.ndarray, differentiate:int,
 
 
 def decode_single( WA, readout:np.ndarray, 
-                  differentiate,
+                  differentiate, scrambler=True,
             dir_scramblers=False, **kwargs) -> list:
-    well_assigner=WA
-    if dir_scramblers==False:
+        if scrambler==True:
+            N=WA.shape[0]
 
-    resulti=[]
-    diff=differentiate
-    if diff ==1:
-        resulti.extend(list(range(well_assigner.shape[0])))
-        full_well_assigner=well_assigner.copy()
-    else:
-        N_cmbn=math.comb(N,diff)
-        temp_well_assigner=np.zeros((N_cmbn, well_assigner.shape[1]))==1
-        for l,k in enumerate(itertools.combinations(np.arange(N),diff)):
-            resulti.append(k)
-            temp_well_assigner[l,:]=np.sum(well_assigner[k,:], axis=0).reshape(1,-1)
-        full_well_assigner=np.concatenate((full_well_assigner,temp_well_assigner))
-    idxs=[i for i in range(full_well_assigner.shape[0]) if np.array_equal(full_well_assigner[i,:],readout)]
-    if len(idxs)==0:
-        print('No match')
-        return(-1)
-    return [resulti[i] for i in idxs]
+
+            return decode_precomp(well_assigner=WA, readout=readout, differentiate=differentiate, scrambler=scrambler max_differentiate=-1)
+        elif not scrambler==False:
+            return decode_precomp(well_assigner=WA, readout=readout, differentiate=differentiate, scrambler=scrambler max_differentiate=-1)
+        
+        elif not dir_scramblers==False:
+            N=WA.shape[0]
+            if differentiate==1:
+                scrambler={1:np.arange(N)}
+            return decode_precomp(well_assigner=WA, readout=readout, differentiate=differentiate, scrambler=scrambler max_differentiate=-1)
  
     
 

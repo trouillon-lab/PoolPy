@@ -101,22 +101,24 @@ def decode_sweep(dir_scramblers,dir_WAs, readout:np.ndarray, differentiate:int,
 
 
 
-def decode_single(dir_scramblers,WA, readout:np.ndarray, 
+def decode_single( WA, readout:np.ndarray, 
                   differentiate,
-            sweep=False, **kwargs) -> list:
-    for i in range(differentiate):
-        resulti=[]
-        diff=i+1
-        if diff ==1:
-            resulti.extend(list(range(well_assigner.shape[0])))
-            full_well_assigner=well_assigner.copy()
-        else:
-            N_cmbn=math.comb(N,diff)
-            temp_well_assigner=np.zeros((N_cmbn, well_assigner.shape[1]))==1
-            for l,k in enumerate(itertools.combinations(np.arange(N),diff)):
-                resulti.append(k)
-                temp_well_assigner[l,:]=np.sum(well_assigner[k,:], axis=0).reshape(1,-1)
-            full_well_assigner=np.concatenate((full_well_assigner,temp_well_assigner))
+            dir_scramblers=False, **kwargs) -> list:
+    well_assigner=WA
+    if dir_scramblers==False:
+        
+    resulti=[]
+    diff=differentiate
+    if diff ==1:
+        resulti.extend(list(range(well_assigner.shape[0])))
+        full_well_assigner=well_assigner.copy()
+    else:
+        N_cmbn=math.comb(N,diff)
+        temp_well_assigner=np.zeros((N_cmbn, well_assigner.shape[1]))==1
+        for l,k in enumerate(itertools.combinations(np.arange(N),diff)):
+            resulti.append(k)
+            temp_well_assigner[l,:]=np.sum(well_assigner[k,:], axis=0).reshape(1,-1)
+        full_well_assigner=np.concatenate((full_well_assigner,temp_well_assigner))
     idxs=[i for i in range(full_well_assigner.shape[0]) if np.array_equal(full_well_assigner[i,:],readout)]
     if len(idxs)==0:
         print('No match')

@@ -102,8 +102,8 @@ def decode_sweep(dir_scramblers,dir_WAs, readout:np.ndarray, differentiate:int,
                     method=re.sub('_.*$', '', method)
                     dict_decode=decode_precomp(well_assigner=WA, differentiate=diff, 
                     scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
-                    decname=os.path.join(dpath, 'Metrics_N_'+str(N)+'_diff_'+str(diff)+'.csv')
-                    json.dump( dict_decode, open( +method+'.json', 'w' ) )
+                    decname=os.path.join(dpath, 'decoder_'+method+'.json')
+                    json.dump( dict_decode, open(decname, 'w' ) )
 
             else:
                 this_sc_file=os.path.join(dir_scramblers, 'N_'+str(N),  'N_'+str(N)+'_diff_'+str(diff)+'.npz')
@@ -117,6 +117,8 @@ def decode_sweep(dir_scramblers,dir_WAs, readout:np.ndarray, differentiate:int,
                     WA=np.genfromtxt(fdir, delimiter=",")
                     decode_precomp(well_assigner=WA, differentiate=diff, 
                     scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
+                    decname=os.path.join(dpath, 'decoder_'+method+'.json')
+                    json.dump( dict_decode, open(decname, 'w' ) )
 
     for i in range(differentiate):
         resulti=[]

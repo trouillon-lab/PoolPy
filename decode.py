@@ -127,10 +127,10 @@ def decode_sweep(dir_scramblers,dir_WAs, readout:np.ndarray, differentiate:int,
 def decode_single( WA, readout:np.ndarray, 
                   differentiate, scrambler=True,
             dir_scramblers=False, **kwargs) -> list:
+        print('Function not yet ready, come back later')
+        return 'Function not yet ready, come back later'
         if scrambler==True:
             N=WA.shape[0]
-
-
             return decode_precomp(well_assigner=WA, readout=readout, differentiate=differentiate, scrambler=scrambler max_differentiate=-1)
         elif not scrambler==False:
             return decode_precomp(well_assigner=WA, readout=readout, differentiate=differentiate, scrambler=scrambler max_differentiate=-1)

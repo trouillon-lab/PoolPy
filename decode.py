@@ -74,8 +74,10 @@ def decode_precomp(well_assigner:np.array, differentiate:int,
             full_od.update({diff:itertools.compress(sc_list,idxs)})
         return full_od
     
-def decode(well_assigner:np.ndarray, readout:np.ndarray, 
-           differentiate:int, sweep=False) -> list:
+def decode(dir_scramblers,dir_WAs, readout:np.ndarray, differentiate:int,
+            max_differentiate=-1,
+            start=50, stop=150, step=10,
+            sweep=False, **kwargs) -> list:
     N=well_assigner.shape[0]
     for i in range(differentiate):
         resulti=[]

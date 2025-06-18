@@ -117,7 +117,7 @@ def decode_sweep(dir_scramblers,dir_WAs, readout:np.ndarray, differentiate:int,
                     for fname in filenames:
                         fdir=os.path.join(WApath,fname)
                         WA=np.genfromtxt(fdir, delimiter=",")
-                        decode_precomp(well_assigner=WA, differentiate=diff, 
+                        dict_decode=decode_precomp(well_assigner=WA, differentiate=diff, 
                         scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
                         decname=os.path.join(dpath, 'decoder_'+method+'.json')
                         json.dump( dict_decode, open(decname, 'w' ) )

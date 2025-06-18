@@ -30,7 +30,7 @@ def decode_precomp(well_assigner:np.array, differentiate:int,
                 #print(this_sc)
                 #print(well_assigner)
                 #print(diff)
-                full_well_assigner=np.concatenate((full_well_assigner,np.bool_(np.sum(well_assigner[this_sc], axis=1))))
+                full_well_assigner=np.concatenate((full_well_assigner,np.any(well_assigner[this_sc], axis=1)))
                 sc_list.extend(list(this_sc))
         #outcomes,_=np.unique(full_well_assigner, axis=0, return_counts=True)
         

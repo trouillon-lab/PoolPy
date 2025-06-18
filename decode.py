@@ -20,7 +20,7 @@ def decode_precomp(well_assigner:np.array, differentiate:int,
         return(True,well_assigner, np.array([1]*well_assigner.shape[0]))
     if max_differentiate<1:
         N=well_assigner.shape[0]
-        sc_list=[range(N)]
+        sc_list=[np.arange(N)]
         for i in range(differentiate):
             diff=i+1
             if diff ==1:

@@ -83,10 +83,10 @@ def decode_sweep(dir_scramblers,dir_WAs, readout:np.ndarray, differentiate:int,
     while N<stop:
         Npath=os.path.join(dir_WAs,'N_'+str(N))
     diff=1
-    if max_diff>=1:
+    if max_differentiate>=1:
         if 'differentiate' in kwargs.keys():
             del kwargs['differentiate']
-        while diff<=max_diff:
+        while diff<=max_differentiate:
             start_time = time.time()
             dpath=os.path.join(Npath,'diff_'+str(diff))
             ls_met=[]
@@ -119,6 +119,10 @@ def decode_sweep(dir_scramblers,dir_WAs, readout:np.ndarray, differentiate:int,
                     scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
                     decname=os.path.join(dpath, 'decoder_'+method+'.json')
                     json.dump( dict_decode, open(decname, 'w' ) )
+
+
+
+                    
         N+=step
 
 

@@ -120,9 +120,10 @@ def decode_sweep(dir_scramblers,dir_WAs, readout:np.ndarray, differentiate:int,
                     decname=os.path.join(dpath, 'decoder_'+method+'.json')
                     json.dump( dict_decode, open(decname, 'w' ) )
 
+    else:
+        diff=differentiate    
 
 
-                    
         N+=step
 
 

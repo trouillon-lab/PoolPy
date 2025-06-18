@@ -48,6 +48,8 @@ def decode_precomp(well_assigner:np.array, differentiate:int,
         
     else:
         full_od={}
+        N=well_assigner.shape[0]
+        sc_list=[np.arange(N)]
         for differentiate in range(max_differentiate):
 
             diff=differentiate+1

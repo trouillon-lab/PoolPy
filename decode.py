@@ -216,4 +216,4 @@ dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,'k
              'start':start, 'stop':stop,  'step':step, 'dir_WAs':args.dir_WAs, 'dir_scramblers':args.dir_scramblers, 'max_diff': max_diff, 'max_dims':max_dims}
 
 
-sweep_metrics_precomp(**dict_kwargs)
+decode_sweep(**dict_kwargs)

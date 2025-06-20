@@ -86,7 +86,7 @@ def decode_sweep(dir_scramblers,dir_WAs, differentiate:int,
         Npath=os.path.join(dir_WAs,'N_'+str(N))
         diff=1
         if max_differentiate>=1:
-            print('here')
+
             diff=1
             if 'differentiate' in kwargs.keys():
                 del kwargs['differentiate']
@@ -107,6 +107,7 @@ def decode_sweep(dir_scramblers,dir_WAs, differentiate:int,
                         dict_decode=decode_precomp(well_assigner=WA, differentiate=diff, 
                         scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
                         decname=os.path.join(dpath, 'decoder_'+method+'.json')
+                        print(dict_decode)
                         json.dump( dict_decode, open(decname, 'w' ) )
 
                 else:

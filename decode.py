@@ -185,6 +185,13 @@ def decode_single( WA, readout:np.ndarray,
                 scrambler={1:np.arange(N)}
             return decode_precomp(well_assigner=WA, readout=readout, 
                                   differentiate=differentiate, scrambler=scrambler, max_differentiate=-1)
+        
+
+def str_to_tuple(string, delimiter='-'):
+    return tuple(string.split(delimiter))
+
+def tuple_to_str(tuple_type, delimiter):
+    return delimiter.join(map(str,tuple_type))
  
     
 

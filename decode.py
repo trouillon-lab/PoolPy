@@ -77,7 +77,7 @@ def decode_precomp(well_assigner:np.array, differentiate:int,
             full_od.update({diff:itertools.compress(sc_list,idxs)})
         return full_od
     
-def decode_sweep(dir_scramblers,dir_WAs, readout:np.ndarray, differentiate:int,
+def decode_sweep(dir_scramblers,dir_WAs, differentiate:int,
             max_differentiate=-1,
             start=50, stop=150, step=10,
             sweep=False, **kwargs) -> list:

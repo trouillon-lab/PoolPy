@@ -39,12 +39,12 @@ def decode_precomp(well_assigner:np.array, differentiate:int,
             outcomes,_=np.unique(full_well_assigner, axis=0, return_counts=True)
             for outcome in outcomes:
                 idxs = np.all(outcome == full_well_assigner, axis=1)
-                outcome_dict.update({tuple_to_str(tuple(outcome)):itertools.compress(sc_list,idxs)})
+                outcome_dict.update({tuple_to_str(tuple(outcome)):list(itertools.compress(sc_list,idxs))})
             return outcome_dict
 
         else:
             idxs = np.all(outcome == full_well_assigner, axis=1)
-            return itertools.compress(sc_list,idxs)
+            return list(itertools.compress(sc_list,idxs))
         
     else:
         full_od={}
@@ -69,12 +69,12 @@ def decode_precomp(well_assigner:np.array, differentiate:int,
                 outcomes,_=np.unique(full_well_assigner, axis=0, return_counts=True)
                 for outcome in outcomes:
                     idxs=np.prod(outcome==full_well_assigner, axis=1)
-                    outcome_dict.update({tuple_to_str(tuple(outcome)):itertools.compress(sc_list,idxs)})
+                    outcome_dict.update({tuple_to_str(tuple(outcome)):list(itertools.compress(sc_list,idxs))})
                 full_od.update({diff:outcome_dict})
 
             else:
                 idxs=np.prod(readout==full_well_assigner, axis=1)
-            full_od.update({diff:itertools.compress(sc_list,idxs)})
+            full_od.update({diff:list(itertools.compress(sc_list,idxs))})
         return full_od
     
 def decode_sweep(dir_scramblers,dir_WAs, differentiate:int,

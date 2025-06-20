@@ -128,35 +128,36 @@ def decode_sweep(dir_scramblers,dir_WAs, differentiate:int,
                 diff+=1
 
         else:
-            diff=differentiate   
-            if diff==1:
-                    scrambler={1:np.arange(N)}
+            diff=1    
+            while diff<=differentiate:  
+                if diff==1:
+                        scrambler={1:np.arange(N)}
+                        WApath=os.path.join(dpath,'WAs')
+                        filenames = next(os.walk(WApath), (None, None, []))[2]
+                        for fname in filenames:
+                            fdir=os.path.join(WApath,fname)
+                            WA=np.genfromtxt(fdir, delimiter=",")
+                            method=re.sub('^WA_', '', fname)
+                            method=re.sub('_.*$', '', method)
+                            dict_decode=decode_precomp(well_assigner=WA, differentiate=diff, 
+                            scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
+                            decname=os.path.join(dpath, 'decoder_'+method+'.json')
+                            json.dump( dict_decode, open(decname, 'w' ) )
+
+                else:
+                    this_sc_file=os.path.join(dir_scramblers, 'N_'+str(N),  'N_'+str(N)+'_diff_'+str(diff)+'.npz')
+                    this_scrambler=np.load(this_sc_file)['sc']
+                    scrambler.update({diff:this_scrambler})
+                    dpath=os.path.join(Npath,'diff_'+str(diff))
                     WApath=os.path.join(dpath,'WAs')
                     filenames = next(os.walk(WApath), (None, None, []))[2]
                     for fname in filenames:
                         fdir=os.path.join(WApath,fname)
                         WA=np.genfromtxt(fdir, delimiter=",")
-                        method=re.sub('^WA_', '', fname)
-                        method=re.sub('_.*$', '', method)
-                        dict_decode=decode_precomp(well_assigner=WA, differentiate=diff, 
+                        decode_precomp(well_assigner=WA, differentiate=diff, 
                         scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
                         decname=os.path.join(dpath, 'decoder_'+method+'.json')
                         json.dump( dict_decode, open(decname, 'w' ) )
-
-            else:
-                this_sc_file=os.path.join(dir_scramblers, 'N_'+str(N),  'N_'+str(N)+'_diff_'+str(diff)+'.npz')
-                this_scrambler=np.load(this_sc_file)['sc']
-                scrambler.update({diff:this_scrambler})
-                dpath=os.path.join(Npath,'diff_'+str(diff))
-                WApath=os.path.join(dpath,'WAs')
-                filenames = next(os.walk(WApath), (None, None, []))[2]
-                for fname in filenames:
-                    fdir=os.path.join(WApath,fname)
-                    WA=np.genfromtxt(fdir, delimiter=",")
-                    decode_precomp(well_assigner=WA, differentiate=diff, 
-                    scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
-                    decname=os.path.join(dpath, 'decoder_'+method+'.json')
-                    json.dump( dict_decode, open(decname, 'w' ) )
  
 
 

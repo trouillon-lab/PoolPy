@@ -190,10 +190,11 @@ def decode_single( WA, readout:np.ndarray,
 def str_to_tuple(string, delimiter='-'):
     return tuple(string.split(delimiter))
 
-def tuple_to_str(tuple_type, delimiter):
+def tuple_to_str(tuple_type, delimiter='-'):
     return delimiter.join(map(str,tuple_type))
  
     
+
 
 
 parser = argparse.ArgumentParser()

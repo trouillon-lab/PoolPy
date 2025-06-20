@@ -123,6 +123,7 @@ def decode_sweep(dir_scramblers,dir_WAs, differentiate:int,
                         scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
                         decname=os.path.join(dpath, 'decoder_'+method+'.json')
                         json.dump( dict_decode, open(decname, 'w' ) )
+                diff+=1
 
         else:
             diff=differentiate   

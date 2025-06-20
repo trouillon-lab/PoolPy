@@ -220,8 +220,11 @@ max_dims= np.inf if type(args.max_dims)==type(None) else int(args.max_dims)
 
 
 
-dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,'keep_ratios_constant': keep_ratios_constant,
-             'start':start, 'stop':stop,  'step':step, 'dir_WAs':args.dir_WAs, 'dir_scramblers':args.dir_scramblers, 'max_diff': max_diff, 'max_dims':max_dims}
+dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,
+             'keep_ratios_constant': keep_ratios_constant,
+             'start':start, 'stop':stop,  'step':step, 
+             'dir_WAs':args.dir_WAs, 'dir_scramblers':args.dir_scramblers, 
+             'max_differentiate': max_diff, 'max_dims':max_dims}
 
 
 decode_sweep(**dict_kwargs)

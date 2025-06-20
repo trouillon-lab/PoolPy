@@ -169,15 +169,18 @@ def decode_single( WA, readout:np.ndarray,
         return 'Function not yet ready, come back later'
         if scrambler==True:
             N=WA.shape[0]
-            return decode_precomp(well_assigner=WA, readout=readout, differentiate=differentiate, scrambler=scrambler max_differentiate=-1)
+            return decode_precomp(well_assigner=WA, readout=readout, 
+                                  differentiate=differentiate, scrambler=scrambler, max_differentiate=-1)
         elif not scrambler==False:
-            return decode_precomp(well_assigner=WA, readout=readout, differentiate=differentiate, scrambler=scrambler max_differentiate=-1)
+            return decode_precomp(well_assigner=WA, readout=readout, 
+                                  differentiate=differentiate, scrambler=scrambler, max_differentiate=-1)
         
         elif not dir_scramblers==False:
             N=WA.shape[0]
             if differentiate==1:
                 scrambler={1:np.arange(N)}
-            return decode_precomp(well_assigner=WA, readout=readout, differentiate=differentiate, scrambler=scrambler max_differentiate=-1)
+            return decode_precomp(well_assigner=WA, readout=readout, 
+                                  differentiate=differentiate, scrambler=scrambler, max_differentiate=-1)
  
     
 

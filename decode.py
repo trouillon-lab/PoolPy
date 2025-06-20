@@ -86,6 +86,7 @@ def decode_sweep(dir_scramblers,dir_WAs, differentiate:int,
         Npath=os.path.join(dir_WAs,'N_'+str(N))
         diff=1
         if max_differentiate>=1:
+            diff=1
             if 'differentiate' in kwargs.keys():
                 del kwargs['differentiate']
             while diff<=max_differentiate:

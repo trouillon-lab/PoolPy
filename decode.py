@@ -80,7 +80,7 @@ def decode_precomp(well_assigner:np.array, differentiate:int,
 def decode_sweep(dir_scramblers,dir_WAs, differentiate:int,
             max_differentiate=-1,
             start=50, stop=150, step=10,
-            sweep=False, **kwargs) -> list:
+             **kwargs) -> list:
     N=start
     while N<stop:
         Npath=os.path.join(dir_WAs,'N_'+str(N))

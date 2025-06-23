@@ -110,14 +110,9 @@ def decode_sweep(dir_scramblers, dir_WAs, differentiate:int,
                         method=re.sub('^WA_', '', fname)
                         method=re.sub('_.*$', '', method)
                         dict_decode=decode_precomp(well_assigner=WA, differentiate=diff, 
-<<<<<<< Updated upstream
                         scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
                         decpath=os.path.join(dpath,'decoders')
                         decname=os.path.join(decpath, 'decoder_'+method+'.json')
-=======
-                        scrambler=scrambler, readout=np.nan, sweep=True, **kwargs)
-                        decname=os.path.join(dpath, 'decoder_'+method+'.json')
->>>>>>> Stashed changes
                         print(dict_decode)
                         json.dump( dict_decode, open(decname, 'w' ) )
 
@@ -134,14 +129,11 @@ def decode_sweep(dir_scramblers, dir_WAs, differentiate:int,
                         method=re.sub('^WA_', '', fname)
                         method=re.sub('_.*$', '', method)
                         dict_decode=decode_precomp(well_assigner=WA, differentiate=diff, 
-<<<<<<< Updated upstream
+
                         scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
                         decpath=os.path.join(dpath,'decoders')
                         decname=os.path.join(decpath, 'decoder_'+method+'.json')
-=======
-                        scrambler=scrambler, readout=np.nan, sweep=True, **kwargs)
-                        decname=os.path.join(dpath, 'decoder_'+method+'.json')
->>>>>>> Stashed changes
+
                         json.dump( dict_decode, open(decname, 'w' ) )
                 diff+=1
 

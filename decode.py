@@ -31,7 +31,7 @@ def decode_precomp(well_assigner:np.array, differentiate:int,
                 #print(well_assigner)
                 #print(diff)
                 full_well_assigner=np.concatenate((full_well_assigner,np.any(well_assigner[this_sc], axis=1)))
-                sc_list.extend(this_sc.tolist)
+                sc_list.extend(this_sc.tolist())
         #outcomes,_=np.unique(full_well_assigner, axis=0, return_counts=True)
         
         if sweep:
@@ -49,7 +49,7 @@ def decode_precomp(well_assigner:np.array, differentiate:int,
     else:
         full_od={}
         N=well_assigner.shape[0]
-        sc_list=[np.arange(N)]
+        sc_list=np.arange(N).tolist()
         for differentiate in range(max_differentiate):
 
             diff=differentiate+1
@@ -61,7 +61,7 @@ def decode_precomp(well_assigner:np.array, differentiate:int,
                 #print(well_assigner)
                 #print(diff)
                 full_well_assigner=np.concatenate((full_well_assigner,np.any(well_assigner[this_sc], axis=1)))
-                sc_list.extend(this_sc.tolist)
+                sc_list.extend(this_sc.tolist())
         #outcomes,_=np.unique(full_well_assigner, axis=0, return_counts=True)
         
             if sweep:

@@ -169,7 +169,7 @@ def make_all_deterministic_WAs_old(start=50, stop=150, step=10, **kwargs):
             print("segment time: %s seconds" % np.round(time.time() - time0, 1))
 
 
-def full_deterministic_WAS_old(**kwargs):
+def full_deterministic_WAS(**kwargs):
     #methods=['matrix', 'random', 'STD', 'Chinese trick']
     # matrix assignment
     

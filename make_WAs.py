@@ -8,9 +8,78 @@ import pickle
 import time
 import os
 import copy
+import shutil
+
 
 
 from Functions import *
+
+
+
+def get_multidim_methods(n_compounds, max_dims):
+    """Generate multidim method names based on current parameters"""
+    multi = []
+    for i in np.arange(2, int(np.ceil(np.log(n_compounds)/np.log(2))):
+        if i > max_dims:
+            continue
+        multi.append(f'multidim-{i}')
+    return multi
+
+def process_methods_for_kwargs(**kwargs):
+    """
+    Checks which WA files exist, computes missing ones, and copies diff-independent files
+    to new diff folders as needed. Automatically includes multidim methods.
+    """
+    # Extract parameters with defaults
+    n_compounds = kwargs['n_compounds']
+    max_diff = kwargs['max_diff']
+    save_dir = kwargs['save_dir']
+    max_dims = kwargs.get('max_dims', 4)
+    timeit = kwargs.get('timeit', False)
+    
+    # Generate method list dynamically
+    multidim_methods = get_multidim_methods(n_compounds, max_dims)
+    all_methods = multidim_methods + ['Matrix', 'Binary', 'STD', 'Chinese trick']
+    
+    # Categorize methods
+    DIFF_INDEPENDENT = multidim_methods + ['Matrix', 'Binary']
+    DIFF_DEPENDENT = ['STD', 'Chinese trick']
+
+    for diff in range(1, max_diff + 1):
+        diff_dir = os.path.join(save_dir, f'N_{n_compounds}', f'diff_{diff}', 'WAs')
+        os.makedirs(diff_dir, exist_ok=True)  # Handles dir creation in one line
+
+        for method in all_methods:
+            # Construct filename using consistent pattern
+            filename = f'WA_{method}_N_{n_compounds}_diff_{diff}.csv'
+            wa_file = os.path.join(diff_dir, filename)
+            
+            if method in DIFF_INDEPENDENT:
+                # For diff-independent methods
+                if diff == 1:
+                    if not os.path.exists(wa_file):
+                        if timeit:
+                            print(f"Computing {method} for diff=1")
+                        # compute_and_save(method, n_compounds, diff, **kwargs)
+                else:
+                    # Check if diff=1 file exists to copy
+                    diff1_file = os.path.join(
+                        save_dir, 
+                        f'N_{n_compounds}',
+                        'diff_1',
+                        'WAs',
+                        filename.replace(f'_diff_{diff}', '_diff_1')
+                    )
+                    if not os.path.exists(wa_file) and os.path.exists(diff1_file):
+                        shutil.copy(diff1_file, wa_file)
+                        if timeit:
+                            print(f"Copied {method} from diff=1 to diff={diff}")
+            else:  # Diff-dependent methods
+                if not os.path.exists(wa_file):
+                    if timeit:
+                        print(f"Computing {method} for diff={diff}")
+                    # compute_and_save(method, n_compounds, diff, **kwargs)
+
 
 
 

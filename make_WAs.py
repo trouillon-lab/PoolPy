@@ -14,78 +14,148 @@ import shutil
 
 from Functions import *
 
+import numpy as np
+import os
+import shutil
+import copy
+import time
+from Functions import assign_wells_multidim, assign_wells_mat, assign_wells_bin, assign_wells_STD, assign_wells_chinese
 
+def get_wa_filename(save_dir, n_compounds, diff, method):
+    """Generate consistent filename pattern"""
+    return os.path.join(
+        save_dir,
+        f'N_{n_compounds}',
+        f'diff_{diff}',
+        'WAs',
+        f'WA_{method}_N_{n_compounds}_diff_{diff}.csv'
+    )
 
-def get_multidim_methods(n_compounds, max_dims):
-    """Generate multidim method names based on current parameters"""
-    multi = []
-    for i in np.arange(2, int(np.ceil(np.log(n_compounds)/np.log(2)))):
-        if i > max_dims:
-            continue
-        multi.append(f'multidim-{i}')
-    return multi
-
-def process_methods_for_kwargs(**kwargs):
+def process_n_compounds(**kwargs):
     """
-    Checks which WA files exist, computes missing ones, and copies diff-independent files
-    to new diff folders as needed. Automatically includes multidim methods.
+    Processes WA computations for a specific n_compounds value with diff handling
+    and file existence checks
     """
-    # Extract parameters with defaults
     n_compounds = kwargs['n_compounds']
     max_diff = kwargs['max_diff']
     save_dir = kwargs['save_dir']
-    max_dims = kwargs.get('max_dims', 4)
+    max_dims = kwargs['max_dims']
     timeit = kwargs.get('timeit', False)
     
-    # Generate method list dynamically
-    multidim_methods = get_multidim_methods(n_compounds, max_dims)
-    all_methods = multidim_methods + ['Matrix', 'Binary', 'STD', 'Chinese trick']
+    # Generate multidim methods dynamically
+    multidim_methods = []
+    for i in np.arange(2, int(np.ceil(np.log(n_compounds)/np.log(2)))):
+        if i > max_dims:
+            continue
+        multidim_methods.append(f'multidim-{i}')
     
-    # Categorize methods
-    DIFF_INDEPENDENT = multidim_methods + ['Matrix', 'Binary']
-    DIFF_DEPENDENT = ['STD', 'Chinese trick']
-
+    # Compute diff-independent methods only if needed
+    WA_list = []
+    methods = []
+    computed_diff_independent = False
+    
+    # Check if all diff-independent files exist for diff=1
+    all_exist = True
+    for method in multidim_methods + ['Matrix', 'Binary']:
+        if not os.path.exists(get_wa_filename(save_dir, n_compounds, 1, method)):
+            all_exist = False
+            break
+    
+    # Compute diff-independent methods if any are missing
+    if not all_exist:
+        computed_diff_independent = True
+        # 1. Compute multidim methods
+        for method in multidim_methods:
+            dim = int(method.split('-')[1])
+            WA = assign_wells_multidim(n_dims=dim, **kwargs)
+            WA_list.append(WA)
+            methods.append(method)
+        
+        # 2. Compute Matrix and Binary
+        WA_mat = assign_wells_mat(**kwargs)
+        WA_list.append(WA_mat)
+        methods.append('Matrix')
+        
+        WA_bin = assign_wells_bin(**kwargs)
+        WA_list.append(WA_bin)
+        methods.append('Binary')
+    elif timeit:
+        print(f"All diff-independent files exist for n={n_compounds}, skipping computation")
+    
+    # Process each differentiation level
     for diff in range(1, max_diff + 1):
+        current_kwargs = kwargs.copy()
+        current_kwargs['differentiate'] = diff
+        
+        # Create directory structure
         diff_dir = os.path.join(save_dir, f'N_{n_compounds}', f'diff_{diff}', 'WAs')
-        os.makedirs(diff_dir, exist_ok=True)  # Handles dir creation in one line
-
-        for method in all_methods:
-            # Construct filename using consistent pattern
-            filename = f'WA_{method}_N_{n_compounds}_diff_{diff}.csv'
-            wa_file = os.path.join(diff_dir, filename)
+        os.makedirs(diff_dir, exist_ok=True)
+        
+        # Handle diff-independent methods
+        for method in multidim_methods + ['Matrix', 'Binary']:
+            dst_file = get_wa_filename(save_dir, n_compounds, diff, method)
             
-            if method in DIFF_INDEPENDENT:
-                # For diff-independent methods
-                if diff == 1:
-                    if not os.path.exists(wa_file):
-                        if timeit:
-                            print(f"Computing {method} for diff=1")
-                        # compute_and_save(method, n_compounds, diff, **kwargs)
-                else:
-                    # Check if diff=1 file exists to copy
-                    diff1_file = os.path.join(
-                        save_dir, 
-                        f'N_{n_compounds}',
-                        'diff_1',
-                        'WAs',
-                        filename.replace(f'_diff_{diff}', '_diff_1')
-                    )
-                    if not os.path.exists(wa_file) and os.path.exists(diff1_file):
-                        shutil.copy(diff1_file, wa_file)
-                        if timeit:
-                            print(f"Copied {method} from diff=1 to diff={diff}")
-            else:  # Diff-dependent methods
-                if not os.path.exists(wa_file):
+            if not os.path.exists(dst_file):
+                if diff == 1 and computed_diff_independent:
+                    # Find method index and save
+                    idx = methods.index(method)
+                    np.savetxt(dst_file, WA_list[idx].astype(bool), delimiter=",")
                     if timeit:
-                        print(f"Computing {method} for diff={diff}")
-                    # compute_and_save(method, n_compounds, diff, **kwargs)
-
-
-
-
-
+                        print(f"Saved {method} for diff={diff}")
+                else:
+                    # Try to copy from diff=1
+                    src_file = get_wa_filename(save_dir, n_compounds, 1, method)
+                    if os.path.exists(src_file):
+                        shutil.copy(src_file, dst_file)
+                        if timeit:
+                            print(f"Copied {method} to diff={diff}")
+                    elif timeit:
+                        print(f"Warning: Base file missing for {method} at diff={diff}")
+        
+        # Handle diff-dependent methods
+        for method in ['STD', 'Chinese trick']:
+            dst_file = get_wa_filename(save_dir, n_compounds, diff, method)
+            
+            if not os.path.exists(dst_file):
+                # Compute only if file doesn't exist
+                if method == 'STD':
+                    WA = assign_wells_STD(**current_kwargs)
+                else:  # Chinese trick
+                    WA = assign_wells_chinese(**current_kwargs)
+                
+                np.savetxt(dst_file, WA.astype(bool), delimiter=",")
+                if timeit:
+                    print(f"Computed {method} for diff={diff}")
+            elif timeit:
+                print(f"Skipping {method} for diff={diff} (already exists)")
 
 def make_all_deterministic_WAs(start=50, stop=150, step=10, **kwargs):
+    """
+    Main loop to process all n_compounds values
+    """
+    current = start
+    while current < stop:
+        if kwargs.get('timeit'):
+            print(f"Processing n_compounds={current}")
+            time0 = time.time()
+        
+        # Process this n_compounds value
+        kwargs['n_compounds'] = current
+        process_n_compounds(**kwargs)
+        
+        if kwargs.get('timeit'):
+            elapsed = np.round(time.time() - time0, 1)
+            print(f"Completed n_compounds={current} in {elapsed} seconds")
+        
+        current += step
+
+# Argument parsing and main execution remains the same as in your original code
+# ... [rest of your argument parsing and main call] ...
+
+
+
+
+def make_all_deterministic_WAs_old(start=50, stop=150, step=10, **kwargs):
     
     current=start
 
@@ -99,7 +169,7 @@ def make_all_deterministic_WAs(start=50, stop=150, step=10, **kwargs):
             print("segment time: %s seconds" % np.round(time.time() - time0, 1))
 
 
-def full_deterministic_WAS(**kwargs):
+def full_deterministic_WAS_old(**kwargs):
     #methods=['matrix', 'random', 'STD', 'Chinese trick']
     # matrix assignment
     

@@ -39,3 +39,20 @@ if __name__ == "__main__":
         safe = safe_input if safe_input else None
 
     delete_files_by_regex(root, regex, safe)
+
+
+'''
+# Delete all 'tmp_' files excluding 'backups' folders
+python script.py /projects "^tmp_" backups
+
+# Delete 'test_' files using default 'decoders' exclusion
+python script.py /data "^test_.*"
+
+# Interactive mode with custom safe folder
+python script.py
+> Enter path: /user/docs
+> Enter regex: "^draft_"
+> Enter safe folder: versions
+
+
+'''

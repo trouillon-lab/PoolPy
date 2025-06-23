@@ -105,6 +105,8 @@ def decode_sweep(dir_scramblers, dir_WAs, differentiate:int,
                         dict_decode=decode_precomp(well_assigner=WA, differentiate=diff, 
                         scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
                         decpath=os.path.join(dpath,'decoders')
+                        if not os.path.exists(decpath):
+                            os.makedirs(decpath)
                         decname=os.path.join(decpath, 'decoder_'+method+'.json')
                         print(dict_decode)
                         json.dump( dict_decode, open(decname, 'w' ) )
@@ -125,6 +127,8 @@ def decode_sweep(dir_scramblers, dir_WAs, differentiate:int,
 
                         scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
                         decpath=os.path.join(dpath,'decoders')
+                        if not os.path.exists(decpath):
+                            os.makedirs(decpath)
                         decname=os.path.join(decpath, 'decoder_'+method+'.json')
 
                         json.dump( dict_decode, open(decname, 'w' ) )

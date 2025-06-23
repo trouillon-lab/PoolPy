@@ -19,7 +19,7 @@ from Functions import *
 def get_multidim_methods(n_compounds, max_dims):
     """Generate multidim method names based on current parameters"""
     multi = []
-    for i in np.arange(2, int(np.ceil(np.log(n_compounds)/np.log(2))):
+    for i in np.arange(2, int(np.ceil(np.log(n_compounds)/np.log(2)))):
         if i > max_dims:
             continue
         multi.append(f'multidim-{i}')

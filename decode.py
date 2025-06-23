@@ -108,7 +108,7 @@ def decode_sweep(dir_scramblers, dir_WAs, differentiate:int,
                         if not os.path.exists(decpath):
                             os.makedirs(decpath)
                         decname=os.path.join(decpath, 'decoder_'+method+'.json')
-                        print(dict_decode)
+                        #print(dict_decode)
                         json.dump( dict_decode, open(decname, 'w' ) )
 
                 else:

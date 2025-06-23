@@ -36,7 +36,7 @@ def decode_precomp(well_assigner:np.array, differentiate:int,
         
         if sweep:
             outcome_dict={}
-            outcomes=np.unique(full_well_assigner, axis=0, return_counts=False).astype(bool)
+            outcomes=np.unique(full_well_assigner, axis=0, return_counts=False).astype(int)
             for outcome in outcomes:
                 idxs = np.all(outcome == full_well_assigner, axis=1)
                 outcome_dict.update({tuple_to_str(tuple(outcome)):list(itertools.compress(sc_list,idxs))})
@@ -66,7 +66,7 @@ def decode_precomp(well_assigner:np.array, differentiate:int,
         
             if sweep:
                 outcome_dict={}
-                outcomes=np.unique(full_well_assigner, axis=0, return_counts=False).astype(bool)
+                outcomes=np.unique(full_well_assigner, axis=0, return_counts=False).astype(int)
                 for outcome in outcomes:
                     idxs=np.prod(outcome==full_well_assigner, axis=1)
                     outcome_dict.update({tuple_to_str(tuple(outcome)):list(itertools.compress(sc_list,idxs))})

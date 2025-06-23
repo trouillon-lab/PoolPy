@@ -64,8 +64,13 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                 del kwargs['differentiate']
             
             while diff<=max_diff:
+
                 start_time = time.time()
                 dpath=os.path.join(Npath,'diff_'+str(diff))
+                metname=os.path.join(dpath, 'Metrics_N_'+str(N)+'_diff_'+str(diff)+'.csv')
+                if os.path.isfile(metname) and not:
+                    diff+=1
+                    continue
                 ls_met=[]
                 full_methods=[]
                 if diff==1:
@@ -193,6 +198,8 @@ parser.add_argument('--max_diff')
 parser.add_argument('--max_dims')
 parser.add_argument('--timeit')
 parser.add_argument('--keep_ratios_constant')
+parser.add_argument('--redo')
+
 
 
 
@@ -211,6 +218,8 @@ keep_ratios_constant= False if type(args.keep_ratios_constant)==type(None) else 
 timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
 max_diff= 4 if type(args.max_diff)==type(None) else int(args.max_diff)
 max_dims= np.inf if type(args.max_dims)==type(None) else int(args.max_dims)
+redo= False if type(args.redo)==type(None) else args.redo=='True'
+
 
 
 

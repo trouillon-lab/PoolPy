@@ -5,15 +5,11 @@ import sys
 def delete_files_by_regex(root_folder, regex_pattern, safe_folder=None):
     pattern = re.compile(regex_pattern)
     for dirpath, dirnames, filenames in os.walk(root_folder):
-        # Handle safe folder exclusion
+        # Exclude the safe folder if specified
         if safe_folder:
             dirnames[:] = [d for d in dirnames if d != safe_folder]
+            # Skip current dir if it's the safe folder
             if safe_folder in os.path.normpath(dirpath).split(os.sep):
-                continue
-        else:
-            # Default: skip 'decoders' folders
-            dirnames[:] = [d for d in dirnames if d != 'decoders']
-            if 'decoders' in os.path.normpath(dirpath).split(os.sep):
                 continue
 
         for filename in filenames:
@@ -35,24 +31,22 @@ if __name__ == "__main__":
         # Interactive mode
         root = input("Enter the path to the root folder: ").strip()
         regex = input("Enter the regex pattern for filenames to delete: ").strip()
-        safe_input = input("Enter safe folder name (optional, default='decoders'): ").strip()
+        safe_input = input("Enter safe folder name (optional): ").strip()
         safe = safe_input if safe_input else None
 
     delete_files_by_regex(root, regex, safe)
 
 
+
 '''
-# Delete all 'tmp_' files excluding 'backups' folders
-python script.py /projects "^tmp_" backups
+# Delete files starting with 'decode_' everywhere
+python script.py /path/to/root "^decode_.*"
 
-# Delete 'test_' files using default 'decoders' exclusion
-python script.py /data "^test_.*"
+# Delete files ending with '.tmp', but skip 'backups' folders
+python script.py /path/to/root ".*\.tmp$" backups
 
-# Interactive mode with custom safe folder
+# Interactive mode
 python script.py
-> Enter path: /user/docs
-> Enter regex: "^draft_"
-> Enter safe folder: versions
-
+# (Follow prompts, leave 'safe folder' blank if you want no exclusions)
 
 '''

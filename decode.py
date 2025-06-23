@@ -128,6 +128,23 @@ def decode_sweep(dir_scramblers, dir_WAs, differentiate:int,
                         decname=os.path.join(decpath, 'decoder_'+method+'.json')
 
                         json.dump( dict_decode, open(decname, 'w' ) )
+
+
+                DTS=np.round((time.time() - start_time),2)
+                DTD=DTS//86400
+                DTH=DTS//3600-DTD*24
+                DTM=DTS//60-DTH*60-DTD*24*60
+                DTS=np.round(DTS-(DTM+DTH*60+DTD*24*60)*60,2)
+                
+                
+                print('\n')
+                print('----------------------------------------------------------------------------------------------------------') 
+                print("%s days %s hours %s minutes and %s seconds required for N= %s and differentiate %s" % 
+                        (DTD, DTH, DTM, DTS, N, diff))
+                print('----------------------------------------------------------------------------------------------------------') 
+
+
+
                 diff+=1
 
         else:

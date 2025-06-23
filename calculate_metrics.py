@@ -224,7 +224,8 @@ redo= False if type(args.redo)==type(None) else args.redo=='True'
 
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,'keep_ratios_constant': keep_ratios_constant,
-             'start':start, 'stop':stop,  'step':step, 'dir_WAs':args.dir_WAs, 'dir_scramblers':args.dir_scramblers, 'max_diff': max_diff, 'max_dims':max_dims}
+             'start':start, 'stop':stop,  'step':step, 'dir_WAs':args.dir_WAs, 'dir_scramblers':args.dir_scramblers, 'max_diff': max_diff, 'max_dims':max_dims,
+             'redo':redo}
 
 
 sweep_metrics_precomp(**dict_kwargs)

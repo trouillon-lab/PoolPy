@@ -93,8 +93,6 @@ def decode_sweep(dir_scramblers,dir_WAs, differentiate:int,
             while diff<=max_differentiate:
                 start_time = time.time()
                 dpath=os.path.join(Npath,'diff_'+str(diff))
-                ls_met=[]
-                full_methods=[]
                 if diff==1:
                     scrambler={1:np.arange(N)}
                     WApath=os.path.join(dpath,'WAs')

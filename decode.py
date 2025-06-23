@@ -40,13 +40,6 @@ def decode_precomp(well_assigner:np.array, differentiate:int,
             for outcome in outcomes:
                 idxs = np.all(outcome == full_well_assigner, axis=1)
                 outcome_dict.update({tuple_to_str(tuple(outcome)):list(itertools.compress(sc_list,idxs))})
-                print(sc_list)
-                print(idxs)
-                print(outcome)
-                print(outcome_dict)
-                
-            exit()
-                
             return outcome_dict
 
         else:

@@ -106,7 +106,8 @@ def decode_sweep(dir_scramblers,dir_WAs, differentiate:int,
                         method=re.sub('_.*$', '', method)
                         dict_decode=decode_precomp(well_assigner=WA, differentiate=diff, 
                         scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
-                        decname=os.path.join(dpath, 'decoder_'+method+'.json')
+                        decpath=os.path.join(dpath,'decoders')
+                        decname=os.path.join(decpath, 'decoder_'+method+'.json')
                         print(dict_decode)
                         json.dump( dict_decode, open(decname, 'w' ) )
 
@@ -124,7 +125,8 @@ def decode_sweep(dir_scramblers,dir_WAs, differentiate:int,
                         method=re.sub('_.*$', '', method)
                         dict_decode=decode_precomp(well_assigner=WA, differentiate=diff, 
                         scrambler=scrambler, readout=np.nan, max_differentiate=-1, sweep=True, **kwargs)
-                        decname=os.path.join(dpath, 'decoder_'+method+'.json')
+                        decpath=os.path.join(dpath,'decoders')
+                        decname=os.path.join(decpath, 'decoder_'+method+'.json')
                         json.dump( dict_decode, open(decname, 'w' ) )
                 diff+=1
 

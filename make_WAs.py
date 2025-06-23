@@ -136,7 +136,7 @@ def make_all_deterministic_WAs(start=50, stop=150, step=10, **kwargs):
     current = start
     while current < stop:
         if kwargs.get('timeit'):
-            print(f"Processing n_compounds={current}")
+            print(f"Processing {current} compounds")
             time0 = time.time()
         
         # Process this n_compounds value
@@ -144,8 +144,16 @@ def make_all_deterministic_WAs(start=50, stop=150, step=10, **kwargs):
         process_n_compounds(**kwargs)
         
         if kwargs.get('timeit'):
-            elapsed = np.round(time.time() - time0, 1)
-            print(f"Completed n_compounds={current} in {elapsed} seconds")
+            DTS=np.round((time.time() - time0),2)
+            DTD=DTS//86400
+            DTH=DTS//3600-DTD*24
+            DTM=DTS//60-DTH*60-DTD*24*60
+            DTS=np.round(DTS-(DTM+DTH*60+DTD*24*60)*60,2)
+            print('\n')
+            print("%s days %s hours %s minutes and %s seconds required for N= %s compounds" % 
+                  (DTD, DTH, DTM, DTS, current))
+            print('\n')
+
         
         current += step
 

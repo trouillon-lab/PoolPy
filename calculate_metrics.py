@@ -68,8 +68,9 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                 start_time = time.time()
                 dpath=os.path.join(Npath,'diff_'+str(diff))
                 metname=os.path.join(dpath, 'Metrics_N_'+str(N)+'_diff_'+str(diff)+'.csv')
-                if os.path.isfile(metname) and not:
+                if os.path.isfile(metname) and not kwargs['redo']:
                     diff+=1
+                    print(f'Differentiate {diff} for N={N} skipped as already present')
                     continue
                 ls_met=[]
                 full_methods=[]

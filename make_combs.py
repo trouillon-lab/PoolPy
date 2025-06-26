@@ -38,7 +38,14 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
         if not os.path.exists(diri):
             os.makedirs(diri)
         if kwargs['use_saved']:
-            pass
+            for diff in np.arange(2,differentiate):
+                this_sc_file=os.path.join(save_dir, 'N_'+str(start),  'N_'+str(start)+'_diff_'+str(diff)+'.npz')
+                if os.path.isfile(this_sc_file) and use_saved:
+                    this_scrambler=np.load(this_sc_file)['sc']
+                    scrambler.update({diff:this_scrambler})
+                else:
+                    scrambler.update({diff:np.array(list(itertools.combinations(np.arange(N),diff)))})
+
         else:
             print(N_start+i+2)
             tmp_d=add_1(tmp_d, ND=differentiate)

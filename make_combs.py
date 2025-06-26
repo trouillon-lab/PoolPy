@@ -49,6 +49,8 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
         i+=1
     if return_last:
         return(tmp_d)
+    
+
 
 
 parser = argparse.ArgumentParser()
@@ -57,6 +59,8 @@ parser.add_argument('--start')
 parser.add_argument('--stop')
 parser.add_argument('--save_dir')
 parser.add_argument('--timeit')
+parser.add_argument('--use_saved')
+
 
 
 args = parser.parse_args()
@@ -67,19 +71,26 @@ start= 50 if type(args.start)==type(None) else int(args.start)
 stop= 110 if type(args.stop)==type(None) else int(args.stop)
 save_dir= os.path.join(os.getcwd(),'outs') if type(args.save_dir)==type(None) else str(args.save_dir)
 timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
-
+use_saved= True if type(args.use_saved)==type(None) else args.use_saved=='True'
 
 dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,
-             'start':start, 'stop':stop, 'save_dir':save_dir,'N_add':stop-start}
+             'start':start, 'stop':stop, 'save_dir':save_dir,'N_add':stop-start,
+             'use_saved':use_saved}
 
 
-f1n=os.path.join(args.save_dir,'N_'+str(args.start)+'.pk')
+scrambler={1:np.arange(N)}
 
-if os.path.isfile(f1n) and False:
+for diff in np.arange(2,differentiate):
+    this_sc_file=os.path.join(save_dir, 'N_'+str(start),  'N_'+str(start)+'_diff_'+str(diff)+'.npz')
+    if os.path.isfile(this_sc_file) and use_saved:
+        this_scrambler=np.load(this_sc_file)['sc']
+        scrambler.update({diff:this_scrambler})
+
+
     with open(f1n, "rb") as input_file:
         dct_cmbn = pickle.load(input_file)
 
-else:
+if not use_saved:
     N=dict_kwargs['start']-1
     diff=dict_kwargs['differentiate']
     dct_cmbn={}

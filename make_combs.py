@@ -86,7 +86,7 @@ for diff in np.arange(2,differentiate):
         this_scrambler=np.load(this_sc_file)['sc']
         scrambler.update({diff:this_scrambler})
     else:
-        scrambler.update({j:np.array(list(itertools.combinations(np.arange(N),diff)))})
+        scrambler.update({diff:np.array(list(itertools.combinations(np.arange(N),diff)))})
 
 
 

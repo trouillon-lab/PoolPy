@@ -40,31 +40,36 @@ def add_1(combinantions_dictionary, diff, ND, N):
 
 def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
                      return_last=True, differentiate=3, **kwargs):
+    tmp_d={}
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     tmp_d=copy.deepcopy(dict_start)
     N_start=dict_start[1][-1]
     i=0
     while i<N_add:
+        print(N_start+i+2)
         diri=os.path.join(save_dir,'N_'+str(N_start+i+2))
         if not os.path.exists(diri):
             os.makedirs(diri)
         if kwargs['use_saved']:
-            diff=2
+            diff=1
             while diff<differentiate:
                 this_sc_file=os.path.join(save_dir, 'N_'+str(start),  'N_'+str(start)+'_diff_'+str(diff)+'.npz')
                 if os.path.isfile(this_sc_file) and use_saved:
                     diff+=1
                     continue
                 elif  not os.path.isfile(this_sc_file) and use_saved:
-                    diff -=1
-                    new_scrambler=np.load(this_sc_file)['sc']
-                    tmp.update({diff:new_scrambler})
+                    if diff==1:
+                        tmp_d.update({diff:np.arange(i)})
+                    else: 
+                        diff -=1
+                        new_scrambler=np.load(this_sc_file)['sc']
+                        tmp_d.update({diff:new_scrambler})
                     break
-            tmp=add_1(tmp,diff,ND=differentiate)
+            tmp_d=add_1(tmp_d,diff,ND=differentiate)
 
         else:
-            print(N_start+i+2)
+            
             tmp_d=add_N(tmp_d, ND=differentiate)
         if save:
             for ii in range(2,differentiate+1):

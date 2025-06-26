@@ -11,7 +11,7 @@ from Functions import *
 
 
 
-def add_1(combinantions_dictionary, ND=5):
+def add_1_N(combinantions_dictionary, ND=5):
     N=combinantions_dictionary[1][-1]+1
     new_cd={1:np.append(combinantions_dictionary[1],N)}
     diff=1
@@ -25,6 +25,13 @@ def add_1(combinantions_dictionary, ND=5):
 
     return(new_cd)
 
+def add_1(N_scrambler, combinantions_dictionary, diff):
+    N=combinantions_dictionary[1][-1]+1
+    new_part=np.vstack([combinantions_dictionary[diff].T,np.array([N]*len(combinantions_dictionary[diff]))])
+    new_in=np.hstack([combinantions_dictionary[diff+1].T,new_part]).T
+
+    return(new_in)
+
 
 def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
                      return_last=True, differentiate=3, **kwargs):
@@ -35,9 +42,11 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
     i=0
     while i<N_add:
         diri=os.path.join(save_dir,'N_'+str(N_start+i+2))
+
         if not os.path.exists(diri):
             os.makedirs(diri)
         if kwargs['use_saved']:
+            scrambler={1:np.arange(N)}
             for diff in np.arange(2,differentiate):
                 this_sc_file=os.path.join(save_dir, 'N_'+str(start),  'N_'+str(start)+'_diff_'+str(diff)+'.npz')
                 if os.path.isfile(this_sc_file) and use_saved:
@@ -48,7 +57,7 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
 
         else:
             print(N_start+i+2)
-            tmp_d=add_1(tmp_d, ND=differentiate)
+            tmp_d=add_1_N(tmp_d, ND=differentiate)
             if save:
                 for ii in range(2,differentiate+1):
                     this_diri=os.path.join(diri,'N_'+str(N_start+i+2)+'_diff_'+str(ii)+'.npz')

@@ -25,12 +25,17 @@ def add_1_N(combinantions_dictionary, ND=5):
 
     return(new_cd)
 
-def add_1(N_scrambler, combinantions_dictionary, diff):
-    N=combinantions_dictionary[1][-1]+1
-    new_part=np.vstack([combinantions_dictionary[diff].T,np.array([N]*len(combinantions_dictionary[diff]))])
-    new_in=np.hstack([combinantions_dictionary[diff+1].T,new_part]).T
+def add_1(combinantions_dictionary, diff, ND, N):
 
-    return(new_in)
+    new_cd={}
+
+    while diff<(ND):
+
+        new_part=np.vstack([combinantions_dictionary[diff].T,np.array([N]*len(combinantions_dictionary[diff]))])
+        new_in=np.hstack([combinantions_dictionary[diff+1].T,new_part]).T
+        new_cd.update({(diff+1):new_in})
+
+    return(new_part)
 
 
 def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
@@ -42,16 +47,25 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
     i=0
     while i<N_add:
         diri=os.path.join(save_dir,'N_'+str(N_start+i+2))
-
+        maxx=0
         if not os.path.exists(diri):
             os.makedirs(diri)
         if kwargs['use_saved']:
             scrambler={1:np.arange(N)}
-            for diff in np.arange(2,differentiate):
+            diff=2
+            while diff<differentiate:
                 this_sc_file=os.path.join(save_dir, 'N_'+str(start),  'N_'+str(start)+'_diff_'+str(diff)+'.npz')
-                if os.path.isfile(this_sc_file) and use_saved:
+                if os.path.isfile(this_sc_file) and use_saved and maxx==0:
+                    diff+=1
+                    continue
+                elif  not os.path.isfile(this_sc_file) and use_saved and maxx==0:
+                    maxx=diff-1
+                    diff -=1
+                    continue
+                elif use_saved and maxx==diff:
                     this_scrambler=np.load(this_sc_file)['sc']
                     scrambler.update({diff:this_scrambler})
+
                 else:
                     scrambler.update({diff:np.array(list(itertools.combinations(np.arange(N),diff)))})
 

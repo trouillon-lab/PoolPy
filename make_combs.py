@@ -61,23 +61,20 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
                 elif  not os.path.isfile(this_sc_file) and use_saved and maxx==0:
                     maxx=diff-1
                     diff -=1
-                    continue
-                elif use_saved and maxx==diff:
-                    this_scrambler=np.load(this_sc_file)['sc']
-                    scrambler.update({diff:this_scrambler})
-
-                else:
-                    scrambler.update({diff:np.array(list(itertools.combinations(np.arange(N),diff)))})
+                    new_scrambler=np.load(this_sc_file)['sc']
+                    tmp.update({diff:new_scrambler})
+                    break
+            tmp=add_1(tmp,)
 
         else:
             print(N_start+i+2)
             tmp_d=add_1_N(tmp_d, ND=differentiate)
-            if save:
-                for ii in range(2,differentiate+1):
-                    this_diri=os.path.join(diri,'N_'+str(N_start+i+2)+'_diff_'+str(ii)+'.npz')
-                    this_diff=tmp_d[ii]
-                    #print(diri)
-                    np.savez_compressed(file=this_diri,sc=this_diff, allow_pickle=False)
+        if save:
+            for ii in range(2,differentiate+1):
+                this_diri=os.path.join(diri,'N_'+str(N_start+i+2)+'_diff_'+str(ii)+'.npz')
+                this_diff=tmp_d[ii]
+                #print(diri)
+                np.savez_compressed(file=this_diri,sc=this_diff, allow_pickle=False)
         i+=1
     if return_last:
         return(tmp_d)

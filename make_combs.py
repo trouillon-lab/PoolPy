@@ -87,8 +87,6 @@ for diff in np.arange(2,differentiate):
         scrambler.update({diff:this_scrambler})
 
 
-    with open(f1n, "rb") as input_file:
-        dct_cmbn = pickle.load(input_file)
 
 if not use_saved:
     N=dict_kwargs['start']-1

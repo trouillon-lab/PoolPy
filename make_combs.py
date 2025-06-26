@@ -77,7 +77,7 @@ dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,
              'start':start, 'stop':stop, 'save_dir':save_dir,'N_add':stop-start,
              'use_saved':use_saved}
 
-
+N=dict_kwargs['start']-1
 scrambler={1:np.arange(N)}
 
 for diff in np.arange(2,differentiate):
@@ -88,15 +88,12 @@ for diff in np.arange(2,differentiate):
 
 
 
-if not use_saved:
-    N=dict_kwargs['start']-1
-    diff=dict_kwargs['differentiate']
-    dct_cmbn={}
-    dct_cmbn.update({1:np.arange(N)})
-    for j in range(2,diff+1):
-        dct_cmbn.update({j:np.array(list(itertools.combinations(np.arange(N),j)))})
 
-iterative_add_N(dict_start=dct_cmbn, return_last=False, **dict_kwargs)
+if not use_saved:
+    for j in range(2,diff+1):
+        scrambler.update({j:np.array(list(itertools.combinations(np.arange(N),j)))})
+
+iterative_add_N(dict_start=scrambler, return_last=False, **dict_kwargs)
 
 
 

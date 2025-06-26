@@ -11,7 +11,7 @@ from Functions import *
 
 
 
-def add_1_N(combinantions_dictionary, ND=5):
+def add_N(combinantions_dictionary, ND=5):
     N=combinantions_dictionary[1][-1]+1
     new_cd={1:np.append(combinantions_dictionary[1],N)}
     diff=1
@@ -61,11 +61,11 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
                     new_scrambler=np.load(this_sc_file)['sc']
                     tmp.update({diff:new_scrambler})
                     break
-            tmp=add_1(tmp,)
+            tmp=add_1(tmp,diff,ND=differentiate)
 
         else:
             print(N_start+i+2)
-            tmp_d=add_1_N(tmp_d, ND=differentiate)
+            tmp_d=add_N(tmp_d, ND=differentiate)
         if save:
             for ii in range(2,differentiate+1):
                 this_diri=os.path.join(diri,'N_'+str(N_start+i+2)+'_diff_'+str(ii)+'.npz')

@@ -85,6 +85,8 @@ for diff in np.arange(2,differentiate):
     if os.path.isfile(this_sc_file) and use_saved:
         this_scrambler=np.load(this_sc_file)['sc']
         scrambler.update({diff:this_scrambler})
+    else:
+        scrambler.update({j:np.array(list(itertools.combinations(np.arange(N),diff)))})
 
 
 

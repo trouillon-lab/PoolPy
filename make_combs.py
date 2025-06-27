@@ -55,10 +55,10 @@ def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
             diff=1
             while diff<differentiate:
                 this_sc_file=os.path.join(save_dir, 'N_'+str(start),  'N_'+str(start)+'_diff_'+str(diff)+'.npz')
-                if os.path.isfile(this_sc_file) and use_saved:
+                if os.path.isfile(this_sc_file):
                     diff+=1
                     continue
-                elif  not os.path.isfile(this_sc_file) and use_saved:
+                elif  not os.path.isfile(this_sc_file):
                     if diff==1:
                         tmp_d.update({diff:np.arange(i)})
                     else: 

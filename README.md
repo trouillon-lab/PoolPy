@@ -119,4 +119,4 @@ uv export > requirements.txt
 
 ## 📚 References
 
-- **uv documentation:** [https://docs.astral.sh/uv/](https://docs.astral.sh/uv/)[^1]
+- **uv documentation:** [https://docs.astral.sh/uv/](https://docs.astral.sh/uv/)

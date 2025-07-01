@@ -24,7 +24,7 @@ Choose one of the following installation methods:
 ### 2. **Clone the Repository**
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/trouillon-lab/pooling
 cd pooling
 ```
 
@@ -120,40 +120,3 @@ uv export > requirements.txt
 ## 📚 References
 
 - **uv documentation:** [https://docs.astral.sh/uv/](https://docs.astral.sh/uv/)[^1]
-
-**Replace `<your-repo-url>` with your actual repository URL.**
-
-<div style="text-align: center">⁂</div>
-
-[^1]: https://pypi.org/project/uv/0.1.32/
-
-[^2]: https://docs.astral.sh/uv/pip/environments/
-
-[^3]: https://astral.sh/blog/uv
-
-[^4]: https://pypi.org/project/uv/
-
-[^5]: https://github.com/justrach/uv-starter
-
-[^6]: https://mac.install.guide/python/install-uv
-
-[^7]: https://docs.astral.sh/uv/guides/install-python/
-
-[^8]: https://pydevtools.com/handbook/how-to/how-to-use-pip-in-a-uv-virtual-environment/
-
-[^9]: https://docs.s3it.uzh.ch/general/uv/
-
-[^10]: https://github.com/robert-mcdermott/uve
-
-[^11]: https://docs.astral.sh/uv/
-
-[^12]: https://www.datacamp.com/tutorial/python-uv
-
-[^13]: https://realpython.com/python-uv/
-
-[^14]: https://flocode.substack.com/p/044-python-environments-again-uv
-
-[^15]: https://github.com/astral-sh/uv/issues/8931
-
-[^16]: https://www.digitalocean.com/community/conceptual-articles/uv-python-package-manager
-

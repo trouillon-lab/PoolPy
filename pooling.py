@@ -138,6 +138,28 @@ WA_DIRECTORY='D:\precomputed'
 SCRAMBLER_DIRECTORY='D:\output'
 MAX_DIFFERENTIATE=4
 
+def find_n_folder(n_samp, wa_directory):
+    folders = [f for f in os.listdir(wa_directory) if os.path.isdir(os.path.join(wa_directory, f)) and f.startswith('N_')]
+    x_values = [int(f.split('_')[1]) for f in folders]
+    if n_samp in x_values:
+        return f'N_{n_samp}'
+    greater_x = [x for x in x_values if x > n_samp]
+    if greater_x:
+        smallest_x = min(greater_x)
+        return f'N_{smallest_x}'
+    return None
+
+def find_closest_diff_folder(n_folder_path, differentiate):
+    folders = [f for f in os.listdir(n_folder_path) if os.path.isdir(os.path.join(n_folder_path, f)) and f.startswith('diff_')]
+    y_values = [int(f.split('_')[1]) for f in folders]
+    if differentiate in y_values:
+        return f'diff_{differentiate}'
+    if y_values:
+        closest_y = min(y_values, key=lambda y: abs(y - differentiate))
+        return f'diff_{closest_y}'
+    return None
+
+
 
 # Define the server logic
 def server(input, output, session):

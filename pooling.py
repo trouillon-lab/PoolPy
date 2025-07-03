@@ -206,11 +206,11 @@ def server(input, output, session):
                 diff_folder = find_closest_diff_folder(n_folder_path, differentiate)
                 if diff_folder:
                     diff_folder_path = os.path.join(n_folder_path, diff_folder)
-                    metrics_filename = f'Metrics_{n_folder}_diff_{diff_folder.split("_")[1]}'
-                    metrics_path = os.path.join(diff_folder_path, metrics_filename)
-                    if os.path.isfile(metrics_path):
-                        with open(metrics_path, 'rb') as f:
-                            metrics_data = pickle.load(f)
+                    excel_filename = f'Metrics_{n_folder}_diff_{diff_folder.split("_")[1]}.xlsx'
+                    excel_path = os.path.join(diff_folder_path, excel_filename)
+                    if os.path.isfile(excel_path):
+                        metrics_data = pd.read_excel(excel_path)
+
                         # Use metrics_data as needed
                     else:
                         # Handle missing metrics file
@@ -246,18 +246,18 @@ def server(input, output, session):
                 output.database_reply.set(output_text)
                 output.extra_computation.set(0)
 
-            '''
+            
             
             CR=f2[md]
             output.full_pickle.set(CR)
+            '''
 
+            #DFT=CR[0]
+            #DFT.insert(loc=0, column='Pooling strategy', value=DFT.index)
+            output.summary_table.set(metrics_data)
 
-            DFT=CR[0]
-            DFT.insert(loc=0, column='Pooling strategy', value=DFT.index)
-            output.summary_table.set(DFT)
-
-            TBLS=CR[1]
-            DFFS={}
+            #TBLS=CR[1]
+            #DFFS={}
             for idx in TBLS.keys():
                 b1=TBLS[idx]
                 tmp1=pd.DataFrame(b1, columns=['Pool '+ str(i) for i in range(b1.shape[1])], index=['Sample '+ str(i) for i in range(b1.shape[0])])

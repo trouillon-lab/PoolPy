@@ -200,6 +200,29 @@ def server(input, output, session):
             output.extra_computation.set(1)
 
         else:
+            n_folder = find_n_folder(n_samp, WA_DIRECTORY)
+            if n_folder:
+                n_folder_path = os.path.join(WA_DIRECTORY, n_folder)
+                diff_folder = find_closest_diff_folder(n_folder_path, differentiate)
+                if diff_folder:
+                    diff_folder_path = os.path.join(n_folder_path, diff_folder)
+                    metrics_filename = f'Metrics_{n_folder}_diff_{diff_folder.split("_")[1]}'
+                    metrics_path = os.path.join(diff_folder_path, metrics_filename)
+                    if os.path.isfile(metrics_path):
+                        with open(metrics_path, 'rb') as f:
+                            metrics_data = pickle.load(f)
+                        # Use metrics_data as needed
+                    else:
+                        # Handle missing metrics file
+                        pass
+                else:
+                    # Handle missing diff_y folders
+                    pass
+            else:
+                # Handle missing N_x folders
+                pass
+
+            '''
             full_dir='Final_precomputed_file.pk'
             with open(full_dir, 'rb') as handle:
                 f1=pickle.load(handle)
@@ -223,7 +246,7 @@ def server(input, output, session):
                 output.database_reply.set(output_text)
                 output.extra_computation.set(0)
 
-            
+            '''
             
             CR=f2[md]
             output.full_pickle.set(CR)

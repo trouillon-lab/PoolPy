@@ -159,6 +159,37 @@ def find_closest_diff_folder(n_folder_path, differentiate):
         return f'diff_{closest_y}'
     return None
 
+import os
+import pandas as pd
+
+def load_wa_matrices(folder_path):
+    DFFS = {}
+    # List all files in the folder
+    files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
+    
+    for file in files:
+        # Check if file matches the WA_Method_N_x_diff_y pattern
+        if file.startswith('WA_') and file.endswith('.xlsx'):
+            # Example filename: WA_Method_N_10_diff_2.xlsx
+            parts = file.split('_')
+            # Extract method name (between WA_ and N_x)
+            try:
+                n_index = next(i for i, part in enumerate(parts) if part.startswith('N'))
+                method_name = '_'.join(parts[1:n_index])
+                # Load the Excel file as a DataFrame
+                file_path = os.path.join(folder_path, file)
+                matrix_df = pd.read_excel(file_path, header=None)
+                # Rename columns and index
+                matrix_df.columns = ['Pool ' + str(i) for i in range(matrix_df.shape[1])]
+                matrix_df.index = ['Sample ' + str(i) for i in range(matrix_df.shape[0])]
+                # Store in dictionary with method name as key
+                DFFS[method_name] = matrix_df
+            except StopIteration:
+                # If no N_x part found, skip this file
+                continue
+    return DFFS
+
+
 
 
 # Define the server logic

@@ -443,12 +443,28 @@ def server(input, output, session):
         yield DFFS['matrix'].to_csv(index=True)
     
     @output
-    @render.download(filename=lambda: "multidimensional_pooling.csv")
+    @render.download(filename=lambda: "2D_pooling.csv")
     async def download_table_md():
         # Yield the content of the CSV file
         DFFS=output.dataframes.get()
-        idt=[i for i in list(DFFS) if i.startswith('multidim')]
-        yield DFFS[idt[0]].to_csv(index=True)
+        #idt=[i for i in list(DFFS) if i.startswith('multidim')]
+        yield DFFS['multidim-2'].to_csv(index=True)
+
+    @output
+    @render.download(filename=lambda: "3D_pooling.csv")
+    async def download_table_md():
+        # Yield the content of the CSV file
+        DFFS=output.dataframes.get()
+        #idt=[i for i in list(DFFS) if i.startswith('multidim')]
+        yield DFFS['multidim-3'].to_csv(index=True)
+
+    @output
+    @render.download(filename=lambda: "4D_pooling.csv")
+    async def download_table_md():
+        # Yield the content of the CSV file
+        DFFS=output.dataframes.get()
+        #idt=[i for i in list(DFFS) if i.startswith('multidim')]
+        yield DFFS['multidim-4'].to_csv(index=True)
 
     @output
     @render.download(filename=lambda: "random_pooling.csv")

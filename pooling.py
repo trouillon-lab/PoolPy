@@ -444,7 +444,7 @@ def server(input, output, session):
     
     @output
     @render.download(filename=lambda: "2D_pooling.csv")
-    async def download_table_md():
+    async def download_table_2d():
         # Yield the content of the CSV file
         DFFS=output.dataframes.get()
         #idt=[i for i in list(DFFS) if i.startswith('multidim')]
@@ -452,7 +452,7 @@ def server(input, output, session):
 
     @output
     @render.download(filename=lambda: "3D_pooling.csv")
-    async def download_table_md():
+    async def download_table_3d():
         # Yield the content of the CSV file
         DFFS=output.dataframes.get()
         #idt=[i for i in list(DFFS) if i.startswith('multidim')]
@@ -460,7 +460,7 @@ def server(input, output, session):
 
     @output
     @render.download(filename=lambda: "4D_pooling.csv")
-    async def download_table_md():
+    async def download_table_4d():
         # Yield the content of the CSV file
         DFFS=output.dataframes.get()
         #idt=[i for i in list(DFFS) if i.startswith('multidim')]

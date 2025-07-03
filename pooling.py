@@ -136,6 +136,7 @@ app_ui = ui.page_fluid(
 )
 WA_DIRECTORY='D:\precomputed'
 SCRAMBLER_DIRECTORY='D:\output'
+MAX_DIFFERENTIATE=4
 
 
 # Define the server logic
@@ -171,7 +172,7 @@ def server(input, output, session):
             output.database_reply.set(output_text)
             output.extra_computation.set(1)
 
-        elif differentiate > 4:
+        elif differentiate > MAX_DIFFERENTIATE:
             output_text=f'Maximum number of positives ({differentiate}) too high. The precomputed maximum is 4. To locally run the code for your specific setting follow the section below'
             output.database_reply.set(output_text)
             output.extra_computation.set(1)

@@ -134,7 +134,8 @@ app_ui = ui.page_fluid(
         });
     ''')
 )
-
+WA_DIRECTORY='D:\precomputed'
+SCRAMBLER_DIRECTORY='D:\output'
 
 
 # Define the server logic

@@ -134,8 +134,8 @@ app_ui = ui.page_fluid(
         });
     ''')
 )
-WA_DIRECTORY='D:\precomputed'
-SCRAMBLER_DIRECTORY='D:\output'
+WA_DIRECTORY='D:\\precomputed'
+SCRAMBLER_DIRECTORY='D:\\output'
 MAX_DIFFERENTIATE=4
 
 def find_n_folder(n_samp, wa_directory):

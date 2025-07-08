@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser(description='Parse some arguments')
 parser.add_argument('--differentiate', type=int, default=2, help='An integer argument with default 2')
 parser.add_argument('--n_compounds', type=int, default=50, help='An integer argument with default 50')
 parser.add_argument('--method', type=str, default='all', help="A string argument with default 'all'")
-parser.add_argument('--path', type=str, default='./', help="A string argument with default './pooling_results'")
+parser.add_argument('--path', type=str, default='./pooling_results', help="A string argument with default './pooling_results'")
 
 args = parser.parse_args()
 
@@ -112,5 +112,5 @@ df_met=pd.DataFrame(ls_met)
 idx_renamer={i:j for i,j in zip(df_met.index, full_methods)}
 col_renamer={i:j for i,j in zip(df_met.columns, ls_names_met)}
 df_met.rename(index=idx_renamer, columns=col_renamer, inplace=True)
-metname=os.path.join(this_path, 'Metrics_N_'+str(n_compounds)+'_diff_'+str(diff)+'.csv')
+metname=os.path.join(this_dir, 'Metrics_N_'+str(n_compounds)+'_diff_'+str(diff)+'.csv')
 df_met.to_csv(metname)

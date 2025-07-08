@@ -42,8 +42,7 @@ if method.startswith('multidim') or method=='all':
         multi.append('multidim-'+str(i))
 
 if method=='random' or method=='all':
-    WA_rand,  min_tests, perc_check=assign_wells_random_precomp(n_compounds=n_compounds, 
-                                                                differentiate=diff,scrambler=scrambler, return_me=True, **args_dict )
+    WA_rand,  min_tests, perc_check=assign_wells_random_precomp(scrambler=scrambler, return_me=True, **args_dict )
     thisfile=os.path.join(WA_path,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+
                                 '_ME_'+str(np.round(min_tests,2))+'.csv')
     

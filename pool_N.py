@@ -99,5 +99,5 @@ df_met=pd.DataFrame(ls_met)
 idx_renamer={i:j for i,j in zip(df_met.index, full_methods)}
 col_renamer={i:j for i,j in zip(df_met.columns, ls_names_met)}
 df_met.rename(index=idx_renamer, columns=col_renamer, inplace=True)
-metname=os.path.join(dpath, 'Metrics_N_'+str(N)+'_diff_'+str(diff)+'.csv')
+metname=os.path.join(this_path, 'Metrics_N_'+str(n_compounds)+'_diff_'+str(diff)+'.csv')
 df_met.to_csv(metname)

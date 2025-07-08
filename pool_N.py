@@ -8,6 +8,7 @@ import os
 import pickle
 import copy
 from Functions import *
+from Fast_functions import *
 import argparse
 
 parser = argparse.ArgumentParser(description='Parse some arguments')
@@ -27,3 +28,7 @@ N=args_dict['N']
 scrambler={1:np.arange(N)}
 for j in range(2,diff+1):
     scrambler.update({j:np.array(list(itertools.combinations(np.arange(N),j)))})
+
+if method==random or method=='all':
+    WA_rand,  min_tests, perc_check=assign_wells_random_precomp(n_compounds=n_compounds, 
+                                                                differentiate=diff,scrambler=scrambler, return_me=True, **kwargs )

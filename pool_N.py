@@ -15,7 +15,7 @@ parser = argparse.ArgumentParser(description='Parse some arguments')
 parser.add_argument('--differentiate', type=int, default=2, help='An integer argument with default 2')
 parser.add_argument('--n_compounds', type=int, default=50, help='An integer argument with default 50')
 parser.add_argument('--method', type=str, default='all', help="A string argument with default 'all'")
-parser.add_argument('--path', type=str, default='./', help="A string argument with default './'")
+parser.add_argument('--path', type=str, default='./', help="A string argument with default './pooling_results'")
 
 args = parser.parse_args()
 
@@ -26,7 +26,8 @@ n_compounds=args_dict['n_compounds']
 method=args_dict['method']
 this_path=args_dict['path']
 args_dict['save_dir']=copy.deepcopy(args_dict['path'])
-WA_path=os.path.join(this_path, 'WAs')
+args_dict['return_wa']=True
+
 
 scrambler={1:np.arange(n_compounds)}
 for j in range(2,diff+1):
@@ -43,8 +44,10 @@ if method.startswith('multidim') or method=='all':
 
 if method=='random' or method=='all':
     WA_rand,  min_tests, perc_check=assign_wells_random_precomp(scrambler=scrambler, return_me=True, **args_dict )
-    thisfile=os.path.join(WA_path,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+
-                                '_ME_'+str(np.round(min_tests,2))+'.csv')
+    #thisfile=os.path.join(WA_path,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+
+    #                            '_ME_'+str(np.round(min_tests,2))+'.csv')
+    WA_list.append(WA_rand)
+    multi.append('Random')
     
 if method=='matrix' or method=='all':
     WA_mat=assign_wells_mat(**args_dict)
@@ -70,17 +73,27 @@ if method=='chinese_trick' or method=='all':
     multi.append('Chinese trick')
     WA_list.append(WA_chin)
 
+
+this_dir=os.path.join(this_path,'N_'+str(args_dict['n_compounds']), 'diff_'+str(args_dict['differentiate']), 'WAs')
+
+if not os.path.exists(this_dir):
+    os.makedirs(this_dir)
+
+for method, WA in zip(multi, WA_list):
+    thisfile=os.path.join(this_dir,'WA_'+ method+'_N_'+str(args_dict['n_compounds'])+'_diff_'+str(args_dict['differentiate'])+'.csv')
+    np.savetxt(thisfile, WA.astype(bool), delimiter=",")
+
+
 ls_names_met=['Method', 'Mean experiments', 'Max compunds per well', 'N wells', 'Percentage check', 'Mean extra experiments', 'Mean steps']
 ls_met=[]
 full_methods=[]
-WApath=WA_path
+WApath=this_dir
 filenames = next(os.walk(WApath), (None, None, []))[2]
 for fname in filenames:
     #print(fname)
     fdir=os.path.join(WApath,fname)
     WA=np.genfromtxt(fdir, delimiter=",")
-    mean_exp, extra_exp,  _, perc_check= mean_metrics_precomp(well_assigner=WA,scrambler=scrambler, 
-                                                                differentiate=diff, **args_dict)
+    mean_exp, extra_exp,  _, perc_check= mean_metrics_precomp(well_assigner=WA,scrambler=scrambler, **args_dict)
     n_wells=WA.shape[1]
     M_exp=np.round(mean_exp, 2)
     max_comp=np.max(np.sum(WA, axis=0))

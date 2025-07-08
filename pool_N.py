@@ -27,6 +27,7 @@ method=args_dict['method']
 this_path=args_dict['path']
 args_dict['save_dir']=copy.deepcopy(args_dict['path'])
 args_dict['return_wa']=True
+args_dict['keep_ratios_constant']=False
 
 
 scrambler={1:np.arange(n_compounds)}
@@ -102,7 +103,7 @@ for fname in filenames:
     #print(method)
     ls_met.append([method, M_exp, max_comp, n_wells, int(perc_check),  extra_exp,1+perc_check/100])
     full_methods.append(method)
-Hier=calculate_metrics_hierarchical(n_compounds=n_compounds, differentiate=diff, **args_dict)
+Hier=calculate_metrics_hierarchical(**args_dict)
 ls_met.append(['Hierarchical']+ [np.round(i,2) for i in Hier[:-1]])
 full_methods.append('Hierarchical')
 df_met=pd.DataFrame(ls_met)

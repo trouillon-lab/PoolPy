@@ -68,5 +68,36 @@ if method=='std' or method=='all':
 if method=='chinese_trick' or method=='all':
 
     WA_chin=assign_wells_chinese(**args_dict)
-    multi.append(''Chinese trick'')
+    multi.append('Chinese trick')
     WA_list.append(WA_chin)
+
+ls_names_met=['Method', 'Mean experiments', 'Max compunds per well', 'N wells', 'Percentage check', 'Mean extra experiments', 'Mean steps']
+ls_met=[]
+full_methods=[]
+WApath=WA_path
+filenames = next(os.walk(WApath), (None, None, []))[2]
+for fname in filenames:
+    #print(fname)
+    fdir=os.path.join(WApath,fname)
+    WA=np.genfromtxt(fdir, delimiter=",")
+    mean_exp, extra_exp,  _, perc_check= mean_metrics_precomp(well_assigner=WA,scrambler=scrambler, 
+                                                                differentiate=diff, **args_dict)
+    n_wells=WA.shape[1]
+    M_exp=np.round(mean_exp, 2)
+    max_comp=np.max(np.sum(WA, axis=0))
+    method=re.sub('^WA_', '', fname)
+    method=re.sub('_.*$', '', method)
+    #print(method)
+    ls_met.append([method, M_exp, max_comp, n_wells, int(perc_check),  extra_exp,1+perc_check/100])
+    full_methods.append(method)
+Hier=calculate_metrics_hierarchical(n_compounds=n_compounds, differentiate=diff, **args_dict)
+ls_met.append(['Hierarchical']+ [np.round(i,2) for i in Hier[:-1]])
+full_methods.append('Hierarchical')
+df_met=pd.DataFrame(ls_met)
+
+
+idx_renamer={i:j for i,j in zip(df_met.index, full_methods)}
+col_renamer={i:j for i,j in zip(df_met.columns, ls_names_met)}
+df_met.rename(index=idx_renamer, columns=col_renamer, inplace=True)
+metname=os.path.join(dpath, 'Metrics_N_'+str(N)+'_diff_'+str(diff)+'.csv')
+df_met.to_csv(metname)

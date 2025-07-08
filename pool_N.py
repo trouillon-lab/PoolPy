@@ -109,6 +109,7 @@ ls_met.append(['Hierarchical']+ [np.round(i,2) for i in Hier[:-1]])
 full_methods.append('Hierarchical')
 df_met=pd.DataFrame(ls_met)
 
+this_dir=os.path.join(this_path,'N_'+str(args_dict['n_compounds']), 'diff_'+str(args_dict['differentiate']))
 
 idx_renamer={i:j for i,j in zip(df_met.index, full_methods)}
 col_renamer={i:j for i,j in zip(df_met.columns, ls_names_met)}

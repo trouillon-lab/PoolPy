@@ -245,9 +245,9 @@ def is_consistent_precomp(well_assigner:np.array, differentiate:int, scrambler:d
             full_well_assigner=well_assigner.copy()
         else:
             this_sc=scrambler[diff]
-            print(this_sc)
-            print(well_assigner)
-            print(diff)
+            #print(this_sc)
+            #print(well_assigner)
+            #print(diff)
             
             full_well_assigner=np.concatenate((full_well_assigner,np.any(well_assigner[this_sc], axis=1)))
     _, counts=np.unique(full_well_assigner, axis=0, return_counts=True)

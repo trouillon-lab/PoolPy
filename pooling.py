@@ -303,8 +303,8 @@ def server(input, output, session):
             
             
             
-        command_p=f'python pooling_comparison.py --start {n_samp} --stop {n_samp+1} --step {1} --differentiate {differentiate} --rand_guesses {50}'
-
+        # Prepare the correct command for pool_N.py based on its arguments
+        command_p = f"python pool_N.py --n_compounds {n_samp} --differentiate {differentiate} --guesses 50 --method all --path your/path"
         output.personalized_command.set(command_p)
 
             #md=np.max(np.array(list(f2)))

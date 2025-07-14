@@ -241,6 +241,8 @@ def server(input, output, session):
                     diff_folder_path = os.path.join(n_folder_path, diff_folder)
                     excel_filename = f'Metrics_{n_folder}_diff_{diff_folder.split("_")[1]}.xlsx'
                     excel_path = os.path.join(diff_folder_path, excel_filename)
+                    output_text=excel_path
+                    output.database_reply.set(output_text)
                     if os.path.isfile(excel_path):
                         metrics_data = pd.read_excel(excel_path)
 
@@ -304,7 +306,7 @@ def server(input, output, session):
             
             
         # Prepare the correct command for pool_N.py based on its arguments
-        command_p = f"python pool_N.py --n_compounds {n_samp} --differentiate {differentiate} --guesses 50 --method all --path your/path"
+        command_p = f"python pool_N.py --n_compounds {n_samp} --differentiate {differentiate} --method all --path your/path"
         output.personalized_command.set(command_p)
 
             #md=np.max(np.array(list(f2)))

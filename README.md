@@ -58,7 +58,7 @@ You can execute locally a pooling setup comparison by running the command:
 
 `python pool_N.py --n_compounds NC --differentiate diff --path path/to/results`
 
-with having NC as the number of compounds you want to test, diff as the max number of compounds positive to your test, and path/to/results the path you want to have your results in.
+with having `NC` as the number of compounds you want to test, `diff` as the max number of compounds positive to your test, and `path/to/results` the path you want to have your results in.
 
 ## 📦 Managing Dependencies
 

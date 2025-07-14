@@ -54,30 +54,11 @@ uv sync
 
 ## 🛠️ Usage
 
-### Example Functions
+You can execute locally a pooling setup comparison by running the command:
 
-```python
-assign_wells_multidim(n_compounds: int, n_dims: int = None)
-```
+`python pool_N.py --n_compounds NC --differentiate diff --path path/to/results`
 
-- *Tip: Consider providing a default for `n_dims` based on `n_compounds` for user convenience.*
-
-```python
-assign_wells_random(
-    n_compounds: int,
-    n_compounds_per_well: int,
-    n_wells: int,
-    guesses: int,
-    differentiate: int = 1
-)
-```
-
-- *Tip: `differentiate` defaults to 1 in other functions—consider using the same default here.*
-
-
-### Method Comparison
-
-A future `method_comparison` function could provide an easy overview of all methods, using sensible defaults for method-specific parameters.
+with having NC as the number of compounds you want to test, diff as the max number of compounds positive to your test, and path/to/results the path you want to have your results in.
 
 ## 📦 Managing Dependencies
 

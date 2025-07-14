@@ -277,7 +277,7 @@ def server(input, output, session):
                 md=n_samp
                 output_text=f'There is a precomputed strategy for {n_samp} samples with up to {differentiate} positives'
                 output.database_reply.set(output_text)
-                output.extra_computation.set(0)
+                output.extra_computation.set(0)I go
 
             
             

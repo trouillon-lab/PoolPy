@@ -84,7 +84,7 @@ app_ui = ui.page_fluid(
         ui.download_button("download_table_random", "Random pooling"),
         ui.download_button("download_table_STD", "STD pooling"),
         ui.download_button("download_table_CT", "Chinese trick pooling"),
-        ui.download_button("download_table_binary", "binary pooling"),
+        ui.download_button("download_table_binary", "Binary pooling"),
         style="text-align: center;",
     ),
 

@@ -297,14 +297,14 @@ def server(input, output, session):
             DFFS={}
             table_path=os.path.join(diff_folder_path,'WAs')
             TBLS=load_wa_matrices(table_path)
-            print(table_path)
+            #print(table_path)
             for idx in TBLS.keys():
                 b1=TBLS[idx]
                 tmp1=pd.DataFrame(b1, columns=['Pool '+ str(i) for i in range(b1.shape[1])], index=['Sample '+ str(i) for i in range(b1.shape[0])])
                 DFFS.update({idx:tmp1})
 
             output.dataframes.set(DFFS)
-            print(DFFS.keys())
+            #print(DFFS.keys())
 
             
             

@@ -48,32 +48,32 @@ if method=='random' or method=='all':
     WA_rand,  min_tests, perc_check=assign_wells_random_precomp(scrambler=scrambler, return_me=True, **args_dict )
     #thisfile=os.path.join(WA_path,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+
     #                            '_ME_'+str(np.round(min_tests,2))+'.csv')
-    WA_list.append(WA_rand)
+    WA_list.append(WA_rand.astype(int))
     multi.append('Random')
     
 if method=='matrix' or method=='all':
     WA_mat=assign_wells_mat(**args_dict)
-    WA_list.append(WA_mat)
+    WA_list.append(WA_mat.astype(int))
     multi.append('Matrix')
 
 if method=='binary' or method=='all':
 
     WA_bin=assign_wells_bin(**args_dict)
     multi.append('Binary')
-    WA_list.append(WA_bin)
+    WA_list.append(WA_bin.astype(int))
 
 if method=='std' or method=='all':
 
      WA_std=assign_wells_STD(**args_dict)
      multi.append('STD')
-     WA_list.append(WA_std)
+     WA_list.append(WA_std.astype(int))
 
 
 if method=='chinese_trick' or method=='all':
 
     WA_chin=assign_wells_chinese(**args_dict)
     multi.append('Chinese trick')
-    WA_list.append(WA_chin)
+    WA_list.append(WA_chin.astype(int))
 
 
 this_dir=os.path.join(this_path,'N_'+str(args_dict['n_compounds']), 'diff_'+str(args_dict['differentiate']), 'WAs')

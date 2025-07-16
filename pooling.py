@@ -136,8 +136,8 @@ app_ui = ui.page_fluid(
         });
     ''')
 )
-WA_DIRECTORY='D:\\precomputed'
-SCRAMBLER_DIRECTORY='D:\\output'
+WA_DIRECTORY='D:\precomputed'
+SCRAMBLER_DIRECTORY='D:\output'
 MAX_DIFFERENTIATE=4
 
 def find_n_folder(n_samp, wa_directory):
@@ -171,7 +171,7 @@ def load_wa_matrices(folder_path):
     
     for file in files:
         # Check if file matches the WA_Method_N_x_diff_y pattern
-        if file.startswith('WA_') and file.endswith('.xlsx'):
+        if file.startswith('WA_') and file.endswith('.csv'):
             # Example filename: WA_Method_N_10_diff_2.xlsx
             parts = file.split('_')
             # Extract method name (between WA_ and N_x)
@@ -180,7 +180,7 @@ def load_wa_matrices(folder_path):
                 method_name = '_'.join(parts[1:n_index])
                 # Load the Excel file as a DataFrame
                 file_path = os.path.join(folder_path, file)
-                matrix_df = pd.read_excel(file_path, header=None)
+                matrix_df = pd.read_csv(file_path, header=None)
                 # Rename columns and index
                 matrix_df.columns = ['Pool ' + str(i) for i in range(matrix_df.shape[1])]
                 matrix_df.index = ['Sample ' + str(i) for i in range(matrix_df.shape[0])]
@@ -239,12 +239,13 @@ def server(input, output, session):
                 diff_folder = find_closest_diff_folder(n_folder_path, differentiate)
                 if diff_folder:
                     diff_folder_path = os.path.join(n_folder_path, diff_folder)
-                    excel_filename = f'Metrics_{n_folder}_diff_{diff_folder.split("_")[1]}.xlsx'
+                    excel_filename = f'Metrics_{n_folder}_diff_{diff_folder.split("_")[1]}.csv'
                     excel_path = os.path.join(diff_folder_path, excel_filename)
-                    output_text=excel_path
-                    output.database_reply.set(output_text)
+                    #output_text=excel_path
+                    #output.database_reply.set(output_text)
+                    #print(output_text)
                     if os.path.isfile(excel_path):
-                        metrics_data = pd.read_excel(excel_path)
+                        metrics_data = pd.read_csv(excel_path)
 
                         # Use metrics_data as needed
                     else:
@@ -289,18 +290,21 @@ def server(input, output, session):
 
             #DFT=CR[0]
             #DFT.insert(loc=0, column='Pooling strategy', value=DFT.index)
+            metrics_data.drop(metrics_data.columns[0], axis=1)
             output.summary_table.set(metrics_data)
 
             #TBLS=CR[1]
             DFFS={}
             table_path=os.path.join(diff_folder_path,'WAs')
             TBLS=load_wa_matrices(table_path)
+            print(table_path)
             for idx in TBLS.keys():
                 b1=TBLS[idx]
                 tmp1=pd.DataFrame(b1, columns=['Pool '+ str(i) for i in range(b1.shape[1])], index=['Sample '+ str(i) for i in range(b1.shape[0])])
                 DFFS.update({idx:tmp1})
 
             output.dataframes.set(DFFS)
+            print(DFFS.keys())
 
             
             

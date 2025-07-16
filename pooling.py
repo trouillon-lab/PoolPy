@@ -15,7 +15,7 @@ app_ui = ui.page_fluid(
         ui.column(3),
         ui.column(
             5,
-            ui.input_numeric("n_samp", "Number of Samples:", value=1)
+            ui.input_numeric("n_samp", "Number of Samples:", value=20)
         ),
         ui.column(
             2,

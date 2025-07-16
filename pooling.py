@@ -43,10 +43,10 @@ app_ui = ui.page_fluid(
     ui.div(
         ui.h4("Database reply"),
         ui.output_text_verbatim("database_r"),  
-        ui.div(
-        ui.download_button("download_pickle", "Download complete pickled file"),
-        style="text-align: center; margin-top: 60px;"
-        ),
+        #ui.div(
+        #ui.download_button("download_pickle", "Download complete pickled file"),
+        #style="text-align: center; margin-top: 60px;"
+        #),
         style="text-align: center;"
     ),
 
@@ -76,7 +76,7 @@ app_ui = ui.page_fluid(
     ui.hr(),
     ui.div(
         ui.h4("Downloadable tables"),
-        ui.output_text_verbatim("table_text"),  
+        #ui.output_text_verbatim("table_text"),  
         ui.download_button("download_table_matrix", "Matrix pooling"),
         ui.download_button("download_table_2d", "2-dimensional pooling"),
         ui.download_button("download_table_3d", "3-dimensional pooling"),
@@ -241,8 +241,8 @@ def server(input, output, session):
                     diff_folder_path = os.path.join(n_folder_path, diff_folder)
                     excel_filename = f'Metrics_{n_folder}_diff_{diff_folder.split("_")[1]}.csv'
                     excel_path = os.path.join(diff_folder_path, excel_filename)
-                    #output_text=excel_path
-                    #output.database_reply.set(output_text)
+                    output_text=f'There is a precomputed strategy for {n_samp} samples with up to {differentiate} positives'
+                    output.database_reply.set(output_text)
                     #print(output_text)
                     if os.path.isfile(excel_path):
                         metrics_data = pd.read_csv(excel_path)

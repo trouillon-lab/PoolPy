@@ -83,7 +83,8 @@ if not os.path.exists(this_dir):
 
 for method, WA in zip(multi, WA_list):
     thisfile=os.path.join(this_dir,'WA_'+ method+'_N_'+str(args_dict['n_compounds'])+'_diff_'+str(args_dict['differentiate'])+'.csv')
-    np.savetxt(thisfile, WA.astype(bool), delimiter=",")
+    np.savetxt(thisfile, WA.astype(int), delimiter=",")
+    
 
 
 ls_names_met=['Method', 'Mean experiments', 'Max compunds per well', 'N wells', 'Percentage check', 'Mean extra experiments', 'Mean steps']
@@ -116,3 +117,10 @@ col_renamer={i:j for i,j in zip(df_met.columns, ls_names_met)}
 df_met.rename(index=idx_renamer, columns=col_renamer, inplace=True)
 metname=os.path.join(this_dir, 'Metrics_N_'+str(n_compounds)+'_diff_'+str(diff)+'.csv')
 df_met.to_csv(metname)
+
+this_dir=os.path.join(this_path,'N_'+str(args_dict['n_compounds']), 'diff_'+str(args_dict['differentiate']), 'WAs')
+
+for method, WA in zip(multi, WA_list):
+    thisfile=os.path.join(this_dir,'WA_'+ method+'_N_'+str(args_dict['n_compounds'])+'_diff_'+str(args_dict['differentiate'])+'.csv')
+    tmp1=pd.DataFrame(WA.astype(int), columns=['Pool '+ str(i) for i in range(WA.shape[1])], index=['Sample '+ str(i) for i in range(WA.shape[0])])
+    tmp1.to_csv(thisfile)

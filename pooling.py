@@ -448,7 +448,7 @@ def server(input, output, session):
     async def download_table_matrix():
         # Yield the content of the CSV file
         DFFS=output.dataframes.get()
-        yield DFFS['matrix'].to_csv(index=True)
+        yield DFFS['Matrix'].to_csv(index=True)
     
     @output
     @render.download(filename=lambda: "2D_pooling.csv")
@@ -479,7 +479,7 @@ def server(input, output, session):
     async def download_table_random():
         # Yield the content of the CSV file
         DFFS=output.dataframes.get()
-        yield DFFS['random'].to_csv(index=True)
+        yield DFFS['Random'].to_csv(index=True)
     
     @output
     @render.download(filename=lambda: "STD_pooling.csv")

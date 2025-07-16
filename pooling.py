@@ -504,7 +504,7 @@ def server(input, output, session):
             yield DFFS['Binary'].to_csv(index=True)
         except:
             yield pd.DataFrame().to_csv(index=True)
-
+'''
     @output
     @render.download(filename=lambda: "full_pooling.pk")
     async def download_pickle():
@@ -521,7 +521,7 @@ def server(input, output, session):
     #def plot():
         # Placeholder for future plot implementation
     #    pass
-
+'''
 
 # Create the app object
 app = App(app_ui, server)

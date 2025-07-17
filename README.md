@@ -73,7 +73,7 @@ Required:
 `--differentiate`: Maximum number of samples that can be positive to your test (diff)  
 Optional:  
 `--path`: The path in which results are saved. Default: current directory.  
-`--method`: Name of group testing method to use. Default: All.  
+`--method`: Name of group testing method to use. Default: `all`. Alternatives: `binary`, `matrix`,`multidim`,`std`,`chinese_trick`,`random`.  
 `--guesses`: Number of guesses for the random method. Default: 5.  
 
 

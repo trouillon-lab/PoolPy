@@ -47,10 +47,10 @@ cd pooling
 uv sync
 ```
 
-- This will:
-    - Create a `.venv` virtual environment (if not present)
-    - Install the correct Python version (if specified in `.python-version`)
-    - Install all dependencies as locked in `uv.lock` and listed in `pyproject.toml`
+This will:
+- Create a `.venv` virtual environment (if not present)
+- Install the correct Python version (if specified in `.python-version`)
+- Install all dependencies as locked in `uv.lock` and listed in `pyproject.toml`
 
 
 #### **(Optional) Activate the Environment**
@@ -64,6 +64,8 @@ uv sync
 
 ## 🛠️ Usage
 
+### 1. **Compute group testing design**
+
 You can execute locally a pooling design comparison by running the command:
 
 `python pool_N.py --n_compounds NC --differentiate diff`
@@ -76,6 +78,19 @@ Optional:
 `--method`: Name of group testing method to use. Default: `all`. Alternatives: `binary`, `matrix`,`multidim`,`std`,`chinese_trick`,`random`.  
 `--guesses`: Number of guesses for the random method. Default: 5.  
 
+Output:
+- `WAs` folder: Contains well assigner (WA) tables for each of the used method. These inform on how to pool the samples.
+-  `Metrics` file: Summary of key metrics for each method used:
+    - `Mean experiments`:
+    - `Max compound per well`:
+    - `N wells`:
+    -  `Percentage check`:
+    -  `Mean extra experiments`:
+    -  `Mean steps`:
+
+### 2. **Decode group testing results**
+
+XXX
 
 ## 📦 Managing Dependencies
 

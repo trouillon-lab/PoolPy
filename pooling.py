@@ -15,7 +15,7 @@ app_ui = ui.page_fluid(
         ui.column(3),
         ui.column(
             5,
-            ui.input_numeric("n_samp", "Number of Samples:", value=1)
+            ui.input_numeric("n_samp", "Number of Samples:", value=20)
         ),
         ui.column(
             2,
@@ -43,10 +43,10 @@ app_ui = ui.page_fluid(
     ui.div(
         ui.h4("Database reply"),
         ui.output_text_verbatim("database_r"),  
-        ui.div(
-        ui.download_button("download_pickle", "Download complete pickled file"),
-        style="text-align: center; margin-top: 60px;"
-        ),
+        #ui.div(
+        #ui.download_button("download_pickle", "Download complete pickled file"),
+        #style="text-align: center; margin-top: 60px;"
+        #),
         style="text-align: center;"
     ),
 
@@ -76,7 +76,7 @@ app_ui = ui.page_fluid(
     ui.hr(),
     ui.div(
         ui.h4("Downloadable tables"),
-        ui.output_text_verbatim("table_text"),  
+        #ui.output_text_verbatim("table_text"),  
         ui.download_button("download_table_matrix", "Matrix pooling"),
         ui.download_button("download_table_2d", "2-dimensional pooling"),
         ui.download_button("download_table_3d", "3-dimensional pooling"),
@@ -84,7 +84,7 @@ app_ui = ui.page_fluid(
         ui.download_button("download_table_random", "Random pooling"),
         ui.download_button("download_table_STD", "STD pooling"),
         ui.download_button("download_table_CT", "Chinese trick pooling"),
-        ui.download_button("download_table_binary", "binary pooling"),
+        ui.download_button("download_table_binary", "Binary pooling"),
         style="text-align: center;",
     ),
 
@@ -136,8 +136,8 @@ app_ui = ui.page_fluid(
         });
     ''')
 )
-WA_DIRECTORY='D:\\precomputed'
-SCRAMBLER_DIRECTORY='D:\\output'
+WA_DIRECTORY='D:\precomputed'
+SCRAMBLER_DIRECTORY='D:\output'
 MAX_DIFFERENTIATE=4
 
 def find_n_folder(n_samp, wa_directory):
@@ -171,7 +171,7 @@ def load_wa_matrices(folder_path):
     
     for file in files:
         # Check if file matches the WA_Method_N_x_diff_y pattern
-        if file.startswith('WA_') and file.endswith('.xlsx'):
+        if file.startswith('WA_') and file.endswith('.csv'):
             # Example filename: WA_Method_N_10_diff_2.xlsx
             parts = file.split('_')
             # Extract method name (between WA_ and N_x)
@@ -180,7 +180,7 @@ def load_wa_matrices(folder_path):
                 method_name = '_'.join(parts[1:n_index])
                 # Load the Excel file as a DataFrame
                 file_path = os.path.join(folder_path, file)
-                matrix_df = pd.read_excel(file_path, header=None)
+                matrix_df = pd.read_csv(file_path, header=None)
                 # Rename columns and index
                 matrix_df.columns = ['Pool ' + str(i) for i in range(matrix_df.shape[1])]
                 matrix_df.index = ['Sample ' + str(i) for i in range(matrix_df.shape[0])]
@@ -239,12 +239,13 @@ def server(input, output, session):
                 diff_folder = find_closest_diff_folder(n_folder_path, differentiate)
                 if diff_folder:
                     diff_folder_path = os.path.join(n_folder_path, diff_folder)
-                    excel_filename = f'Metrics_{n_folder}_diff_{diff_folder.split("_")[1]}.xlsx'
+                    excel_filename = f'Metrics_{n_folder}_diff_{diff_folder.split("_")[1]}.csv'
                     excel_path = os.path.join(diff_folder_path, excel_filename)
-                    output_text=excel_path
+                    output_text=f'There is a precomputed strategy for {n_samp} samples with up to {differentiate} positives'
                     output.database_reply.set(output_text)
+                    #print(output_text)
                     if os.path.isfile(excel_path):
-                        metrics_data = pd.read_excel(excel_path)
+                        metrics_data = pd.read_csv(excel_path)
 
                         # Use metrics_data as needed
                     else:
@@ -289,18 +290,21 @@ def server(input, output, session):
 
             #DFT=CR[0]
             #DFT.insert(loc=0, column='Pooling strategy', value=DFT.index)
+            metrics_data.drop(metrics_data.columns[0], axis=1)
             output.summary_table.set(metrics_data)
 
             #TBLS=CR[1]
             DFFS={}
             table_path=os.path.join(diff_folder_path,'WAs')
             TBLS=load_wa_matrices(table_path)
+            #print(table_path)
             for idx in TBLS.keys():
                 b1=TBLS[idx]
                 tmp1=pd.DataFrame(b1, columns=['Pool '+ str(i) for i in range(b1.shape[1])], index=['Sample '+ str(i) for i in range(b1.shape[0])])
                 DFFS.update({idx:tmp1})
 
             output.dataframes.set(DFFS)
+            #print(DFFS.keys())
 
             
             
@@ -444,7 +448,7 @@ def server(input, output, session):
     async def download_table_matrix():
         # Yield the content of the CSV file
         DFFS=output.dataframes.get()
-        yield DFFS['matrix'].to_csv(index=True)
+        yield DFFS['Matrix'].to_csv(index=True)
     
     @output
     @render.download(filename=lambda: "2D_pooling.csv")
@@ -475,7 +479,7 @@ def server(input, output, session):
     async def download_table_random():
         # Yield the content of the CSV file
         DFFS=output.dataframes.get()
-        yield DFFS['random'].to_csv(index=True)
+        yield DFFS['Random'].to_csv(index=True)
     
     @output
     @render.download(filename=lambda: "STD_pooling.csv")
@@ -500,7 +504,7 @@ def server(input, output, session):
             yield DFFS['Binary'].to_csv(index=True)
         except:
             yield pd.DataFrame().to_csv(index=True)
-
+'''
     @output
     @render.download(filename=lambda: "full_pooling.pk")
     async def download_pickle():
@@ -517,7 +521,7 @@ def server(input, output, session):
     #def plot():
         # Placeholder for future plot implementation
     #    pass
-
+'''
 
 # Create the app object
 app = App(app_ui, server)

@@ -12,8 +12,8 @@ Choose one of the following installation methods:
 
 | Method | Command |
 | :-- | :-- |
-| **macOS/Linux** | `curl -LsSf https://astral.sh/uv/install.sh | sh` |
-| **Windows** | `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"` |
+| **macOS/Linux** | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
+| **Windows** | `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 \| iex"` |
 | **pip** | `pip install uv` |
 | **pipx** | `pipx install uv` |
 | **Homebrew** | `brew install uv` |

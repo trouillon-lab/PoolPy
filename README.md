@@ -1,6 +1,20 @@
 # Pooling
 
-A Python package for multidimensional and random well assignment strategies in pooling experiments.
+A Python package to design and decode group testing strategies. This package implements seven of the most commonly used group testing strategies.  
+
+We provide pre-computed designs for all methods across a large range of sample numbers on our web app (LINK). If your specific use case is not covered, you can compute the corresponding designs using the `pool_N.py` script, as described below.
+To decode the results of your test, use the XXX script.  
+
+Implemented methods:
+- Hierarchical
+- Binary
+- Matrix
+- Multi-dimensional
+- Shifted transversal
+- Chinese trick
+- Random
+
+More details can be found in the associated publication.
 
 ## 🚀 Quick Start
 
@@ -19,7 +33,7 @@ Choose one of the following installation methods:
 | **Homebrew** | `brew install uv` |
 | **Pacman** | `pacman -S uv` |
 
-> For more details and troubleshooting, see the [uv documentation](https://docs.astral.sh/uv/)[^1].
+> For more details and troubleshooting, see the [uv documentation](https://docs.astral.sh/uv/).
 
 ### 2. **Clone the Repository**
 
@@ -54,11 +68,18 @@ uv sync
 
 ## 🛠️ Usage
 
-You can execute locally a pooling setup comparison by running the command:
+You can execute locally a pooling design comparison by running the command:
 
-`python pool_N.py --n_compounds NC --differentiate diff --path path/to/results`
+`python pool_N.py --n_compounds NC --differentiate diff`
 
-with having `NC` as the number of compounds you want to test, `diff` as the max number of compounds positive to your test, and `path/to/results` the path you want to have your results in.
+Required:  
+`--n_compounds`: Total number of samples you want to test (NC)  
+`--differentiate`: Maximum number of samples that can be positive to your test (diff)  
+Optional:  
+`--path`: The path in which results are saved. Default: current directory.  
+`--method`: Name of group testing method to use. Default: All.  
+`--guesses`: Number of guesses for the random method. Default: 5.  
+
 
 ## 📦 Managing Dependencies
 

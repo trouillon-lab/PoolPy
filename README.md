@@ -83,7 +83,7 @@ Output:
 -  `Metrics` file: Summary of key metrics for each method used:
     - `Mean experiments`:
     - `Max compound per well`:
-    - `N wells`:
+    - `N wells`: (+ specific case of hierarchical)
     -  `Percentage check`:
     -  `Mean extra experiments`:
     -  `Mean steps`:

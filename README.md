@@ -28,12 +28,8 @@ Choose one of the following installation methods:
 | :-- | :-- |
 | **macOS/Linux** | `curl -LsSf https://astral.sh/uv/install.sh \| sh` |
 | **Windows** | `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 \| iex"` |
-| **pip** | `pip install uv` |
-| **pipx** | `pipx install uv` |
-| **Homebrew** | `brew install uv` |
-| **Pacman** | `pacman -S uv` |
 
-> For more details and troubleshooting, see the [uv documentation](https://docs.astral.sh/uv/).
+> For more installation methods and troubleshooting, see the [uv documentation](https://docs.astral.sh/uv/).
 
 ### 2. **Clone the Repository**
 

@@ -60,7 +60,7 @@ This will:
 | macOS/Linux | `source .venv/bin/activate` |
 | Windows | `.venv\Scripts\activate` |
 
-> **Note:** Activating the environment is optional for most uv commands, but necessary if you want to use Python or pip directly[^1].
+> **Note:** Activating the environment is optional for most uv commands, but necessary if you want to use Python or pip directly.
 
 ## 🛠️ Usage
 
@@ -76,7 +76,7 @@ Required:
 Optional:  
 `--path`: The path in which results are saved. Default: current directory.  
 `--method`: Name of group testing method to use. Default: `all`. Alternatives: `binary`, `matrix`,`multidim`,`std`,`chinese_trick`,`random`.  
-`--guesses`: Number of guesses for the random method. Default: 5.  
+`--guesses`: Number of guesses for the random method. Default: `5`.  
 
 Output:
 - `WAs` folder: Contains well assigner (WA) tables for each of the used method. These inform on how to pool the samples.

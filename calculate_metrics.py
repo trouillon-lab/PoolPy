@@ -54,7 +54,7 @@ def mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs):
 
 def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150, step=10, diff=2, **kwargs):
     N=start
-    ls_names_met=['Method', 'Mean experiments', 'Max compunds per well', 'N wells', 'Percentage check', 'Mean extra experiments', 'Mean steps']
+    ls_names_met=['Method', 'Mean experiments', 'Max compunds per pool', 'N pools', 'Percentage check', 'Mean extra experiments', 'Mean steps']
     
     while N<stop:
         Npath=os.path.join(dir_WAs,'N_'+str(N))

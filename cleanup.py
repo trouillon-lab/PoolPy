@@ -60,8 +60,6 @@ def replace_method_string_for_all_metrics(dpath):
 # Set your root paths and variables
 dpath = '/your/main/folder'        # <-- Change this
 WApath = os.path.join(dpath, 'WAs')
-N = 10                             # <-- Set the value of N
-diff = 0.1                         # <-- Set the value of diff
 
 clean_wa_files(WApath)
 replace_method_string_for_all_metrics(dpath)

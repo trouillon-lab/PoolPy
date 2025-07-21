@@ -1,6 +1,5 @@
 import os
 import re
-import glob
 
 def extract_min_tests(filename):
     """Extract float number after '_ME_' and before '.csv'."""

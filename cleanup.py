@@ -57,7 +57,7 @@ def replace_method_string_for_all_metrics(dpath):
 
 # === Usage ===
 # Set your root paths and variables
-dpath = '/your/main/folder'        # <-- Change this
+dpath = 'D:\precomputed\N_10'        # <-- Change this
 WApath = os.path.join(dpath, 'WAs')
 
 clean_wa_files(WApath)

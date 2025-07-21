@@ -83,7 +83,7 @@ app_ui = ui.page_fluid(
         ui.download_button("download_table_4d", "4-dimensional pooling"),
         ui.download_button("download_table_random", "Random pooling"),
         ui.download_button("download_table_STD", "STD pooling"),
-        ui.download_button("download_table_CT", "Chinese trick pooling"),
+        ui.download_button("download_table_CT", "Chinese reminder pooling"),
         ui.download_button("download_table_binary", "Binary pooling"),
         style="text-align: center;",
     ),
@@ -294,6 +294,7 @@ def server(input, output, session):
             #ls_met_nice=['Pooling design', 'Mean total experiments', 'Max samples per pool', 'N pools', '\% multiple rounds', 'Mean extra experiments']
             dict_ren={'N wells':'N pools'}#{i:j for i,j in zip(metrics_data.columns,ls_met_nice)}
             metrics_data.rename(columns=dict_ren, inplace=True)
+            #metrics_data.rename(index={'Chinese trick':'Chinese reminder'}, inplace=True)
             output.summary_table.set(metrics_data)
 
             #TBLS=CR[1]
@@ -492,7 +493,7 @@ def server(input, output, session):
         yield DFFS['STD'].to_csv(index=True)
 
     @output
-    @render.download(filename=lambda: "Chinese_trick_pooling.csv")
+    @render.download(filename=lambda: "Chinese_reminder_pooling.csv")
     async def download_table_CT():
         # Yield the content of the CSV file
         DFFS=output.dataframes.get()

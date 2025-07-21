@@ -45,7 +45,7 @@ def replace_method_string_for_all_metrics(dpath):
                     with open(filepath, 'r', encoding='utf-8') as f:
                         content = f.read()
 
-                    new_content = content.replace('method 1', 'First method')
+                    new_content = content.replace('Chinese trick', 'Chinese reminder')
 
                     if new_content != content:
                         with open(filepath, 'w', encoding='utf-8') as f:
@@ -58,7 +58,6 @@ def replace_method_string_for_all_metrics(dpath):
 # === Usage ===
 # Set your root paths and variables
 dpath = 'D:\precomputed\N_10'        # <-- Change this
-WApath = os.path.join(dpath, 'WAs')
 
-clean_wa_files(WApath)
+clean_wa_files(dpath)
 replace_method_string_for_all_metrics(dpath)

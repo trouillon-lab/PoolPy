@@ -291,6 +291,9 @@ def server(input, output, session):
             #DFT=CR[0]
             #DFT.insert(loc=0, column='Pooling strategy', value=DFT.index)
             metrics_data.drop(metrics_data.columns[0], axis=1)
+            ls_met_nice=['Pooling design', 'Mean total experiments', 'Max samples per pool', 'N pools', '\% multiple rounds', 'Mean extra experiments']
+            dict_ren={i:j for i,j in zip(metrics_data.columns,ls_met_nice)}
+            metrics_data.rename(columns=dict_ren, inpalce=True)
             output.summary_table.set(metrics_data)
 
             #TBLS=CR[1]
@@ -310,7 +313,7 @@ def server(input, output, session):
             
             
         # Prepare the correct command for pool_N.py based on its arguments
-        command_p = f"python pool_N.py --n_compounds {n_samp} --differentiate {differentiate} --method all --path your/path"
+        command_p = f"python pool_N.py --n_samp {n_samp} --differentiate {differentiate} --method all --path your/path"
         output.personalized_command.set(command_p)
 
             #md=np.max(np.array(list(f2)))

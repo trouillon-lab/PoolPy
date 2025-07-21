@@ -32,21 +32,29 @@ def clean_wa_files(WApath):
                 except Exception as e:
                     print("Failed to remove", fname, ":", e)
 
-def replace_method_string(dpath, N, diff):
-    """Find matching Metrics_N_<N>_diff_<diff>.csv files and replace 'method 1' -> 'First method'."""
-    pattern = os.path.join(dpath, f'Metrics_N_{N}_diff_{diff}.csv')
-    matches = glob.glob(pattern, recursive=True)
+def replace_method_string_for_all_metrics(dpath):
+    """Find all 'Metrics_N_*_diff_*.csv' files under dpath and replace 'method 1'."""
+    # Regex pattern to match valid Metrics filenames
+    metrics_filename_pattern = re.compile(r'^Metrics_N_\d+_diff_[\d\.]+\.csv$')
 
-    for filepath in matches:
-        try:
-            with open(filepath, 'r', encoding='utf-8') as f:
-                content = f.read()
-            new_content = content.replace('method 1', 'First method')
-            with open(filepath, 'w', encoding='utf-8') as f:
-                f.write(new_content)
-            print("Replaced in:", filepath)
-        except Exception as e:
-            print("Error processing", filepath, ":", e)
+    for root, dirs, files in os.walk(dpath):
+        for file in files:
+            if metrics_filename_pattern.match(file):
+                filepath = os.path.join(root, file)
+
+                try:
+                    with open(filepath, 'r', encoding='utf-8') as f:
+                        content = f.read()
+
+                    new_content = content.replace('method 1', 'First method')
+
+                    if new_content != content:
+                        with open(filepath, 'w', encoding='utf-8') as f:
+                            f.write(new_content)
+                        print(f"Replaced in: {filepath}")
+
+                except Exception as e:
+                    print(f"Failed to process {filepath}: {e}")
 
 # === Usage ===
 # Set your root paths and variables
@@ -56,4 +64,4 @@ N = 10                             # <-- Set the value of N
 diff = 0.1                         # <-- Set the value of diff
 
 clean_wa_files(WApath)
-replace_method_string(dpath, N, diff)
+replace_method_string_for_all_metrics(dpath)

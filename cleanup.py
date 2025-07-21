@@ -1,44 +1,59 @@
 import os
 import re
+import glob
 
 def extract_min_tests(filename):
-    """Extract the number after '_ME_' and before '.csv'."""
-    match = re.search(r'_ME_([\\d\\.]+)\\.csv$', filename)
+    """Extract float number after '_ME_' and before '.csv'."""
+    match = re.search(r'_ME_([\d\.]+)\.csv$', filename)
     if match:
         return float(match.group(1))
     return None
 
-def clean_wa_files(start_path):
-    for root, dirs, files in os.walk(start_path):
-        # Find files matching the pattern in this folder
-        target_files = [
-            f for f in files
-            if f.startswith('WA_Random_N_') and '_diff_' in f and '_ME_' in f and f.endswith('.csv')
-        ]
-        if not target_files:
+def clean_wa_files(WApath):
+    """In each folder under WApath, only keep the file with smallest _ME_ value."""
+    for root, dirs, files in os.walk(WApath):
+        wa_files = [f for f in files if f.startswith('WA_Random_N_') and '_ME_' in f and f.endswith('.csv')]
+        if not wa_files:
             continue
 
-        # Map files to their min_tests value
-        files_with_mt = []
-        for fname in target_files:
-            mt = extract_min_tests(fname)
-            if mt is not None:
-                files_with_mt.append((fname, mt))
-
-        if not files_with_mt:
+        files_with_vals = [(f, extract_min_tests(f)) for f in wa_files if extract_min_tests(f) is not None]
+        if not files_with_vals:
             continue
 
-        # Find the smallest min_tests value
-        smallest_mt = min(files_with_mt, key=lambda x: x[1])[1]
+        # Get min ME value for this folder
+        min_me = min(files_with_vals, key=lambda x: x[1])[1]
 
-        # Remove all except those with the smallest min_tests
-        for fname, mt in files_with_mt:
-            if mt != smallest_mt:
+        # Remove all files with ME != min
+        for fname, val in files_with_vals:
+            if val != min_me:
                 try:
                     os.remove(os.path.join(root, fname))
-                    print(f"Removed: {os.path.join(root, fname)}")
+                    print("Removed:", os.path.join(root, fname))
                 except Exception as e:
-                    print(f"Could not remove {fname}: {e}")
+                    print("Failed to remove", fname, ":", e)
 
-# Example usage:
-# clean_wa_files('/your/path/here')
+def replace_method_string(dpath, N, diff):
+    """Find matching Metrics_N_<N>_diff_<diff>.csv files and replace 'method 1' -> 'First method'."""
+    pattern = os.path.join(dpath, f'Metrics_N_{N}_diff_{diff}.csv')
+    matches = glob.glob(pattern, recursive=True)
+
+    for filepath in matches:
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                content = f.read()
+            new_content = content.replace('method 1', 'First method')
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(new_content)
+            print("Replaced in:", filepath)
+        except Exception as e:
+            print("Error processing", filepath, ":", e)
+
+# === Usage ===
+# Set your root paths and variables
+dpath = '/your/main/folder'        # <-- Change this
+WApath = os.path.join(dpath, 'WAs')
+N = 10                             # <-- Set the value of N
+diff = 0.1                         # <-- Set the value of diff
+
+clean_wa_files(WApath)
+replace_method_string(dpath, N, diff)

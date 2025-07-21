@@ -1,52 +1,44 @@
 import os
 import re
-import sys
 
-def delete_files_by_regex(root_folder, regex_pattern, safe_folder=None):
-    pattern = re.compile(regex_pattern)
-    for dirpath, dirnames, filenames in os.walk(root_folder):
-        # Exclude the safe folder if specified
-        if safe_folder:
-            dirnames[:] = [d for d in dirnames if d != safe_folder]
-            # Skip current dir if it's the safe folder
-            if safe_folder in os.path.normpath(dirpath).split(os.sep):
-                continue
+def extract_min_tests(filename):
+    """Extract the number after '_ME_' and before '.csv'."""
+    match = re.search(r'_ME_([\\d\\.]+)\\.csv$', filename)
+    if match:
+        return float(match.group(1))
+    return None
 
-        for filename in filenames:
-            if pattern.match(filename):
-                file_path = os.path.join(dirpath, filename)
-                print(f"Deleting {file_path}")
+def clean_wa_files(start_path):
+    for root, dirs, files in os.walk(start_path):
+        # Find files matching the pattern in this folder
+        target_files = [
+            f for f in files
+            if f.startswith('WA_Random_N_') and '_diff_' in f and '_ME_' in f and f.endswith('.csv')
+        ]
+        if not target_files:
+            continue
+
+        # Map files to their min_tests value
+        files_with_mt = []
+        for fname in target_files:
+            mt = extract_min_tests(fname)
+            if mt is not None:
+                files_with_mt.append((fname, mt))
+
+        if not files_with_mt:
+            continue
+
+        # Find the smallest min_tests value
+        smallest_mt = min(files_with_mt, key=lambda x: x[1])[1]
+
+        # Remove all except those with the smallest min_tests
+        for fname, mt in files_with_mt:
+            if mt != smallest_mt:
                 try:
-                    os.remove(file_path)
+                    os.remove(os.path.join(root, fname))
+                    print(f"Removed: {os.path.join(root, fname)}")
                 except Exception as e:
-                    print(f"Failed to delete {file_path}: {e}")
+                    print(f"Could not remove {fname}: {e}")
 
-if __name__ == "__main__":
-    # Command-line arguments handling
-    if len(sys.argv) >= 3:  # At least root and regex provided
-        root = sys.argv[1]
-        regex = sys.argv[2]
-        safe = sys.argv[3] if len(sys.argv) >= 4 else None
-    else:
-        # Interactive mode
-        root = input("Enter the path to the root folder: ").strip()
-        regex = input("Enter the regex pattern for filenames to delete: ").strip()
-        safe_input = input("Enter safe folder name (optional): ").strip()
-        safe = safe_input if safe_input else None
-
-    delete_files_by_regex(root, regex, safe)
-
-
-
-'''
-# Delete files starting with 'decode_' everywhere
-python script.py /path/to/root "^decode_.*"
-
-# Delete files ending with '.tmp', but skip 'backups' folders
-python script.py /path/to/root ".*\.tmp$" backups
-
-# Interactive mode
-python script.py
-# (Follow prompts, leave 'safe folder' blank if you want no exclusions)
-
-'''
+# Example usage:
+# clean_wa_files('/your/path/here')

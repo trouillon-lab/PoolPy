@@ -290,10 +290,10 @@ def server(input, output, session):
 
             #DFT=CR[0]
             #DFT.insert(loc=0, column='Pooling strategy', value=DFT.index)
-            metrics_data.drop(metrics_data.columns[0], axis=1)
-            ls_met_nice=['Pooling design', 'Mean total experiments', 'Max samples per pool', 'N pools', '\% multiple rounds', 'Mean extra experiments']
-            dict_ren={i:j for i,j in zip(metrics_data.columns,ls_met_nice)}
-            metrics_data.rename(columns=dict_ren, inpalce=True)
+            metrics_data.drop(metrics_data.columns[0], axis=1, inplace=True)
+            #ls_met_nice=['Pooling design', 'Mean total experiments', 'Max samples per pool', 'N pools', '\% multiple rounds', 'Mean extra experiments']
+            dict_ren={'N wells':'N pools'}#{i:j for i,j in zip(metrics_data.columns,ls_met_nice)}
+            metrics_data.rename(columns=dict_ren, inplace=True)
             output.summary_table.set(metrics_data)
 
             #TBLS=CR[1]

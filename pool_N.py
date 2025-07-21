@@ -87,7 +87,7 @@ for method, WA in zip(multi, WA_list):
     
 
 
-ls_names_met=['Method', 'Mean experiments', 'Max compunds per well', 'N wells', 'Percentage check', 'Mean extra experiments', 'Mean steps']
+ls_names_met=['Method', 'Mean experiments', 'Max compunds per well', 'N pools', 'Percentage check', 'Mean extra experiments', 'Mean steps']
 ls_met=[]
 full_methods=[]
 WApath=this_dir

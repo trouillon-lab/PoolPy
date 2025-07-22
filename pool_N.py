@@ -29,7 +29,7 @@ this_path=args_dict['path']
 args_dict['save_dir']=copy.deepcopy(args_dict['path'])
 args_dict['return_wa']=True
 args_dict['keep_ratios_constant']=False
-
+args_dict['n_compounds']=n_compounds
 
 scrambler={1:np.arange(n_compounds)}
 for j in range(2,diff+1):

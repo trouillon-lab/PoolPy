@@ -33,6 +33,9 @@ inf_diff=re.sub('^.*_', '', st_dir)
 inf_diff=re.sub('\.csv$', '', inf_diff)
 inf_diff=int(inf_diff)
 
+method=re.sub('.*WA_', '', dira)
+method=re.sub('_.*$', '', method)
+
 if diff==-1:
     diff=inf_diff
 

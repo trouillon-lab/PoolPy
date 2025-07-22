@@ -81,5 +81,7 @@ fdriro=os.path.join(s1driro, f'{method}_diff_{diff}_decoded.txt')
 with open(fdriro, 'w+') as f:
     if diff!=inf_diff:
         f.write(f'WARNING: inferred differentiate of {inf_diff} different from passed differentiate of {diff}\n')
+
+    f.write('Decoded file {dira} assuming differentiate {diff}.\n Possible positive samples combiantion are')
     for line in decoded:
         f.write(f"Samples: {line}\n")

@@ -65,7 +65,10 @@ for deco in decoded:
     print('Samples:', deco)
 
 s1driro=os.path.join(os.path.dirname(os.path.dirname(dira)), 'decoded')
-fdriro=os.path.join(s1driro, f'{method}_diff_{diff}_decoded.txt'))
+if not os.path.isdir(s1driro):
+    os.mkdir(s1driro)
+fdriro=os.path.join(s1driro, f'{method}_diff_{diff}_decoded.txt')
+
 with open(fdriro, 'w+') as f:
     if diff!=inf_diff:
         f.write(f'WARNING: inferred differentiate of {inf_diff} different from passed differentiate of {diff}\n')

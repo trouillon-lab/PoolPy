@@ -39,7 +39,7 @@ def decode_precomp(well_assigner:np.array, differentiate:int,
             return outcome_dict
 
         else:
-            idxs = np.all(outcome == full_well_assigner, axis=1)
+            idxs = np.all(readout == full_well_assigner, axis=1)
             return list(itertools.compress(sc_list,idxs))
         
     else:

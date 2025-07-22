@@ -877,5 +877,3 @@ def recalculate_full_metrics(full_ls, differentiate, Ps, **kwargs):
     dict_out.update({diff:[Ps[diff],df_met]})
     return(dict_out)
     
-    
-

@@ -17,7 +17,7 @@ from Fast_functions import *
 
 
 parser = argparse.ArgumentParser(description='Parse some arguments')
-parser.add_argument('--differentiate', type=int, default=2, help='An integer argument with default 2')
+parser.add_argument('--differentiate', type=int, default=-1, help='An integer argument with default 2')
 parser.add_argument('--path_to_WA', type=str, help="A string argument with default './pooling_results'")
 
 args = parser.parse_args()
@@ -27,6 +27,18 @@ args_dict = vars(args)
 dira=args_dict['path_to_WA']
 diff=args_dict['differentiate']
 WA_df=pd.read_csv(dira, index_col=0)
+
+st_dir=str(dira)
+inf_diff=re.sub('^.*_', '', st_dir)
+inf_diff=re.sub('\.csv$', '', inf_diff)
+inf_diff=int(inf_diff)
+
+if diff==-1:
+    diff=inf_diff
+
+if diff!=inf_diff:
+    print(f'WARNING: inferred differentiate of {inf_diff} different from passed differentiate of {diff}\n')
+
 
 WA=WA_df.values
 n_compounds=WA.shape[1]
@@ -49,7 +61,9 @@ print('The possible positives for the given well assigner, outcome, and differen
 for deco in decoded:
     print('Samples:', deco)
 
-fdriro=os.path.join(dira, 'decoded.txt')
+fdriro=os.path.join(os.path.dirname(os.path.dirname(dira)), 'decoded', f'decoded_diff_{diff}.txt')
 with open(fdriro, 'w') as f:
+    if diff!=inf_diff:
+        f.write(f'WARNING: inferred differentiate of {inf_diff} different from passed differentiate of {diff}\n')
     for line in decoded:
         f.write(f"Samples: {line}\n")

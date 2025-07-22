@@ -45,4 +45,11 @@ multi=[]
 decoded=decode_precomp(well_assigner=WA,differentiate= diff, scrambler=scrambler, 
                readout=np.array((WA[0]+WA[5]).astype(bool).astype(int)))
 
+print('The possible positives for the given well assigner, outcome, and differentiate are:')
+for deco in decoded:
+    print('Samples:', deco)
 
+
+with open('your_file.txt', 'w') as f:
+    for line in decoded:
+        f.write(f"Samples: {line}\n")

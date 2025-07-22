@@ -30,7 +30,7 @@ WA_df=pd.read_csv(dira, index_col=0)
 
 st_dir=str(dira)
 inf_diff=re.sub('^.*_', '', st_dir)
-inf_diff=re.sub('\.csv$', '', inf_diff)
+inf_diff=re.sub('\\.csv$', '', inf_diff)
 inf_diff=int(inf_diff)
 
 method=re.sub('.*WA_', '', dira)
@@ -65,7 +65,7 @@ for deco in decoded:
     print('Samples:', deco)
 
 fdriro=os.path.join(os.path.dirname(os.path.dirname(dira)), 'decoded', f'{method}_diff_{diff}_decoded.txt')
-with open(fdriro, 'w') as f:
+with open(fdriro, 'w+') as f:
     if diff!=inf_diff:
         f.write(f'WARNING: inferred differentiate of {inf_diff} different from passed differentiate of {diff}\n')
     for line in decoded:

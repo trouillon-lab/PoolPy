@@ -19,14 +19,23 @@ from Fast_functions import *
 parser = argparse.ArgumentParser(description='Parse some arguments')
 parser.add_argument('--differentiate', type=int, default=-1, help='An integer argument with default 2')
 parser.add_argument('--path_to_WA', type=str, help="A string argument with default './pooling_results'")
+parser.add_argument('--readout', type=str, help="A string either containing the readout or containing a path a csv of the readout")
 
 args = parser.parse_args()
 
 args_dict = vars(args)
 
+
+
 dira=args_dict['path_to_WA']
 diff=args_dict['differentiate']
+readout_in=args_dict['readout']
 WA_df=pd.read_csv(dira, index_col=0)
+
+if readout_in.endswith('csv'):
+    readout = np.genfromtxt('readout_in', delimiter=',', dtype=int)
+else:
+    readout = np.fromstring(readout_in, sep=',', dtype=int)    
 
 st_dir=str(dira)
 inf_diff=re.sub('^.*_', '', st_dir)
@@ -58,7 +67,7 @@ WA_list=[]
 multi=[]
 
 decoded=decode_precomp(well_assigner=WA,differentiate= diff, scrambler=scrambler, 
-               readout=np.array((WA[0]+WA[5]).astype(bool).astype(int)))
+               readout=np.array(readout.astype(bool).astype(int)))
 
 print('The possible positives for the given well assigner, outcome, and differentiate are:')
 for deco in decoded:

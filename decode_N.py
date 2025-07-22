@@ -64,7 +64,8 @@ print('The possible positives for the given well assigner, outcome, and differen
 for deco in decoded:
     print('Samples:', deco)
 
-fdriro=os.path.join(os.path.dirname(os.path.dirname(dira)), 'decoded', f'{method}_diff_{diff}_decoded.txt')
+s1driro=os.path.join(os.path.dirname(os.path.dirname(dira)), 'decoded')
+fdriro=os.path.join(s1driro, f'{method}_diff_{diff}_decoded.txt'))
 with open(fdriro, 'w+') as f:
     if diff!=inf_diff:
         f.write(f'WARNING: inferred differentiate of {inf_diff} different from passed differentiate of {diff}\n')

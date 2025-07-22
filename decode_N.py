@@ -49,7 +49,7 @@ print('The possible positives for the given well assigner, outcome, and differen
 for deco in decoded:
     print('Samples:', deco)
 
-
-with open('your_file.txt', 'w') as f:
+fdriro=os.path.join(dira, 'decoded.txt')
+with open(fdriro, 'w') as f:
     for line in decoded:
         f.write(f"Samples: {line}\n")

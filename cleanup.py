@@ -78,7 +78,7 @@ def replace_method_string_and_filter_metrics(dpath):
 
 # === Usage ===
 # Set your root paths and variables
-dpath = 'D:\precomputed\N_10'        # <-- Change this
+dpath = 'D:\\precomputed\\N_10'        # <-- Change this
 
 clean_wa_files(dpath)
 replace_method_string_and_filter_metrics(dpath)

@@ -233,6 +233,25 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, *
             prod=prod*n
             primes.append(n)
 
+    if backtrack:
+        T=np.sum(primes)
+        nprimes=np.array(primes)
+        ND=n_compounds**differentiate
+        ls_of_ls=[]
+        LMP=np.log(primes[-1])
+        for pi in primes:
+            LE=np.floor(LMP/np.log(pi))
+            ls_of_ls.append(list(range(LE+1)))
+        for id_combo, combo in enumerate(itertools.product(*ls_of_ls)):
+            carr=np.array(combo)
+            flt=carr>0
+            this_primes=nprimes[flt]
+            this_exp=carr[flt]
+            npc=np.prod(this_primes**this_exp)
+            if np.prod(npc)>=ND and np.sum(npc)<T
+
+        pass    
+
     WA=np.zeros((np.sum(primes), n_compounds))==1
     past_primes=0
     for prime in primes:

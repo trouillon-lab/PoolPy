@@ -7,7 +7,28 @@ import argparse
 import pickle
 import time
 import os
+import string
 
+# Possible digits from the lowest to the highest
+DIGITS = '%s%s' % (string.digits, string.lowercase)
+
+def baseencode(num, base):
+    result = 0
+    positive = True
+    # If a number is negative let's remove the minus sign
+    if num[0] == '-':
+        positive = False
+        num = num[1:]
+
+    for i, n in enumerate(num[::-1]):
+        # Since 0xff == 0xFF
+        n = n.lower()
+        result += DIGITS.index(n) * base ** i
+
+    if not positive:
+        result = -1 * result
+
+    return result
 
 
 #Coumpound counter starts from 1

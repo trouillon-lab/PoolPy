@@ -222,7 +222,7 @@ def assign_wells_STD(n_compounds:int, differentiate=1, False_results=0, force_q=
 # Method from IMPROVED COMBINATORIAL GROUP TESTING ALGORITHMSFOR REAL-WORLD PROBLEM SIZES
 # section The Chinese remainder sieve
 
-def assign_wells_chinese(n_compounds:int,  differentiate:int, **kwargs)->np.array:
+def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, **kwargs)->np.array:
     prod=1
     n=1
     primes=[]

@@ -234,7 +234,7 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, *
             primes.append(n)
 
     if backtrack:
-        T=np.sum(primes)
+        T=np.inf
         nprimes=np.array(primes)
         ND=n_compounds**differentiate
         ls_of_ls=[]
@@ -242,15 +242,34 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, *
         for pi in primes:
             LE=np.floor(LMP/np.log(pi))
             ls_of_ls.append(list(range(LE+1)))
-        for id_combo, combo in enumerate(itertools.product(*ls_of_ls)):
+        ls_iter=list(itertools.product(*ls_of_ls))
+        for id_combo, combo in enumerate(ls_iter):
             carr=np.array(combo)
             flt=carr>0
             this_primes=nprimes[flt]
             this_exp=carr[flt]
             npc=np.prod(this_primes**this_exp)
-            if np.prod(npc)>=ND and np.sum(npc)<T
+            if np.prod(npc)>=ND and np.sum(npc)<T:
+                T=np.sum(npc)
+                best_id=id_combo
+        combo=ls_iter[best_id]
+        carr=np.array(combo)
+        flt=carr>0
+        this_primes=nprimes[flt]
+        this_exp=carr[flt]
+        npc=np.prod(this_primes**this_exp)
 
-        pass    
+        WA=np.zeros((np.sum(npc), n_compounds))==1
+        past_primes=0
+        for prime in npc:
+            temp_wa=np.zeros((prime, n_compounds))==1
+            for x in range(prime):
+                ids=c_id%prime==x    
+                temp_wa[x, ids]=True
+            WA[past_primes:past_primes+prime,:]=temp_wa
+            past_primes=past_primes+prime
+
+        return(WA.T)   
 
     WA=np.zeros((np.sum(primes), n_compounds))==1
     past_primes=0

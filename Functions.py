@@ -9,26 +9,22 @@ import time
 import os
 import string
 
-# Possible digits from the lowest to the highest
-DIGITS = '%s%s' % (string.digits, string.lowercase)
-
-def baseencode(num, base):
-    result = 0
-    positive = True
-    # If a number is negative let's remove the minus sign
-    if num[0] == '-':
-        positive = False
-        num = num[1:]
-
-    for i, n in enumerate(num[::-1]):
-        # Since 0xff == 0xFF
-        n = n.lower()
-        result += DIGITS.index(n) * base ** i
-
-    if not positive:
-        result = -1 * result
-
-    return result
+def int_to_base(n, N):
+    """ Return base N representation for int n. """
+    base_n_digits = string.digits + string.ascii_lowercase + string.ascii_uppercase
+    result = ""
+    if n < 0:
+        sign = "-"
+        n = -n
+    else:
+        sign = ""
+    while n > 0:
+        q, r = divmod(n, N)
+        result += base_n_digits[r]
+        n = q
+    if result == "":
+        result = "0"
+    return sign + "".join(reversed(result))
 
 
 #Coumpound counter starts from 1
@@ -294,6 +290,7 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
     
     if special_diff and differentiate==2:
         q=np.ceil(np.log(n_compounds)/np.log(3))
+        
 
     WA=np.zeros((np.sum(primes), n_compounds))==1
     past_primes=0

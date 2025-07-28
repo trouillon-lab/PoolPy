@@ -302,6 +302,7 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
             for ii in range(i+1,q):
                 for j in range(n_compounds):
                     temp_wa[k,j]=1 if ls_nc3[j][i]==ls_nc3[j][ii] else 0
+                k+=1
 
 
 

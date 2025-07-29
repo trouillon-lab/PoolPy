@@ -2,6 +2,8 @@ import os
 import re
 import pandas as pd
 from io import StringIO
+from Functions import assign_wells_chinese
+import numpy as np
 
 def extract_min_tests(filename):
     """Extract float number after '_ME_' and before '.csv'."""
@@ -104,8 +106,24 @@ def replace_method_filter_metrics_add_CT(dpath):
                     new_content = content.replace('Chinese trick', 'Chinese reminder')
 
                     # Try to read into DataFrame
-                    
                     df = pd.read_csv(StringIO(new_content))
+
+                    # Prepare WAs subfolder path
+                    was_dir = os.path.join(root, 'WAs')
+                    if not os.path.exists(was_dir):
+                        os.makedirs(was_dir)
+
+                    # Call assign_wells_chinese with backtrack=True
+
+                    WA_bktrk = assign_wells_chinese(n_compounds=N_value, differentiate=diff_value, backtrack=True)
+                    bktrk_fname = f'WA_chinese_bktrk_N_{N_value}_diff_{diff_value}.csv'
+                    np.savetxt(os.path.join(was_dir, bktrk_fname), WA_bktrk.astype(bool), delimiter=",")
+
+                    # If diff_value is 2 or 3, call assign_wells_chinese with special_diff=True
+                    if diff_value in [2, 3]:
+                        WA_special = assign_wells_chinese(n_compounds=N_value, differentiate=diff_value, special_diff=True)
+                        special_fname = f'WA_chinese_special_N_{N_value}_diff_{diff_value}.csv'
+                        np.savetxt(os.path.join(was_dir, special_fname), WA_special.astype(bool), delimiter=",")
 
                     if 'Method' in df.columns and 'Mean experiments' in df.columns:
                         # Drop duplicates keeping the one with the minimum 'Mean experiments'

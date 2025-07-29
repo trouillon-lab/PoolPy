@@ -158,13 +158,7 @@ def replace_method_filter_metrics_add_CT(dpath):
                         }
                         if 'Method' in df.columns:
                             df = df.append(special_row, ignore_index=True)
-
-                    # If diff_value is 2 or 3, call assign_wells_chinese with special_diff=True
-                    if diff_value in [2, 3]:
-                        WA_special = assign_wells_chinese(n_compounds=N_value, differentiate=diff_value, special_diff=True)
-                        special_fname = f'WA_chinese_special_N_{N_value}_diff_{diff_value}.csv'
-                        np.savetxt(os.path.join(was_dir, special_fname), WA_special.astype(bool), delimiter=",")
-
+                                       
                     if 'Method' in df.columns and 'Mean experiments' in df.columns:
                         # Drop duplicates keeping the one with the minimum 'Mean experiments'
                         df.sort_values('Mean experiments', inplace=True)

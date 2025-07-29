@@ -309,17 +309,15 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
         q=np.ceil(np.log(n_compounds)/np.log(2))
         t=int((q-1)*q*2)
         WA=np.zeros((t, n_compounds))==1
-        ls_nc3=[list(i)[::-1] for i in [int_to_base(j,3).zfill(q) for j in range(n_compounds)]]
-        for i in range(q):
-            for ii in range(3):
-                for j in range(n_compounds):
-                    WA[3*i+ii,j]=True if ls_nc3[j][i]==ii else False
-        k=3*q
+        ls_nc3=[list(i)[::-1] for i in [int_to_base(j,2).zfill(q) for j in range(n_compounds)]]
+        k=0
         for i in range(q):
             for ii in range(i+1,q):
-                for j in range(n_compounds):
-                    WA[k,j]=True if ls_nc3[j][i]==ls_nc3[j][ii] else False
-                k+=1
+                for nu in [0,1]:
+                    for nuu in [0,1]:
+                        for j in range(n_compounds):
+                            WA[k,j]=True if ls_nc3[j][i]==nu and ls_nc3[j][ii]==nuu else False
+                        k+=1
         return(WA.T)
 
 

@@ -126,6 +126,39 @@ def replace_method_filter_metrics_add_CT(dpath):
                     bktrk_fname = f'WA_chinese_bktrk_N_{N_value}_diff_{diff_value}.csv'
                     np.savetxt(os.path.join(was_dir, bktrk_fname), WA_bktrk.astype(bool), delimiter=",")
 
+                                        # Add row for Ch. Rm. Bktrk
+                    bktrk_row = {
+                        'Unnamed: 0': 'Ch. Rm. Bktrk',
+                        'Method': 'Ch. Rm. Bktrk',
+                        'Mean experiments': WA_bktrk.shape[1],
+                        'Max compunds per well': int(np.max(np.sum(WA_bktrk, axis=0))),
+                        'N pools': WA_bktrk.shape[1],
+                        'Percentage check': 0,
+                        'Mean extra experiments': 0,
+                        'Mean steps': 1
+                    }
+                    if 'Method' in df.columns:
+                        df = df.append(bktrk_row, ignore_index=True)
+
+                    # If diff_value is 2 or 3, call assign_wells_chinese with special_diff=True
+                    if diff_value in [2, 3]:
+                        WA_special = assign_wells_chinese(n_compounds=N_value, differentiate=diff_value, special_diff=True)
+                        special_fname = f'WA_chinese_special_N_{N_value}_diff_{diff_value}.csv'
+                        np.savetxt(os.path.join(was_dir, special_fname), WA_special.astype(bool), delimiter=",")
+                        # Add row for Ch. Rm. Special
+                        special_row = {
+                            'Unnamed: 0': 'Ch. Rm. Special',
+                            'Method': 'Ch. Rm. Special',
+                            'Mean experiments': WA_special.shape[1],
+                            'Max compunds per well': int(np.max(np.sum(WA_special, axis=0))),
+                            'N pools': WA_special.shape[1],
+                            'Percentage check': 0,
+                            'Mean extra experiments': 0,
+                            'Mean steps': 1
+                        }
+                        if 'Method' in df.columns:
+                            df = df.append(special_row, ignore_index=True)
+
                     # If diff_value is 2 or 3, call assign_wells_chinese with special_diff=True
                     if diff_value in [2, 3]:
                         WA_special = assign_wells_chinese(n_compounds=N_value, differentiate=diff_value, special_diff=True)

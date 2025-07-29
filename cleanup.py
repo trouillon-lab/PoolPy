@@ -109,7 +109,7 @@ def replace_method_filter_metrics_add_CT(dpath):
                         content = f.read()
 
                     # Replace 'method 1' → 'First method'
-                    new_content = content.replace('method 1', 'First method')
+                    new_content = content.replace('Chinese trick', 'Chinese reminder')
 
                     # Try to read into DataFrame
                     

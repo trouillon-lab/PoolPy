@@ -75,6 +75,19 @@ if method=='chinese_trick' or method=='all':
     multi.append('Chinese trick')
     WA_list.append(WA_chin.astype(int))
 
+if method=='chinese_trick_bktrk' or method=='all':
+
+    WA_chin=assign_wells_chinese(**args_dict, backtrack=True)
+    multi.append('Ch. Tr. Bktrk')
+    WA_list.append(WA_chin.astype(int))
+
+if method=='chinese_trick_special' or method=='all':
+
+    if args_dict['differentiate']==2 or args_dict['differentiate']==3:
+        WA_chin=assign_wells_chinese(**args_dict, backtrack=True)
+        multi.append('Ch. Tr. special')
+        WA_list.append(WA_chin.astype(int))
+
 
 this_dir=os.path.join(this_path,'N_'+str(args_dict['n_compounds']), 'diff_'+str(args_dict['differentiate']), 'WAs')
 

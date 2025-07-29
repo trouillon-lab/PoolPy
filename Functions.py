@@ -306,8 +306,8 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
         return(WA.T)
     
     if special_diff and differentiate==3:
-        q=np.ceil(np.log(n_compounds)/np.log(3))
-        t=int((q+5)*q/2)
+        q=np.ceil(np.log(n_compounds)/np.log(2))
+        t=int((q-1)*q*2)
         WA=np.zeros((t, n_compounds))==1
         ls_nc3=[list(i)[::-1] for i in [int_to_base(j,3).zfill(q) for j in range(n_compounds)]]
         for i in range(q):

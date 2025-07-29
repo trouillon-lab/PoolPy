@@ -46,13 +46,6 @@ def replace_method_string_and_filter_metrics(dpath):
         for fname in files:
             if metrics_filename_pattern.match(fname):
                 # Extract N and diff values from filename
-                match = re.match(r'^Metrics_N_(\d+)_diff_([\d\.]+)\.csv$', fname)
-                if match:
-                    N_value = int(match.group(1))
-                    diff_value = float(match.group(2))
-                else:
-                    N_value = None
-                    diff_value = None
                 fpath = os.path.join(root, fname)
                 try:
                     # Load file as text
@@ -108,7 +101,6 @@ def replace_method_filter_metrics_add_CT(dpath):
                     with open(fpath, 'r', encoding='utf-8') as f:
                         content = f.read()
 
-                    # Replace 'method 1' → 'First method'
                     new_content = content.replace('Chinese trick', 'Chinese reminder')
 
                     # Try to read into DataFrame

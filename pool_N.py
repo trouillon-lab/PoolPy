@@ -106,7 +106,7 @@ full_methods=[]
 WApath=this_dir
 filenames = next(os.walk(WApath), (None, None, []))[2]
 for fname in filenames:
-    print(fname)
+    #print(fname)
     fdir=os.path.join(WApath,fname)
     WA=np.genfromtxt(fdir, delimiter=",")
     mean_exp, extra_exp,  _, perc_check= mean_metrics_precomp(well_assigner=WA,scrambler=scrambler, **args_dict)

@@ -257,7 +257,7 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
         ls_of_ls=[]
         LMP=np.log(primes[-1])
         for pi in primes:
-            LE=np.floor(LMP/np.log(pi))
+            LE=np.floor(LMP/np.log(pi)).astype(int)
             ls_of_ls.append(list(range(LE+1)))
         ls_iter=list(itertools.product(*ls_of_ls))
         for id_combo, combo in enumerate(ls_iter):
@@ -289,7 +289,7 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
         return(WA.T)   
     
     if special_diff and differentiate==2:
-        q=np.ceil(np.log(n_compounds)/np.log(3))
+        q=np.ceil(np.log(n_compounds)/np.log(3)).astype(int)
         t=int((q+5)*q/2)
         WA=np.zeros((t, n_compounds))==1
         ls_nc3=[list(i)[::-1] for i in [int_to_base(j,3).zfill(q) for j in range(n_compounds)]]
@@ -306,7 +306,7 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
         return(WA.T)
     
     if special_diff and differentiate==3:
-        q=np.ceil(np.log(n_compounds)/np.log(2))
+        q=np.ceil(np.log(n_compounds)/np.log(2)).astype(int)
         t=int((q-1)*q*2)
         WA=np.zeros((t, n_compounds))==1
         ls_nc3=[list(i)[::-1] for i in [int_to_base(j,2).zfill(q) for j in range(n_compounds)]]

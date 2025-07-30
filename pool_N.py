@@ -84,7 +84,7 @@ if method=='chinese_trick_bktrk' or method=='all':
 if method=='chinese_trick_special' or method=='all':
 
     if args_dict['differentiate']==2 or args_dict['differentiate']==3:
-        WA_chin=assign_wells_chinese(**args_dict, backtrack=True)
+        WA_chin=assign_wells_chinese(**args_dict, special_diff=True)
         multi.append('Ch-Rm-special')
         WA_list.append(WA_chin.astype(int))
 

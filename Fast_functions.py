@@ -263,7 +263,8 @@ def is_consistent_precomp(well_assigner:np.array, differentiate:int, scrambler:d
 def mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs):
     BT=well_assigner.shape[1]
     _,_, counts= is_consistent_precomp(well_assigner, differentiate, scrambler) 
-    ET=extra_tests(counts)   
+    ET=extra_tests(counts)  
+    ET =ET if ET<well_assigner.shape[1] else well_assigner.shape[1]
     rounds=np.sum(counts>1)/np.sum(counts>0)+1
     p_check=np.round(np.sum(counts[counts>1])/np.sum(counts)*100)
     return BT+ET, ET,  rounds, p_check

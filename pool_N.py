@@ -117,19 +117,21 @@ for fname in filenames:
     method=re.sub('^WA_', '', fname)
     method=re.sub('_.*$', '', method)
     #print(method)
-    ls_met.append([method, M_exp, max_comp, n_wells, int(perc_check),  extra_exp,1+np.round(perc_check/100,2)])
+    ls_met.append([method, M_exp, max_comp, n_wells, int(perc_check),  extra_exp,np.round(1+perc_check/100,2)])
     full_methods.append(method)
+
+
 Hier=calculate_metrics_hierarchical(**args_dict)
 ls_met.append(['Hierarchical']+ [np.round(i,2) for i in Hier[:-1]])
 full_methods.append('Hierarchical')
 df_met=pd.DataFrame(ls_met)
-
 this_dir=os.path.join(this_path,'N_'+str(args_dict['n_compounds']), 'diff_'+str(args_dict['differentiate']))
 
 idx_renamer={i:j for i,j in zip(df_met.index, full_methods)}
 col_renamer={i:j for i,j in zip(df_met.columns, ls_names_met)}
 df_met.rename(index=idx_renamer, columns=col_renamer, inplace=True)
 metname=os.path.join(this_dir, 'Metrics_N_'+str(n_compounds)+'_diff_'+str(diff)+'.csv')
+df_met=df_met.sort_values(by=['Mean experiments'])
 df_met.to_csv(metname)
 
 this_dir=os.path.join(this_path,'N_'+str(args_dict['n_compounds']), 'diff_'+str(args_dict['differentiate']), 'WAs')

@@ -803,7 +803,14 @@ def full_deterministic_WAS(**kwargs):
 
 
             WA_listo.extend([ WA_std, WA_chin])
-            methodso.extend(['STD', 'Chinese trick'])
+            methodso.extend(['STD', 'Chinese reminder'])
+
+            WA_chin_BK=assign_wells_chinese(**kwargs, backtrack=True)
+
+            if 1<diffo<3:
+                WA_chin_sp=assign_wells_chinese(**kwargs, special_diff=True)
+
+
 
 
 

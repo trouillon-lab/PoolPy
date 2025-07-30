@@ -117,7 +117,7 @@ for fname in filenames:
     method=re.sub('^WA_', '', fname)
     method=re.sub('_.*$', '', method)
     #print(method)
-    ls_met.append([method, M_exp, max_comp, n_wells, int(perc_check),  extra_exp,1+np.rond(perc_check/100,2)])
+    ls_met.append([method, M_exp, max_comp, n_wells, int(perc_check),  extra_exp,1+np.round(perc_check/100,2)])
     full_methods.append(method)
 Hier=calculate_metrics_hierarchical(**args_dict)
 ls_met.append(['Hierarchical']+ [np.round(i,2) for i in Hier[:-1]])

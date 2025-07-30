@@ -112,11 +112,12 @@ for fname in filenames:
     mean_exp, extra_exp,  _, perc_check= mean_metrics_precomp(well_assigner=WA,scrambler=scrambler, **args_dict)
     n_wells=WA.shape[1]
     M_exp=np.round(mean_exp, 2)
+    extra_exp=np.round(extra_exp,2)
     max_comp=np.max(np.sum(WA, axis=0))
     method=re.sub('^WA_', '', fname)
     method=re.sub('_.*$', '', method)
     #print(method)
-    ls_met.append([method, M_exp, max_comp, n_wells, int(perc_check),  extra_exp,1+perc_check/100])
+    ls_met.append([method, M_exp, max_comp, n_wells, int(perc_check),  extra_exp,1+np.rond(perc_check/100,2)])
     full_methods.append(method)
 Hier=calculate_metrics_hierarchical(**args_dict)
 ls_met.append(['Hierarchical']+ [np.round(i,2) for i in Hier[:-1]])

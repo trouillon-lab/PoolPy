@@ -274,7 +274,7 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
         flt=carr>0
         this_primes=nprimes[flt]
         this_exp=carr[flt]
-        npc=np.prod(this_primes**this_exp)
+        npc=this_primes**this_exp
 
         WA=np.zeros((np.sum(npc), n_compounds))==1
         past_primes=0

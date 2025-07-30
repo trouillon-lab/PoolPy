@@ -770,19 +770,19 @@ def full_deterministic_WAS(**kwargs):
         if i>kwargs['max_dims']:
             continue
         WA_mul=assign_wells_multidim(n_dims=i, **kwargs)
-        WA_list.append(WA_mul)
+        WA_list.append(WA_mul.astype(int))
         multi.append('multidim-'+str(i))
         
     methods=multi.copy()
 
     WA_mat=assign_wells_mat(**kwargs)
 
-    WA_list.append(WA_mat)
+    WA_list.append(WA_mat.astype(int))
     methods.append('Matrix')
 
     WA_bin=assign_wells_bin(**kwargs)
     methods.append('Binary')
-    WA_list.append(WA_bin)
+    WA_list.append(WA_bin.astype(int))
 
     if kwargs['max_diff']>1:
         for diffo in np.arange(kwargs['max_diff']):
@@ -802,10 +802,12 @@ def full_deterministic_WAS(**kwargs):
             WA_chin=assign_wells_chinese(**kwargs)
 
 
-            WA_listo.extend([ WA_std, WA_chin])
+            WA_listo.extend([ WA_std.astype(int), WA_chin.astype(int)])
             methodso.extend(['STD', 'Chinese reminder'])
 
             WA_chin_BK=assign_wells_chinese(**kwargs, backtrack=True)
+            methodso.append('Ch. Rm. special')
+            WA_listo.append(WA_chin.astype(int))
 
             if 1<diffo<3:
                 WA_chin_sp=assign_wells_chinese(**kwargs, special_diff=True)

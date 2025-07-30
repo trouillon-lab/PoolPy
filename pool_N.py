@@ -72,20 +72,20 @@ if method=='std' or method=='all':
 if method=='chinese_trick' or method=='all':
 
     WA_chin=assign_wells_chinese(**args_dict)
-    multi.append('Chinese trick')
+    multi.append('Chinese reminder')
     WA_list.append(WA_chin.astype(int))
 
 if method=='chinese_trick_bktrk' or method=='all':
 
     WA_chin=assign_wells_chinese(**args_dict, backtrack=True)
-    multi.append('Ch. Tr. Bktrk')
+    multi.append('Ch. Rm. Bktrk')
     WA_list.append(WA_chin.astype(int))
 
 if method=='chinese_trick_special' or method=='all':
 
     if args_dict['differentiate']==2 or args_dict['differentiate']==3:
         WA_chin=assign_wells_chinese(**args_dict, backtrack=True)
-        multi.append('Ch. Tr. special')
+        multi.append('Ch. Rm. special')
         WA_list.append(WA_chin.astype(int))
 
 

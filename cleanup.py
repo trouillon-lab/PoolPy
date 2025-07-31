@@ -176,6 +176,27 @@ def replace_method_filter_metrics_add_CT(dpath):
                 except Exception as e:
                     print(f"Error processing {fpath}: {e}")
 
+def sum_mean_experiments(row):
+    if row['Method'] == 'Hierarchical':
+        return row['Mean experiments']  # leave as is
+    #print(type(row['Mean extra experiments']), type(row['N wells']))
+    return row['Mean extra experiments'] + int(row['N wells'])
+
+
+
+def adjust_mean_extra_experiments(df, N_value):
+    """
+    Ensure 'Mean extra experiments' <= N_value for all rows except 'Hierarchical' method.
+    For 'Hierarchical', leave as is.
+    """
+    def adjust(row):
+        if row['Method'] == 'Hierarchical':
+            return row['Mean extra experiments']
+        return row['Mean extra experiments'] if row['Mean extra experiments'] <= N_value else N_value
+    df['Mean extra experiments'] = df.apply(adjust, axis=1)
+    return df
+
+
 def process_metrics_and_adjust_experiments(dpath):
     """
     Process all Metrics_N_*_diff_*.csv files:
@@ -248,10 +269,10 @@ def process_metrics_and_adjust_experiments(dpath):
                     if 'Mean extra experiments' in df.columns and 'N wells' in df.columns:
                         # Ensure 'Mean extra experiments' <= N_value
                         df['Mean extra experiments'] = df['Mean extra experiments'].apply(
-                            lambda x: x if x <= N_value else N_value
+                            lambda x: int(x) if int(x) <= N_value else N_value
                         )
-                        # Set 'Mean experiments' = 'Mean extra experiments' + 'N wells'
-                        df['Mean experiments'] = df['Mean extra experiments'] + df['N wells']
+                        # Set 'Mean experiments' = 'Mean extra experiments' + 'N wells', skip 'Hierarchical' method
+                        df['Mean experiments'] = df.apply(sum_mean_experiments, axis=1)
 
                         
                     for col in df.select_dtypes(include=['float', 'int']).columns:
@@ -269,6 +290,7 @@ def process_metrics_and_adjust_experiments(dpath):
 
                 except Exception as e:
                     print(f"Error processing {fpath}: {e}")
+
 
 
 # === Usage ===

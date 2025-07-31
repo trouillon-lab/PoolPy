@@ -17,6 +17,8 @@ parser.add_argument('--n_samp', type=int, default=50, help='An integer argument 
 parser.add_argument('--guesses', type=int, default=5, help='An integer argument for guesses of random WA with default 20')
 parser.add_argument('--method', type=str, default='all', help="A string argument with default 'all'")
 parser.add_argument('--path', type=str, default='./pooling_results', help="A string argument with default './pooling_results'")
+parser.add_argument('--keep_ratios_constant', type=str, default=False, help="True/False argument to keep ratios constant in the Hierarchical method")
+
 
 args = parser.parse_args()
 
@@ -28,7 +30,6 @@ method=args_dict['method']
 this_path=args_dict['path']
 args_dict['save_dir']=copy.deepcopy(args_dict['path'])
 args_dict['return_wa']=True
-args_dict['keep_ratios_constant']=False
 args_dict['n_compounds']=n_compounds
 
 scrambler={1:np.arange(n_compounds)}

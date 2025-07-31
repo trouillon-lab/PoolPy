@@ -158,7 +158,7 @@ def replace_method_filter_metrics_add_CT(dpath):
                         }
                         if 'Method' in df.columns:
                             df = df.append(special_row, ignore_index=True)
-                                       
+
                     if 'Method' in df.columns and 'Mean experiments' in df.columns:
                         # Drop duplicates keeping the one with the minimum 'Mean experiments'
                         df.sort_values('Mean experiments', inplace=True)
@@ -178,7 +178,7 @@ def replace_method_filter_metrics_add_CT(dpath):
 
 # === Usage ===
 # Set your root paths and variables
-dpath = 'D:\\precomputed\\N_10'        # <-- Change this
+dpath = 'D:\precomputed\N_10'        # <-- Change this
 
 clean_wa_files(dpath)
 replace_method_string_and_filter_metrics(dpath)

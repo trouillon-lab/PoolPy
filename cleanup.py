@@ -123,7 +123,7 @@ def replace_method_filter_metrics_add_CT(dpath):
                     # Call assign_wells_chinese with backtrack=True
 
                     WA_bktrk = assign_wells_chinese(n_compounds=N_value, differentiate=diff_value, backtrack=True)
-                    bktrk_fname = f'WA_chinese_bktrk_N_{N_value}_diff_{diff_value}.csv'
+                    bktrk_fname = f'WA_Chinese_bktrk_N_{N_value}_diff_{diff_value}.csv'
                     np.savetxt(os.path.join(was_dir, bktrk_fname), WA_bktrk.astype(bool), delimiter=",")
 
                                         # Add row for Ch. Rm. Bktrk
@@ -132,18 +132,18 @@ def replace_method_filter_metrics_add_CT(dpath):
                         'Method': 'Ch. Rm. Bktrk',
                         'Mean experiments': WA_bktrk.shape[1],
                         'Max compunds per well': int(np.max(np.sum(WA_bktrk, axis=0))),
-                        'N pools': WA_bktrk.shape[1],
+                        'N wells': WA_bktrk.shape[1],
                         'Percentage check': 0,
                         'Mean extra experiments': 0,
                         'Mean steps': 1
                     }
                     if 'Method' in df.columns:
-                        df = df.append(bktrk_row, ignore_index=True)
+                        df = pd.concat([df, pd.DataFrame([bktrk_row])], ignore_index=True)
 
                     # If diff_value is 2 or 3, call assign_wells_chinese with special_diff=True
                     if diff_value in [2, 3]:
                         WA_special = assign_wells_chinese(n_compounds=N_value, differentiate=diff_value, special_diff=True)
-                        special_fname = f'WA_chinese_special_N_{N_value}_diff_{diff_value}.csv'
+                        special_fname = f'WA_Chinese_special_N_{N_value}_diff_{diff_value}.csv'
                         np.savetxt(os.path.join(was_dir, special_fname), WA_special.astype(bool), delimiter=",")
                         # Add row for Ch. Rm. Special
                         special_row = {
@@ -151,13 +151,13 @@ def replace_method_filter_metrics_add_CT(dpath):
                             'Method': 'Ch. Rm. Special',
                             'Mean experiments': WA_special.shape[1],
                             'Max compunds per well': int(np.max(np.sum(WA_special, axis=0))),
-                            'N pools': WA_special.shape[1],
+                            'N wells': WA_special.shape[1],
                             'Percentage check': 0,
                             'Mean extra experiments': 0,
                             'Mean steps': 1
                         }
                         if 'Method' in df.columns:
-                            df = df.append(special_row, ignore_index=True)
+                            df = pd.concat([df, pd.DataFrame([special_row])], ignore_index=True)
 
                     if 'Method' in df.columns and 'Mean experiments' in df.columns:
                         # Drop duplicates keeping the one with the minimum 'Mean experiments'
@@ -176,9 +176,105 @@ def replace_method_filter_metrics_add_CT(dpath):
                 except Exception as e:
                     print(f"Error processing {fpath}: {e}")
 
+def process_metrics_and_adjust_experiments(dpath):
+    """
+    Process all Metrics_N_*_diff_*.csv files:
+    - Replace 'Chinese trick' → 'Chinese reminder'
+    - Add rows for Ch. Rm. Bktrk and Ch. Rm. Special
+    - After building the DataFrame, ensure 'Mean extra experiments' <= N_value.
+      If not, set it to N_value.
+    - Set 'Mean experiments' = 'Mean extra experiments' + 'N wells'
+    - Drop duplicate Methods (keep min Mean experiments)
+    """
+    metrics_filename_pattern = re.compile(r'^Metrics_N_\d+_diff_[\d\.]+\.csv$')
+
+    for root, dirs, files in os.walk(dpath):
+        for fname in files:
+            if metrics_filename_pattern.match(fname):
+                fpath = os.path.join(root, fname)
+                match = re.match(r'^Metrics_N_(\d+)_diff_([\d\.]+)\.csv$', fname)
+                if match:
+                    N_value = int(match.group(1))
+                    diff_value = float(match.group(2))
+                else:
+                    N_value = None
+                    diff_value = None
+                try:
+                    with open(fpath, 'r', encoding='utf-8') as f:
+                        content = f.read()
+
+                    new_content = content.replace('Chinese trick', 'Chinese reminder')
+                    df = pd.read_csv(StringIO(new_content))
+
+                    was_dir = os.path.join(root, 'WAs')
+                    if not os.path.exists(was_dir):
+                        os.makedirs(was_dir)
+
+                    WA_bktrk = assign_wells_chinese(n_compounds=N_value, differentiate=diff_value, backtrack=True)
+                    bktrk_fname = f'WA_Chinese_bktrk_N_{N_value}_diff_{diff_value}.csv'
+                    np.savetxt(os.path.join(was_dir, bktrk_fname), WA_bktrk.astype(bool), delimiter=",")
+
+                    bktrk_row = {
+                        'Unnamed: 0': 'Ch. Rm. Bktrk',
+                        'Method': 'Ch. Rm. Bktrk',
+                        'Mean experiments': WA_bktrk.shape[1],
+                        'Max compunds per well': int(np.max(np.sum(WA_bktrk, axis=0))),
+                        'N wells': WA_bktrk.shape[1],
+                        'Percentage check': 0,
+                        'Mean extra experiments': 0,
+                        'Mean steps': 1
+                    }
+                    if 'Method' in df.columns:
+                        df = pd.concat([df, pd.DataFrame([bktrk_row])], ignore_index=True)
+
+                    if diff_value in [2, 3]:
+                        WA_special = assign_wells_chinese(n_compounds=N_value, differentiate=diff_value, special_diff=True)
+                        special_fname = f'WA_Chinese_special_N_{N_value}_diff_{diff_value}.csv'
+                        np.savetxt(os.path.join(was_dir, special_fname), WA_special.astype(bool), delimiter=",")
+                        special_row = {
+                            'Unnamed: 0': 'Ch. Rm. Special',
+                            'Method': 'Ch. Rm. Special',
+                            'Mean experiments': WA_special.shape[1],
+                            'Max compunds per well': int(np.max(np.sum(WA_special, axis=0))),
+                            'N wells': WA_special.shape[1],
+                            'Percentage check': 0,
+                            'Mean extra experiments': 0,
+                            'Mean steps': 1
+                        }
+                        if 'Method' in df.columns:
+                            df = pd.concat([df, pd.DataFrame([special_row])], ignore_index=True)
+
+                    # --- Adjust columns as requested ---
+                    if 'Mean extra experiments' in df.columns and 'N wells' in df.columns:
+                        # Ensure 'Mean extra experiments' <= N_value
+                        df['Mean extra experiments'] = df['Mean extra experiments'].apply(
+                            lambda x: x if x <= N_value else N_value
+                        )
+                        # Set 'Mean experiments' = 'Mean extra experiments' + 'N wells'
+                        df['Mean experiments'] = df['Mean extra experiments'] + df['N wells']
+
+                        
+                    for col in df.select_dtypes(include=['float', 'int']).columns:
+                        df[col] = df[col].round(2)
+
+                    if 'Method' in df.columns and 'Mean experiments' in df.columns:
+                        df.sort_values('Mean experiments', inplace=True)
+                        df = df.drop_duplicates(subset='Method', keep='first')
+                        df.to_csv(fpath, index=False)
+                        print(f"Processed: {fpath}")
+                    else:
+                        with open(fpath, 'w', encoding='utf-8') as f:
+                            f.write(new_content)
+                        print(f"Updated text only: {fpath}")
+
+                except Exception as e:
+                    print(f"Error processing {fpath}: {e}")
+
+
 # === Usage ===
 # Set your root paths and variables
-dpath = 'D:\precomputed\N_10'        # <-- Change this
+dpath = 'D:\\precomputed\\N_11'        # <-- Change this
 
 clean_wa_files(dpath)
-replace_method_string_and_filter_metrics(dpath)
+#replace_method_filter_metrics_add_CT(dpath)
+process_metrics_and_adjust_experiments(dpath)

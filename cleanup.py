@@ -192,7 +192,8 @@ def adjust_mean_extra_experiments(df, N_value):
     def adjust(row):
         if row['Method'] == 'Hierarchical':
             return row['Mean extra experiments']
-        return row['Mean extra experiments'] if row['Mean extra experiments'] <= N_value else N_value
+        #print(row['Mean extra experiments'], N_value)
+        return row['Mean extra experiments'] if row['Mean extra experiments'] <= N_value*row['Percentage check'] else N_value*row['Percentage check']
     df['Mean extra experiments'] = df.apply(adjust, axis=1)
     return df
 
@@ -267,11 +268,7 @@ def process_metrics_and_adjust_experiments(dpath):
 
                     # --- Adjust columns as requested ---
                     if 'Mean extra experiments' in df.columns and 'N wells' in df.columns:
-                        # Ensure 'Mean extra experiments' <= N_value
-                        df['Mean extra experiments'] = df['Mean extra experiments'].apply(
-                            lambda x: int(x) if int(x) <= N_value else N_value
-                        )
-                        # Set 'Mean experiments' = 'Mean extra experiments' + 'N wells', skip 'Hierarchical' method
+                        df = adjust_mean_extra_experiments(df, N_value)
                         df['Mean experiments'] = df.apply(sum_mean_experiments, axis=1)
 
                         
@@ -295,7 +292,7 @@ def process_metrics_and_adjust_experiments(dpath):
 
 # === Usage ===
 # Set your root paths and variables
-dpath = 'D:\\precomputed\\N_11'        # <-- Change this
+dpath = 'D:\\precomputed\\N_12'        # <-- Change this
 
 clean_wa_files(dpath)
 #replace_method_filter_metrics_add_CT(dpath)

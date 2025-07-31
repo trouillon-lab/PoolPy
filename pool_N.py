@@ -72,8 +72,21 @@ if method=='std' or method=='all':
 if method=='chinese_trick' or method=='all':
 
     WA_chin=assign_wells_chinese(**args_dict)
-    multi.append('Chinese trick')
+    multi.append('Chinese-reminder')
     WA_list.append(WA_chin.astype(int))
+
+if method=='chinese_trick_bktrk' or method=='all':
+
+    WA_chin=assign_wells_chinese(**args_dict, backtrack=True)
+    multi.append('Ch-Rm-Bktrk')
+    WA_list.append(WA_chin.astype(int))
+
+if method=='chinese_trick_special' or method=='all':
+
+    if args_dict['differentiate']==2 or args_dict['differentiate']==3:
+        WA_chin=assign_wells_chinese(**args_dict, special_diff=True)
+        multi.append('Ch-Rm-special')
+        WA_list.append(WA_chin.astype(int))
 
 
 this_dir=os.path.join(this_path,'N_'+str(args_dict['n_compounds']), 'diff_'+str(args_dict['differentiate']), 'WAs')
@@ -99,23 +112,26 @@ for fname in filenames:
     mean_exp, extra_exp,  _, perc_check= mean_metrics_precomp(well_assigner=WA,scrambler=scrambler, **args_dict)
     n_wells=WA.shape[1]
     M_exp=np.round(mean_exp, 2)
+    extra_exp=np.round(extra_exp,2)
     max_comp=np.max(np.sum(WA, axis=0))
     method=re.sub('^WA_', '', fname)
     method=re.sub('_.*$', '', method)
     #print(method)
-    ls_met.append([method, M_exp, max_comp, n_wells, int(perc_check),  extra_exp,1+perc_check/100])
+    ls_met.append([method, M_exp, max_comp, n_wells, int(perc_check),  extra_exp,np.round(1+perc_check/100,2)])
     full_methods.append(method)
+
+
 Hier=calculate_metrics_hierarchical(**args_dict)
 ls_met.append(['Hierarchical']+ [np.round(i,2) for i in Hier[:-1]])
 full_methods.append('Hierarchical')
 df_met=pd.DataFrame(ls_met)
-
 this_dir=os.path.join(this_path,'N_'+str(args_dict['n_compounds']), 'diff_'+str(args_dict['differentiate']))
 
 idx_renamer={i:j for i,j in zip(df_met.index, full_methods)}
 col_renamer={i:j for i,j in zip(df_met.columns, ls_names_met)}
 df_met.rename(index=idx_renamer, columns=col_renamer, inplace=True)
 metname=os.path.join(this_dir, 'Metrics_N_'+str(n_compounds)+'_diff_'+str(diff)+'.csv')
+df_met=df_met.sort_values(by=['Mean experiments'])
 df_met.to_csv(metname)
 
 this_dir=os.path.join(this_path,'N_'+str(args_dict['n_compounds']), 'diff_'+str(args_dict['differentiate']), 'WAs')

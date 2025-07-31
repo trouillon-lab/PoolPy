@@ -7,7 +7,24 @@ import argparse
 import pickle
 import time
 import os
+import string
 
+def int_to_base(n, N):
+    """ Return base N representation for int n. """
+    base_n_digits = string.digits + string.ascii_lowercase + string.ascii_uppercase
+    result = ""
+    if n < 0:
+        sign = "-"
+        n = -n
+    else:
+        sign = ""
+    while n > 0:
+        q, r = divmod(n, N)
+        result += base_n_digits[r]
+        n = q
+    if result == "":
+        result = "0"
+    return sign + "".join(reversed(result))
 
 
 #Coumpound counter starts from 1
@@ -222,7 +239,7 @@ def assign_wells_STD(n_compounds:int, differentiate=1, False_results=0, force_q=
 # Method from IMPROVED COMBINATORIAL GROUP TESTING ALGORITHMSFOR REAL-WORLD PROBLEM SIZES
 # section The Chinese remainder sieve
 
-def assign_wells_chinese(n_compounds:int,  differentiate:int, **kwargs)->np.array:
+def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, special_diff=False, **kwargs)->np.array:
     prod=1
     n=1
     primes=[]
@@ -232,6 +249,83 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, **kwargs)->np.arra
         if isprime(n):
             prod=prod*n
             primes.append(n)
+
+    if backtrack:
+        T=np.inf
+        nprimes=np.array(primes)
+        ND=n_compounds**differentiate
+        ls_of_ls=[]
+        LMP=np.log(primes[-1])
+        for pi in primes:
+            LE=np.floor(LMP/np.log(pi)).astype(int)
+            ls_of_ls.append(list(range(LE+1)))
+        ls_iter=list(itertools.product(*ls_of_ls))
+        for id_combo, combo in enumerate(ls_iter):
+            carr=np.array(combo)
+            flt=carr>0
+            this_primes=nprimes[flt]
+            this_exp=carr[flt]
+            npc=this_primes**this_exp
+            if np.prod(npc)>=ND and np.sum(npc)<T:
+                T=np.sum(npc)
+                best_id=id_combo
+        combo=ls_iter[best_id]
+        carr=np.array(combo)
+        flt=carr>0
+        this_primes=nprimes[flt]
+        this_exp=carr[flt]
+        npc=this_primes**this_exp
+
+        WA=np.zeros((np.sum(npc), n_compounds))==1
+        past_primes=0
+        for prime in npc:
+            temp_wa=np.zeros((prime, n_compounds))==1
+            for x in range(prime):
+                ids=c_id%prime==x    
+                temp_wa[x, ids]=True
+            WA[past_primes:past_primes+prime,:]=temp_wa
+            past_primes=past_primes+prime
+
+        return(WA.T)   
+    
+    if special_diff and differentiate==2:
+        q=np.ceil(np.log(n_compounds)/np.log(3)).astype(int)
+        t=int((q+5)*q/2)
+        WA=np.zeros((t, n_compounds))==1
+        ls_nc3=[list(i)[::-1] for i in [int_to_base(j,3).zfill(q) for j in range(n_compounds)]]
+        for i in range(q):
+            for ii in range(3):
+                for j in range(n_compounds):
+                    WA[3*i+ii,j]=True if int(ls_nc3[j][i])==int(ii) else False
+        k=3*q
+        for i in range(q):
+            for ii in range(i+1,q):
+                for j in range(n_compounds):
+                    WA[k,j]=True if int(ls_nc3[j][i])==int(ls_nc3[j][ii]) else False
+                k+=1
+        return(WA.T)
+    
+    if special_diff and differentiate==3:
+        q=np.ceil(np.log(n_compounds)/np.log(2)).astype(int)
+        t=int((q-1)*q*2)
+        WA=np.zeros((t, n_compounds))==1
+        ls_nc3=[list(i)[::-1] for i in [int_to_base(j,2).zfill(q) for j in range(n_compounds)]]
+        k=0
+        for i in range(q):
+            for ii in range(i+1,q):
+                for nu in [0,1]:
+                    for nuu in [0,1]:
+                        for j in range(n_compounds):
+                            WA[k,j]=True if int(ls_nc3[j][i])==nu and int(ls_nc3[j][ii])==nuu else False
+                        k+=1
+        return(WA.T)
+
+
+
+
+        
+
+
 
     WA=np.zeros((np.sum(primes), n_compounds))==1
     past_primes=0

@@ -263,7 +263,8 @@ def is_consistent_precomp(well_assigner:np.array, differentiate:int, scrambler:d
 def mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs):
     BT=well_assigner.shape[1]
     _,_, counts= is_consistent_precomp(well_assigner, differentiate, scrambler) 
-    ET=extra_tests(counts)   
+    ET=extra_tests(counts)  
+    ET =ET if ET<well_assigner.shape[0] else well_assigner.shape[0]
     rounds=np.sum(counts>1)/np.sum(counts>0)+1
     p_check=np.round(np.sum(counts[counts>1])/np.sum(counts)*100)
     return BT+ET, ET,  rounds, p_check
@@ -770,19 +771,19 @@ def full_deterministic_WAS(**kwargs):
         if i>kwargs['max_dims']:
             continue
         WA_mul=assign_wells_multidim(n_dims=i, **kwargs)
-        WA_list.append(WA_mul)
+        WA_list.append(WA_mul.astype(int))
         multi.append('multidim-'+str(i))
         
     methods=multi.copy()
 
     WA_mat=assign_wells_mat(**kwargs)
 
-    WA_list.append(WA_mat)
+    WA_list.append(WA_mat.astype(int))
     methods.append('Matrix')
 
     WA_bin=assign_wells_bin(**kwargs)
     methods.append('Binary')
-    WA_list.append(WA_bin)
+    WA_list.append(WA_bin.astype(int))
 
     if kwargs['max_diff']>1:
         for diffo in np.arange(kwargs['max_diff']):
@@ -802,8 +803,20 @@ def full_deterministic_WAS(**kwargs):
             WA_chin=assign_wells_chinese(**kwargs)
 
 
-            WA_listo.extend([ WA_std, WA_chin])
-            methodso.extend(['STD', 'Chinese trick'])
+            WA_listo.extend([ WA_std.astype(int), WA_chin.astype(int)])
+            methodso.extend(['STD', 'Chinese reminder'])
+
+            WA_chin_BK=assign_wells_chinese(**kwargs, backtrack=True)
+            methodso.append('Ch. Rm. bktrk')
+            WA_listo.append(WA_chin_BK.astype(int))
+
+            if 1<diffo<3:
+                WA_chin_sp=assign_wells_chinese(**kwargs, special_diff=True)
+                methodso.append('Ch. Rm. special')
+                WA_listo.append(WA_chin_sp.astype(int))
+                
+
+
 
 
 

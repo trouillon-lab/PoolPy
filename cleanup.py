@@ -2,6 +2,8 @@ import os
 import re
 import pandas as pd
 from io import StringIO
+from Functions import assign_wells_chinese
+import numpy as np
 
 def extract_min_tests(filename):
     """Extract float number after '_ME_' and before '.csv'."""
@@ -45,7 +47,15 @@ def replace_method_string_and_filter_metrics(dpath):
     for root, dirs, files in os.walk(dpath):
         for fname in files:
             if metrics_filename_pattern.match(fname):
+                # Extract N and diff values from filename
                 fpath = os.path.join(root, fname)
+                match = re.match(r'^Metrics_N_(\d+)_diff_([\d\.]+)\.csv$', fname)
+                if match:
+                    N_value = int(match.group(1))
+                    diff_value = float(match.group(2))
+                else:
+                    N_value = None
+                    diff_value = None
                 try:
                     # Load file as text
                     with open(fpath, 'r', encoding='utf-8') as f:
@@ -55,9 +65,100 @@ def replace_method_string_and_filter_metrics(dpath):
                     new_content = content.replace('method 1', 'First method')
 
                     # Try to read into DataFrame
-                    
                     df = pd.read_csv(StringIO(new_content))
 
+                    if 'Method' in df.columns and 'Mean experiments' in df.columns:
+                        # Drop duplicates keeping the one with the minimum 'Mean experiments'
+                        df.sort_values('Mean experiments', inplace=True)
+                        df = df.drop_duplicates(subset='Method', keep='first')
+
+                        # Save back to CSV
+                        df.to_csv(fpath, index=False)
+                        print(f"Processed: {fpath} (N={N_value}, diff={diff_value})")
+                    else:
+                        # Save only the replaced version if columns not found
+                        with open(fpath, 'w', encoding='utf-8') as f:
+                            f.write(new_content)
+                        print(f"Updated text only: {fpath} (N={N_value}, diff={diff_value})")
+
+                except Exception as e:
+                    print(f"Error processing {fpath}: {e}")
+
+
+
+def replace_method_filter_metrics_add_CT(dpath):
+    """Process all Metrics_N_*_diff_*.csv files:
+       - Replace 'method 1' → 'First method'
+       - Drop duplicate Methods (keep min Mean experiments)
+    """
+    # File name pattern: Metrics_N_<num>_diff_<float>.csv
+    metrics_filename_pattern = re.compile(r'^Metrics_N_\d+_diff_[\d\.]+\.csv$')
+
+    for root, dirs, files in os.walk(dpath):
+        for fname in files:
+            if metrics_filename_pattern.match(fname):
+                fpath = os.path.join(root, fname)
+                match = re.match(r'^Metrics_N_(\d+)_diff_([\d\.]+)\.csv$', fname)
+                if match:
+                    N_value = int(match.group(1))
+                    diff_value = float(match.group(2))
+                else:
+                    N_value = None
+                    diff_value = None
+                try:
+                    # Load file as text
+                    with open(fpath, 'r', encoding='utf-8') as f:
+                        content = f.read()
+
+                    new_content = content.replace('Chinese trick', 'Chinese reminder')
+
+                    # Try to read into DataFrame
+                    df = pd.read_csv(StringIO(new_content))
+
+                    # Prepare WAs subfolder path
+                    was_dir = os.path.join(root, 'WAs')
+                    if not os.path.exists(was_dir):
+                        os.makedirs(was_dir)
+
+                    # Call assign_wells_chinese with backtrack=True
+
+                    WA_bktrk = assign_wells_chinese(n_compounds=N_value, differentiate=diff_value, backtrack=True)
+                    bktrk_fname = f'WA_chinese_bktrk_N_{N_value}_diff_{diff_value}.csv'
+                    np.savetxt(os.path.join(was_dir, bktrk_fname), WA_bktrk.astype(bool), delimiter=",")
+
+                                        # Add row for Ch. Rm. Bktrk
+                    bktrk_row = {
+                        'Unnamed: 0': 'Ch. Rm. Bktrk',
+                        'Method': 'Ch. Rm. Bktrk',
+                        'Mean experiments': WA_bktrk.shape[1],
+                        'Max compunds per well': int(np.max(np.sum(WA_bktrk, axis=0))),
+                        'N pools': WA_bktrk.shape[1],
+                        'Percentage check': 0,
+                        'Mean extra experiments': 0,
+                        'Mean steps': 1
+                    }
+                    if 'Method' in df.columns:
+                        df = df.append(bktrk_row, ignore_index=True)
+
+                    # If diff_value is 2 or 3, call assign_wells_chinese with special_diff=True
+                    if diff_value in [2, 3]:
+                        WA_special = assign_wells_chinese(n_compounds=N_value, differentiate=diff_value, special_diff=True)
+                        special_fname = f'WA_chinese_special_N_{N_value}_diff_{diff_value}.csv'
+                        np.savetxt(os.path.join(was_dir, special_fname), WA_special.astype(bool), delimiter=",")
+                        # Add row for Ch. Rm. Special
+                        special_row = {
+                            'Unnamed: 0': 'Ch. Rm. Special',
+                            'Method': 'Ch. Rm. Special',
+                            'Mean experiments': WA_special.shape[1],
+                            'Max compunds per well': int(np.max(np.sum(WA_special, axis=0))),
+                            'N pools': WA_special.shape[1],
+                            'Percentage check': 0,
+                            'Mean extra experiments': 0,
+                            'Mean steps': 1
+                        }
+                        if 'Method' in df.columns:
+                            df = df.append(special_row, ignore_index=True)
+                                       
                     if 'Method' in df.columns and 'Mean experiments' in df.columns:
                         # Drop duplicates keeping the one with the minimum 'Mean experiments'
                         df.sort_values('Mean experiments', inplace=True)
@@ -74,7 +175,6 @@ def replace_method_string_and_filter_metrics(dpath):
 
                 except Exception as e:
                     print(f"Error processing {fpath}: {e}")
-
 
 # === Usage ===
 # Set your root paths and variables

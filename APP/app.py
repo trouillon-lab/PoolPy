@@ -136,7 +136,7 @@ app_ui = ui.page_fluid(
         });
     ''')
 )
-WA_DIRECTORY='.\precomputed'
+WA_DIRECTORY='precomputed'
 #SCRAMBLER_DIRECTORY='.\output'
 MAX_DIFFERENTIATE=4
 

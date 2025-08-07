@@ -1,4 +1,4 @@
-# Pooling
+# PoolPy
 
 A Python package to design and decode group testing strategies. This package implements seven of the most commonly used group testing strategies.  
 

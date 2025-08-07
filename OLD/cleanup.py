@@ -293,7 +293,7 @@ def process_metrics_and_adjust_experiments(dpath):
 
 # === Usage ===
 # Set your root paths and variables
-dpath = 'D:\\precomputed\\N_97'        # <-- Change this
+dpath = 'D:\\precomputed'        # <-- Change this
 
 clean_wa_files(dpath)
 #replace_method_filter_metrics_add_CT(dpath)

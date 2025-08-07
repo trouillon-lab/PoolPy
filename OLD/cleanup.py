@@ -290,11 +290,40 @@ def process_metrics_and_adjust_experiments(dpath):
                     print(f"Error processing {fpath}: {e}")
 
 
-
+def remove_decoders_folders(root_path):
+    """
+    Recursively delete all folders named 'decoders' and their contents under root_path.
+    """
+    for current_root, dirs, files in os.walk(root_path, topdown=True):
+        # Make a copy of dirs to avoid modifying while iterating
+        for dir_name in list(dirs):
+            if dir_name == 'decoders':
+                decoders_path = os.path.join(current_root, dir_name)
+                # Remove all files inside the decoders folder
+                for root_dec, dirs_dec, files_dec in os.walk(decoders_path, topdown=False):
+                    for file_dec in files_dec:
+                        try:
+                            os.remove(os.path.join(root_dec, file_dec))
+                        except Exception as e:
+                            print(f"Failed to remove file {file_dec}: {e}")
+                    for dir_dec in dirs_dec:
+                        try:
+                            os.rmdir(os.path.join(root_dec, dir_dec))
+                        except Exception as e:
+                            print(f"Failed to remove subfolder {dir_dec}: {e}")
+                # Remove the decoders folder itself
+                try:
+                    os.rmdir(decoders_path)
+                    print(f"Removed folder: {decoders_path}")
+                except Exception as e:
+                    print(f"Failed to remove folder {decoders_path}: {e}")
+                # Remove from dirs so os.walk doesn't visit it again
+                dirs.remove(dir_name)
 # === Usage ===
 # Set your root paths and variables
 dpath = 'D:\\precomputed'        # <-- Change this
 
 clean_wa_files(dpath)
+remove_decoders_folders(dpath)
 #replace_method_filter_metrics_add_CT(dpath)
 process_metrics_and_adjust_experiments(dpath)

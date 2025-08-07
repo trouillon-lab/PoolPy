@@ -73,7 +73,7 @@ if method=='std' or method=='all':
 if method=='chinese_trick' or method=='all':
 
     WA_chin=assign_wells_chinese(**args_dict)
-    multi.append('Chinese-reminder')
+    multi.append('Chinese-remainder')
     WA_list.append(WA_chin.astype(int))
 
 if method=='chinese_trick_bktrk' or method=='all':

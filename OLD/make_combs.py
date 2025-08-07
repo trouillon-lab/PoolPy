@@ -1,0 +1,138 @@
+import numpy as np
+import math
+import re
+import itertools
+import pandas as pd
+import time
+import os
+import pickle
+import copy
+from Functions import *
+
+
+
+def add_N(combinantions_dictionary, ND=5):
+    N=combinantions_dictionary[1][-1]+1
+    new_cd={1:np.append(combinantions_dictionary[1],N)}
+    diff=1
+    while diff<(ND):
+        new_part=np.vstack([combinantions_dictionary[diff].T,np.array([N]*len(combinantions_dictionary[diff]))])
+        new_in=np.hstack([combinantions_dictionary[diff+1].T,new_part]).T
+        new_cd.update({(diff+1):new_in})
+
+        diff+=1
+    
+
+    return(new_cd)
+
+def add_1(combinantions_dictionary, diff, ND, N):
+
+    new_cd={}
+
+    while diff<(ND):
+
+        new_part=np.vstack([combinantions_dictionary[diff].T,np.array([N]*len(combinantions_dictionary[diff]))])
+        new_in=np.hstack([combinantions_dictionary[diff+1].T,new_part]).T
+        new_cd.update({(diff+1):new_in})
+
+    return(new_part)
+
+
+def iterative_add_N(dict_start, N_add, save=True,save_dir='./combinations/',
+                     return_last=True, differentiate=3, **kwargs):
+    tmp_d={}
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+    tmp_d=copy.deepcopy(dict_start)
+    N_start=dict_start[1][-1]
+    i=0
+    while i<N_add:
+        print(N_start+i+2)
+        diri=os.path.join(save_dir,'N_'+str(N_start+i+2))
+        if not os.path.exists(diri):
+            os.makedirs(diri)
+        if kwargs['use_saved']:
+            diff=1
+            while diff<differentiate:
+                this_sc_file=os.path.join(save_dir, 'N_'+str(start),  'N_'+str(start)+'_diff_'+str(diff)+'.npz')
+                if os.path.isfile(this_sc_file):
+                    diff+=1
+                    continue
+                elif  not os.path.isfile(this_sc_file):
+                    if diff==1:
+                        tmp_d.update({diff:np.arange(i)})
+                    else: 
+                        diff -=1
+                        new_scrambler=np.load(this_sc_file)['sc']
+                        tmp_d.update({diff:new_scrambler})
+                    break
+            tmp_d=add_1(tmp_d,diff,ND=differentiate)
+
+        else:
+            
+            tmp_d=add_N(tmp_d, ND=differentiate)
+        if save:
+            for ii in range(2,differentiate+1):
+                this_diri=os.path.join(diri,'N_'+str(N_start+i+2)+'_diff_'+str(ii)+'.npz')
+                this_diff=tmp_d[ii]
+                #print(diri)
+                np.savez_compressed(file=this_diri,sc=this_diff, allow_pickle=False)
+        i+=1
+    if return_last:
+        return(tmp_d)
+    
+
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--differentiate')
+parser.add_argument('--start')
+parser.add_argument('--stop')
+parser.add_argument('--save_dir')
+parser.add_argument('--timeit')
+parser.add_argument('--use_saved')
+
+
+
+args = parser.parse_args()
+
+
+differentiate= 2 if type(args.differentiate)==type(None) else int(args.differentiate)
+start= 50 if type(args.start)==type(None) else int(args.start)
+stop= 110 if type(args.stop)==type(None) else int(args.stop)
+save_dir= os.path.join(os.getcwd(),'outs') if type(args.save_dir)==type(None) else str(args.save_dir)
+timeit= True if type(args.timeit)==type(None) else args.timeit=='True'
+use_saved= True if type(args.use_saved)==type(None) else args.use_saved=='True'
+
+dict_kwargs={'differentiate':differentiate, 'return_wa':True, 'timeit':timeit,
+             'start':start, 'stop':stop, 'save_dir':save_dir,'N_add':stop-start,
+             'use_saved':use_saved}
+
+N=dict_kwargs['start']-1
+scrambler={1:np.arange(N)}
+
+for diff in np.arange(2,differentiate):
+    this_sc_file=os.path.join(save_dir, 'N_'+str(start),  'N_'+str(start)+'_diff_'+str(diff)+'.npz')
+    if os.path.isfile(this_sc_file) and use_saved:
+        this_scrambler=np.load(this_sc_file)['sc']
+        scrambler.update({diff:this_scrambler})
+    else:
+        scrambler.update({diff:np.array(list(itertools.combinations(np.arange(N),diff)))})
+
+
+
+
+if not use_saved:
+    for j in range(2,diff+1):
+        scrambler.update({j:np.array(list(itertools.combinations(np.arange(N),j)))})
+
+iterative_add_N(dict_start=scrambler, return_last=False, **dict_kwargs)
+
+
+
+
+
+
+
+
+

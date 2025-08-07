@@ -446,7 +446,7 @@ def server(input, output, session):
     async def download_summary():
         # Yield the content of the CSV file
         yield output.summary_table.get().to_csv(index=False)
-    
+    '''
     @output
     @render.download(filename=lambda: "matrix_pooling.csv")
     async def download_table_matrix():
@@ -508,6 +508,7 @@ def server(input, output, session):
             yield DFFS['Binary'].to_csv(index=True)
         except:
             yield pd.DataFrame().to_csv(index=True)
+'''
 '''
     @output
     @render.download(filename=lambda: "full_pooling.pk")

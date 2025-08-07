@@ -1,17 +1,18 @@
 # PoolPy
 
-A Python package to design and decode group testing strategies. This package implements seven of the most commonly used group testing strategies.  
+A Python package to design and decode group testing strategies.
 
-We provide pre-computed designs for all methods across a large range of sample numbers on our web app (LINK). If your specific use case is not covered, you can compute the corresponding designs using the `pool_N.py` script, as described below.
+We provide pre-computed designs for all methods across a large range of sample numbers on our [web app](https://trouillon-lab.github.io/PoolPy/). If your specific use case is not covered, you can compute the corresponding designs using the `pool_N.py` script, as described below.
 To decode the results of your test, use the XXX script.  
 
+This package implements several of the most commonly used group testing strategies.
 Implemented methods:
 - Hierarchical
 - Binary
 - Matrix
 - Multi-dimensional
 - Shifted transversal
-- Chinese trick
+- Chinese remainder
 - Random
 
 More details can be found in the associated publication.
@@ -34,8 +35,8 @@ Choose one of the following installation methods:
 ### 2. **Clone the Repository**
 
 ```bash
-git clone https://github.com/trouillon-lab/pooling
-cd pooling
+git clone https://github.com/trouillon-lab/PoolPy
+cd PoolPy
 ```
 
 

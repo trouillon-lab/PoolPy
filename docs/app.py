@@ -326,6 +326,7 @@ def server(input, output, session):
                 #output.debug.set(str(e))
                 files = os.listdir('.')
                 output.debug.set(str([f for f in files]))
+                output.debug.set(f"cwd: {os.getcwd()}, files: {os.listdir('.')}")
                 
             
             

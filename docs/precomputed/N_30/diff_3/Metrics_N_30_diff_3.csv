@@ -1,0 +1,12 @@
+Unnamed: 0,Method,Mean experiments,Max compunds per well,N wells,Percentage check,Mean extra experiments,Mean steps
+multidim-2,multidim-2,16.57,6.0,11,93,5.57,1.93
+Matrix,Matrix,16.57,6.0,11,93,5.57,1.93
+Hierarchical,Hierarchical,17.88,6.0,[5 3],100,12.88,3.0
+Random,Random,19.69,6.0,11,93,8.69,1.93
+STD,STD,28.0,5.0,28,0,0.0,1.0
+multidim-3,multidim-3,29.63,12.0,10,96,19.63,1.96
+multidim-4,multidim-4,33.78,16.0,10,97,23.78,1.97
+Binary,Binary,34.69,15.0,5,100,29.69,2.0
+Ch. Rm. Special,Ch. Rm. Special,40.0,8.0,40,0,0.0,1.0
+Ch. Rm. Bktrk,Ch. Rm. Bktrk,40.0,6.0,40,0,0.0,1.0
+Chinese remainder,Chinese remainder,41.0,15.0,41,0,0.0,1.0

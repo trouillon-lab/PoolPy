@@ -11,6 +11,8 @@ import copy
 
 
 from Functions import *
+from Fast_functions import *
+
 
 
 def is_consistent_precomp(well_assigner:np.array, differentiate:int, scrambler:dict) -> list:

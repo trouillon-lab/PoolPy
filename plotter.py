@@ -54,32 +54,35 @@ def plot_with_custom_labels(
     rng = np.random.default_rng(seed=42)  # For reproducibility
 
     for method in methods:
-        grp = df_filtered[df_filtered['Method'] == method]
-        y_vals = grp[y_col].values
-        # Jitter x values
-        x_vals = grp[x_col].values + rng.uniform(-jitter, jitter, size=len(grp)) if jitter > 0 else grp[x_col].values
-        # Sort by jittered x for line plotting
-        sort_idx = np.argsort(x_vals)
-        x_sorted = x_vals[sort_idx]
-        y_sorted = y_vals[sort_idx]
-        # Line: through jittered points
-        if connect_line:
-            ax.plot(
-                x_sorted, y_sorted,
+        try:
+            grp = df_filtered[df_filtered['Method'] == method]
+            y_vals = grp[y_col].values
+            # Jitter x values
+            x_vals = grp[x_col].values + rng.uniform(-jitter, jitter, size=len(grp)) if jitter > 0 else grp[x_col].values
+            # Sort by jittered x for line plotting
+            sort_idx = np.argsort(x_vals)
+            x_sorted = x_vals[sort_idx]
+            y_sorted = y_vals[sort_idx]
+            # Line: through jittered points
+            if connect_line:
+                ax.plot(
+                    x_sorted, y_sorted,
+                    color=color_dict[method],
+                    alpha=line_alpha,
+                    linewidth=line_width,
+                    zorder=1
+                )
+            # Scatter: with jitter
+            ax.scatter(
+                x_vals, y_vals,
+                label=method,
                 color=color_dict[method],
-                alpha=line_alpha,
-                linewidth=line_width,
-                zorder=1
+                s=scatter_size,
+                alpha=scatter_alpha,
+                zorder=2
             )
-        # Scatter: with jitter
-        ax.scatter(
-            x_vals, y_vals,
-            label=method,
-            color=color_dict[method],
-            s=scatter_size,
-            alpha=scatter_alpha,
-            zorder=2
-        )
+        except:
+            continue
 
     ax.set_xlabel(x_label, fontsize=label_fontsize)
     ax.set_ylabel(ylabel if ylabel else y_col, fontsize=label_fontsize)

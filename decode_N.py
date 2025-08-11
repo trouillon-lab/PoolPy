@@ -57,14 +57,12 @@ n_compounds=WA.shape[1]
 scrambler={1:np.arange(n_compounds)}
 for j in range(2,diff+1):
     scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
-WA_list=[]
-multi=[]
+
 
 scrambler={1:np.arange(n_compounds)}
 for j in range(2,diff+1):
     scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
-WA_list=[]
-multi=[]
+
 
 decoded=decode_precomp(well_assigner=WA,differentiate= diff, scrambler=scrambler, 
                readout=np.array(readout.astype(bool).astype(int)))

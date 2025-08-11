@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 
 # Define the UI
 app_ui = ui.page_fluid(
+
+    # Title of the app
+    
     #Centered Title
     ui.h2("Pooling", style="text-align: center;"),
     
@@ -292,7 +295,7 @@ def server(input, output, session):
             #DFT.insert(loc=0, column='Pooling strategy', value=DFT.index)
             metrics_data.drop(metrics_data.columns[0], axis=1, inplace=True)
             #ls_met_nice=['Pooling design', 'Mean total experiments', 'Max samples per pool', 'N pools', '\% multiple rounds', 'Mean extra experiments']
-            dict_ren={'N wells':'N pools'}#{i:j for i,j in zip(metrics_data.columns,ls_met_nice)}
+            dict_ren={'N wells':'N pools', 'Max compunds per well':'Max compounds per pool'}#{i:j for i,j in zip(metrics_data.columns,ls_met_nice)}
             metrics_data.rename(columns=dict_ren, inplace=True)
             #metrics_data.rename(index={'Chinese trick':'Chinese reminder'}, inplace=True)
             output.summary_table.set(metrics_data)

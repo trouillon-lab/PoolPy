@@ -204,7 +204,7 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
     #ls_names_met=['Method', 'Mean experiments', 'Max compunds per well', 'N wells', 'Percentage check', 'Mean extra experiments', 'Mean steps', 'N', 'diff' ]
     
     #full_df_met=pd.DataFrame(columns=ls_names_met)
-
+    y_as_inf=[]
     ls_metrics=[]
     while N<stop:
         Npath=os.path.join(dir_WAs,'N_'+str(N))
@@ -222,6 +222,8 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
                 diff +=1
                 continue
             df_met=pd.read_csv(metname, header=0)
+            if len(y_as_inf)==0:
+                y_as_inf=list(df_met)[1:]
             df_met['N']=N
             df_met['diff']=diff
 
@@ -247,6 +249,7 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
 
     if y_axis=='all':
         y_as=['Mean experiments', 'Max compunds per well', 'N wells', 'Percentage check', 'Mean extra experiments', 'Mean steps']
+        y_as=y_as_inf
     else:
         y_as=[y_axis]
 

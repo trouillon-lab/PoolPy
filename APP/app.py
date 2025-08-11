@@ -3,13 +3,10 @@ import pandas as pd
 import os
 import pickle
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
 # Define the UI
 app_ui = ui.page_fluid(
-
-    # Title of the app
-    
     #Centered Title
     ui.h2("Pooling", style="text-align: center;"),
     
@@ -39,6 +36,13 @@ app_ui = ui.page_fluid(
     ui.div(
         ui.h4("Last submitted values:"),
         ui.output_text_verbatim("last_val"),
+        style="text-align: center;"
+    ),
+
+    ui.hr(),
+    ui.div(
+        ui.h4("Debug output"),
+        ui.output_text_verbatim("debug"),   # <--- Here
         style="text-align: center;"
     ),
 
@@ -99,7 +103,7 @@ app_ui = ui.page_fluid(
         ui.h4("Histogram Plot"),
         ui.output_plot("histogram_plot")  # Output container for the plot
     ),
-    
+
     # Section for downloadable tables with dynamic names
     ui.hr(),
     ui.panel_conditional(
@@ -139,12 +143,15 @@ app_ui = ui.page_fluid(
         });
     ''')
 )
+
+
 WA_DIRECTORY='precomputed'
 #SCRAMBLER_DIRECTORY='.\output'
 MAX_DIFFERENTIATE=4
 
 def find_n_folder(n_samp, wa_directory):
     folders = [f for f in os.listdir(wa_directory) if os.path.isdir(os.path.join(wa_directory, f)) and f.startswith('N_')]
+    #print(folders)
     x_values = [int(f.split('_')[1]) for f in folders]
     if n_samp in x_values:
         return f'N_{n_samp}'
@@ -206,6 +213,7 @@ def server(input, output, session):
     output.personalized_command = reactive.Value("")
     output.dataframes = reactive.Value(0)
     output.full_pickle = reactive.Value(0)
+    output.debug = reactive.Value("")
 
 
     ls_met=['Pooling strategy', 'mean_experiments', 'max_compounds_per_well', 'n_wells', 'percentage_check', 'mean_extra_exp']
@@ -236,84 +244,90 @@ def server(input, output, session):
             output.extra_computation.set(1)
 
         else:
-            n_folder = find_n_folder(n_samp, WA_DIRECTORY)
-            if n_folder:
-                n_folder_path = os.path.join(WA_DIRECTORY, n_folder)
-                diff_folder = find_closest_diff_folder(n_folder_path, differentiate)
-                if diff_folder:
-                    diff_folder_path = os.path.join(n_folder_path, diff_folder)
-                    excel_filename = f'Metrics_{n_folder}_diff_{diff_folder.split("_")[1]}.csv'
-                    excel_path = os.path.join(diff_folder_path, excel_filename)
-                    output_text=f'There is a precomputed strategy for {n_samp} samples with up to {differentiate} positives'
-                    output.database_reply.set(output_text)
-                    #print(output_text)
-                    if os.path.isfile(excel_path):
-                        metrics_data = pd.read_csv(excel_path)
+            try:
+                n_folder = find_n_folder(n_samp, WA_DIRECTORY)
+                if n_folder:
+                    n_folder_path = os.path.join(WA_DIRECTORY, n_folder)
+                    diff_folder = find_closest_diff_folder(n_folder_path, differentiate)
+                    if diff_folder:
+                        diff_folder_path = os.path.join(n_folder_path, diff_folder)
+                        excel_filename = f'Metrics_{n_folder}_diff_{diff_folder.split("_")[1]}.csv'
+                        excel_path = os.path.join(diff_folder_path, excel_filename)
+                        output_text=f'There is a precomputed strategy for {n_samp} samples with up to {differentiate} positives'
+                        output.database_reply.set(output_text)
+                        #print(output_text)
+                        if os.path.isfile(excel_path):
+                            metrics_data = pd.read_csv(excel_path)
 
-                        # Use metrics_data as needed
+                            # Use metrics_data as needed
+                        else:
+                            # Handle missing metrics file
+                            pass
                     else:
-                        # Handle missing metrics file
+                        # Handle missing diff_y folders
                         pass
                 else:
-                    # Handle missing diff_y folders
+                    # Handle missing N_x folders
                     pass
-            else:
-                # Handle missing N_x folders
-                pass
 
-            '''
-            full_dir='Final_precomputed_file.pk'
-            with open(full_dir, 'rb') as handle:
-                f1=pickle.load(handle)
-            f2=f1['Differentiate '+str(differentiate)]
-            a2=np.array(list(f2))
-            md=np.max(a2)
-            if n_samp>md:
-                output_text=f'Maximum number of samples ({n_samp}) too high for the chosen number of positives \n Below are displayed the information for {md} samples and up to {differentiate} positives. \n You can run the code following the commands below for your specific case.'
-                output.database_reply.set(output_text)
-                output.extra_computation.set(0)
+                '''
+                full_dir='Final_precomputed_file.pk'
+                with open(full_dir, 'rb') as handle:
+                    f1=pickle.load(handle)
+                f2=f1['Differentiate '+str(differentiate)]
+                a2=np.array(list(f2))
+                md=np.max(a2)
+                if n_samp>md:
+                    output_text=f'Maximum number of samples ({n_samp}) too high for the chosen number of positives \n Below are displayed the information for {md} samples and up to {differentiate} positives. \n You can run the code following the commands below for your specific case.'
+                    output.database_reply.set(output_text)
+                    output.extra_computation.set(0)
 
-            elif np.sum(a2==n_samp)==0:
-                md=np.min(a2[a2>n_samp])
-                output_text=f'There is no precomputed strategy for {n_samp} samples. \n The closest precomputed strategy is for {md} samples with up to {differentiate} positives'
-                output.database_reply.set(output_text)
-                output.extra_computation.set(0)
+                elif np.sum(a2==n_samp)==0:
+                    md=np.min(a2[a2>n_samp])
+                    output_text=f'There is no precomputed strategy for {n_samp} samples. \n The closest precomputed strategy is for {md} samples with up to {differentiate} positives'
+                    output.database_reply.set(output_text)
+                    output.extra_computation.set(0)
 
-            else:
-                md=n_samp
-                output_text=f'There is a precomputed strategy for {n_samp} samples with up to {differentiate} positives'
-                output.database_reply.set(output_text)
-                output.extra_computation.set(0)I go
+                else:
+                    md=n_samp
+                    output_text=f'There is a precomputed strategy for {n_samp} samples with up to {differentiate} positives'
+                    output.database_reply.set(output_text)
+                    output.extra_computation.set(0)I go
 
-            
-            
-            CR=f2[md]
-            output.full_pickle.set(CR)
-            '''
+                
+                
+                CR=f2[md]
+                output.full_pickle.set(CR)
+                '''
 
-            #DFT=CR[0]
-            #DFT.insert(loc=0, column='Pooling strategy', value=DFT.index)
-            metrics_data.drop(metrics_data.columns[0], axis=1, inplace=True)
-            #ls_met_nice=['Pooling design', 'Mean total experiments', 'Max samples per pool', 'N pools', '\% multiple rounds', 'Mean extra experiments']
-            dict_ren={'N wells':'N pools', 'Max compunds per well':'Max compounds per pool'}#{i:j for i,j in zip(metrics_data.columns,ls_met_nice)}
-            metrics_data.rename(columns=dict_ren, inplace=True)
-            #metrics_data.rename(index={'Chinese trick':'Chinese reminder'}, inplace=True)
-            output.summary_table.set(metrics_data)
+                #DFT=CR[0]
+                #DFT.insert(loc=0, column='Pooling strategy', value=DFT.index)
+                metrics_data.drop(metrics_data.columns[0], axis=1, inplace=True)
+                #ls_met_nice=['Pooling design', 'Mean total experiments', 'Max samples per pool', 'N pools', '\% multiple rounds', 'Mean extra experiments']
+                dict_ren={'N wells':'N pools'}#{i:j for i,j in zip(metrics_data.columns,ls_met_nice)}
+                metrics_data.rename(columns=dict_ren, inplace=True)
+                #metrics_data.rename(index={'Chinese trick':'Chinese reminder'}, inplace=True)
+                output.summary_table.set(metrics_data)
 
-            #TBLS=CR[1]
-            DFFS={}
-            table_path=os.path.join(diff_folder_path,'WAs')
-            TBLS=load_wa_matrices(table_path)
-            #print(table_path)
-            for idx in TBLS.keys():
-                b1=TBLS[idx]
-                tmp1=pd.DataFrame(b1, columns=['Pool '+ str(i) for i in range(b1.shape[1])], index=['Sample '+ str(i) for i in range(b1.shape[0])])
-                DFFS.update({idx:tmp1})
+                #TBLS=CR[1]
+                DFFS={}
+                table_path=os.path.join(diff_folder_path,'WAs')
+                TBLS=load_wa_matrices(table_path)
+                #print(table_path)
+                for idx in TBLS.keys():
+                    b1=TBLS[idx]
+                    tmp1=pd.DataFrame(b1, columns=['Pool '+ str(i) for i in range(b1.shape[1])], index=['Sample '+ str(i) for i in range(b1.shape[0])])
+                    DFFS.update({idx:tmp1})
 
-            output.dataframes.set(DFFS)
-            #print(DFFS.keys())
+                output.dataframes.set(DFFS)
+                #print(DFFS.keys())
 
-            
+            except Exception as e:
+                #output.debug.set(str(e))
+                files = os.listdir('.')
+                output.debug.set(str([f for f in files]))
+                output.debug.set(f"cwd: {os.getcwd()}, files: {os.listdir('.')}")
+                
             
             
         # Prepare the correct command for pool_N.py based on its arguments
@@ -405,24 +419,23 @@ def server(input, output, session):
             # Set extra_computation flag to control conditional panel for plot
             output.extra_computation.set(extra_computation)
 
-
-    @output
-    @render.plot
-    def histogram_plot():
-        # Check if extra_computation is False before generating the plot
-        #if not output.extra_computation.get():
-        # Generate random data for histogram
-        np.random.seed(19680801)
-        data = 100 + 15 * np.random.randn(437)
-        
-        # Create a histogram with a fixed number of bins (or customize based on inputs)
-        fig, ax = plt.subplots()
-        ax.hist(data, bins=30, density=True)  # Fixed bins for simplicity or customize as needed
-        ax.set_title("Histogram of Random Data")
-        ax.set_xlabel("Value")
-        ax.set_ylabel("Density")
-        
-        return fig
+            @output
+            @render.plot
+            def histogram_plot():
+                # Check if extra_computation is False before generating the plot
+                #if not output.extra_computation.get():
+                # Generate random data for histogram
+                np.random.seed(19680801)
+                data = 100 + 15 * np.random.randn(437)
+                
+                # Create a histogram with a fixed number of bins (or customize based on inputs)
+                fig, ax = plt.subplots()
+                ax.hist(data, bins=30, density=True)  # Fixed bins for simplicity or customize as needed
+                ax.set_title("Histogram of Random Data")
+                ax.set_xlabel("Value")
+                ax.set_ylabel("Density")
+                
+                return fig
 
     @output
     @render.text
@@ -433,6 +446,11 @@ def server(input, output, session):
     @render.text
     def database_r():
         return  output.database_reply.get()
+    
+    @output
+    @render.text
+    def debug():
+        return  output.debug.get()
     
     @output
     @render.text

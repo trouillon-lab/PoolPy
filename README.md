@@ -35,6 +35,9 @@ This package implements several of the most commonly used group testing strategi
 - Random
 
 More details can be found in the associated publication.
+&nbsp;
+
+&nbsp;
 
 ## 🚀 Quick Start
 
@@ -81,6 +84,9 @@ This will:
 | Windows | `.venv\Scripts\activate` |
 
 > **Note:** Activating the environment is optional for most uv commands, but necessary if you want to use Python or pip directly.
+&nbsp;
+
+&nbsp;
 
 ## 🛠️ Usage
 
@@ -112,6 +118,7 @@ Required:
 `--path_to_WA`: Path where is the well assigner table for the used design.  
 `--readout`: A string either containing the readout or containing a path to a .csv file of the readout (Readout). If providing the readout as a string, use a comma-delimited list of positive samples.  
 
+&nbsp;
 
 ## 🧪 Example: From Design to Decoding
 
@@ -128,7 +135,10 @@ python pool_N.py --n_compounds 100 --differentiate 1 --method matrix --path ./ma
 ```
 
 **Outputs:**
-- `WA_Matrix_N_100_diff_1.csv` — Table mapping each sample to the pools where it should be added.   
+- `WA_Matrix_N_100_diff_1.csv` — Table mapping each sample to the pools where it should be added.
+
+In this example, the matrix design tells us that we can make 20 pools out of our 100 samples. Following this design, we can perform only 20 tests and still be able to pinpoint which sample is positive out of our 100 samples.  
+&nbsp;
 
 **Example `WA_Matrix_N_100_diff_1.csv` snippet:**
 
@@ -144,14 +154,16 @@ Presence or absence of a sample into a specific pool is denoted by 1 or 0, respe
 ---
 ### Step 2 — Perform pooled testing
 
-Run your tests according to the generated pools and record the results in a CSV file (`results.csv`), or as a list of positive pools.  
-For our example, we will assume that pools 2 and 17 were positive in our test.
+Pool your sampls according to the obtained design. Then, run your tests on the generated pools and record the results in a CSV file (`results.csv`), or as a list of positive pools.  
+For our example, we will assume that pools 2 and 17 came back positive in our test.
 
 ---
 ### Step 3 — Decode the results
 
 
+&nbsp;
 
+&nbsp;
 
 ## 📦 Managing Dependencies
 
@@ -178,6 +190,14 @@ uv add -r requirements.txt
 ```bash
 uv export > requirements.txt
 ```
+&nbsp;
+
+
+## 📚 Citation
+
+If you use PoolPy in your research, please cite the PoolPy paper.
+
+&nbsp;
 
 
 ## 📝 License
@@ -185,6 +205,3 @@ uv export > requirements.txt
 [MIT](https://choosealicense.com/licenses/mit/)
 
 
-## 📚 Citation
-
-If you use PoolPy in your research, please cite the PoolPy paper.

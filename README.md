@@ -183,7 +183,6 @@ python decode_N.py --differentiate 1 --readout "0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,
 &nbsp;
 
 **Outputs:**
-<img align="right" width="300" src="https://github.com/trouillon-lab/PoolPy/blob/main/docs/images/matrix_github_example.png" />
 
 - `Matrix_diff_1_decoded.txt` — File containing the decoded results with the positive samples.
 

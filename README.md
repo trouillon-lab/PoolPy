@@ -99,8 +99,8 @@ You can execute locally a pooling design comparison by running the command:
 `python pool_N.py --n_samp NC --differentiate diff`
 
 Required:  
-`--n_samp`: Total number of samples you want to test (NC)  
-`--differentiate`: Maximum number of samples that can be positive to your test (diff)  
+`--n_samp`: Total number of samples you want to test (NC).  
+`--differentiate`: Maximum number of samples that can be positive to your test (diff).  
 Optional:  
 `--path`: The path in which results are saved. Default: current directory.  
 `--method`: Name of group testing method to use. Default: `all`. Alternatives: `binary`, `matrix`,`multidim`,`std`,`chinese_trick`,`random`.  
@@ -109,15 +109,15 @@ Optional:
 
 Output:
 - `WAs` folder: Contains well assigner (WA) tables for each of the used method. These inform on how to pool the samples.
--  `Metrics` file: Summary of key metrics for each method used
+-  `Metrics` file: Summary of key metrics for each method used.
  
-| Metric | Definition | 
-|:------:|:------:|
-| Mean experiments |  |
-| Max compound per well |  |
-| N wells |  |
-| Mean extra experiments |  |
-| Mean steps |  |
+| Metrics | Definition | 
+|:------|:------|
+| Mean experiments | Mean total number of test needed, accounting for extra steps if needed. |
+| Max sample per pools | Maximum number of samples to be pooled in one pool. |
+| N pools | Number of pools needed (in the first step if more than one is needed). |
+| Mean extra experiments | Mean number of extra tests needed after a first step. |
+| Mean steps | Mean number of rounds (steps) of testing needed to identify positive samples. |
 
 ### 2. **Decode group testing results**
 

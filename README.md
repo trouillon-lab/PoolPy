@@ -126,7 +126,7 @@ You can decode locally the result of a pooling experiment by running the command
 Required:  
 `--differentiate`: Maximum number of samples that can be positive to your test (diff).  
 `--path_to_WA`: Path where is the well assigner table for the used design.  
-`--readout`: A string either containing the readout or containing a path to a .csv file of the readout (Readout). If providing the readout as a string, use a comma-delimited list of positive pools (e.g., for five pools with pool 2 being positive: 0,1,0,0,0).  
+`--readout`: A string either containing the readout or containing a path to a .csv file of the readout (Readout). If providing the readout as a string, use a comma-delimited list of positive pools (e.g., for five pools with pool 2 and 3 being positive: 0,1,1,0,0; or by simply listing the positive pools: 2,3).  
 
 &nbsp;
 
@@ -178,7 +178,7 @@ For our example, we will assume that pools 3 and 13 came back positive in our te
 Now we can decode the result of our pooled experiment (samples 3 and 13 positive), with the following command:
 
 ```bash
-python decode_N.py --differentiate 1 --readout "0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0" --path_to_WA .\matrix_design\N_100\diff_1\WAs\WA_Matrix_N_100_diff_1.csv
+python decode_N.py --differentiate 1 --readout "3,13" --path_to_WA .\matrix_design\N_100\diff_1\WAs\WA_Matrix_N_100_diff_1.csv
 ```
 &nbsp;
 

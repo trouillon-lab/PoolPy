@@ -1,7 +1,7 @@
 <img align="left" width="200" src="https://github.com/trouillon-lab/PoolPy/blob/main/docs/images/PoolPy_logo.png" />
 
 ### A **Py**thon package to design **Pool**ing strategies.
-
+#### [_Launch PoolPy web app_](https://trouillon-lab.github.io/PoolPy/)
 &nbsp;
 
 &nbsp;

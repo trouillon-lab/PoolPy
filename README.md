@@ -8,8 +8,6 @@
 
 &nbsp;
 
-&nbsp;
-
 # PoolPy
 
 PoolPy is an open-source Python package for designing and evaluating combinatorial group testing strategies. It implements ten distinct pooling algorithms and guides users in selecting the optimal design for their testing scenario, providing both pooling layouts and decoding schemes.  

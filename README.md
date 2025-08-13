@@ -128,7 +128,8 @@ This example demonstrates how to generate a pooling plan for 100 samples, run yo
 
 ### Step 1 — Generate the pooling design
 
-In this example, we create a pooling scheme for 100 samples using the matrix pooling method, assuming at most **1 positive sample** in the set.
+In this example, we create a pooling scheme for 100 samples using the matrix pooling method, assuming at most **1 positive sample** in the set.  
+&nbsp;
 
 ```bash
 python pool_N.py --n_compounds 100 --differentiate 1 --method matrix --path ./matrix_design
@@ -150,6 +151,10 @@ In this example, the matrix design tells us that we can make 20 pools out of our
 | Sample 100 | 0 | 0 | ... | 1 |
 
 Presence or absence of a sample into a specific pool is denoted by 1 or 0, respectivelly.
+&nbsp;
+
+To note, we provide pre-computed designs across a large range of sample numbers on the [PoolPy web app](https://trouillon-lab.github.io/PoolPy/), which means that you likely don't need to compute the design yourself as explained here. In this example, a pooling design using the Matrix method with 100 samples and at most 1 positive sample is already provided on the web app. There, you can directly see the comparison of all 10 methods and see that for this example, using the Binary method would be the most efficient (only 7 pools needed) as long as you are not restricted in how many samples can be pooled together.
+&nbsp;
 
 ---
 ### Step 2 — Perform pooled testing

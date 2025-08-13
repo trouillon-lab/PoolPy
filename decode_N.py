@@ -19,7 +19,7 @@ from Fast_functions import *
 parser = argparse.ArgumentParser(description='Parse some arguments')
 parser.add_argument('--differentiate', type=int, default=-1, help='An integer argument with default 2')
 parser.add_argument('--path_to_WA', type=str, help="A string argument with default './pooling_results'")
-parser.add_argument('--readout', type=str, help="A string either containing the readout or containing a path a csv of the readout")
+parser.add_argument('--readout', type=str, help="A string either containing the readout or containing a path a csv of the readout (readout in the form 0,1,0,1,0,0)")
 
 args = parser.parse_args()
 

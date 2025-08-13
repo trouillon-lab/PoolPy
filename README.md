@@ -144,7 +144,7 @@ In this example, we create a pooling scheme for 100 samples using the matrix poo
 &nbsp;
 
 ```bash
-python pool_N.py --n_compounds 100 --differentiate 1 --method matrix --path ./matrix_design
+python pool_N.py --n_samp 100 --differentiate 1 --method matrix --path ./matrix_design
 ```
 
 **Outputs:**

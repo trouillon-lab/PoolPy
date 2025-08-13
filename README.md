@@ -12,9 +12,11 @@
 
 # PoolPy
 
-PoolPy is an open-source Python package for designing and evaluating combinatorial group testing strategies. It implements ten distinct pooling algorithms and guides users in selecting the optimal design for their testing scenario, providing both pooling layouts and decoding schemes.
+PoolPy is an open-source Python package for designing and evaluating combinatorial group testing strategies. It implements ten distinct pooling algorithms and guides users in selecting the optimal design for their testing scenario, providing both pooling layouts and decoding schemes.  
   
-We provide pre-computed designs for all methods across a large range of sample numbers on the [PoolPy web app](https://trouillon-lab.github.io/PoolPy/).  
+The pooling designs are applicable to any type of tests that give results that can be classified in a binary manner (e.g. positive/negative, functional/defective ...), such as pathogen detection via PCR, quality control testing in manufacturing, or drug screening in biotechnology.
+  
+We provide pre-computed designs for all methods across a large range of sample numbers on the [PoolPy web app](https://trouillon-lab.github.io/PoolPy/). There, we provide direct comparison of all ten methods for each test case, as well as downloadable design tables that guide the user on how to perform the pooling.  
 If your specific use case is not covered, you can compute the corresponding design and decode it as described below.
 
 ### Why PoolPy?
@@ -159,7 +161,7 @@ To note, we provide pre-computed designs across a large range of sample numbers 
 ---
 ### Step 2 — Perform pooled testing
 
-Pool your sampls according to the obtained design. Then, run your tests on the generated pools and record the results in a CSV file (`results.csv`), or as a list of positive pools.  
+Pool your samples according to the obtained design. Then, run your tests on the generated pools and record the results in a CSV file (`results.csv`), or as a list of positive pools.  
 For our example, we will assume that pools 2 and 17 came back positive in our test.
 
 ---

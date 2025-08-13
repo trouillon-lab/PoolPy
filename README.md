@@ -96,18 +96,28 @@ This will:
 
 You can execute locally a pooling design comparison by running the command:
 
-`python pool_N.py --n_compounds NC --differentiate diff`
+`python pool_N.py --n_samp NC --differentiate diff`
 
 Required:  
-`--n_compounds`: Total number of samples you want to test (NC)  
+`--n_samp`: Total number of samples you want to test (NC)  
 `--differentiate`: Maximum number of samples that can be positive to your test (diff)  
 Optional:  
 `--path`: The path in which results are saved. Default: current directory.  
 `--method`: Name of group testing method to use. Default: `all`. Alternatives: `binary`, `matrix`,`multidim`,`std`,`chinese_trick`,`random`.  
 `--guesses`: Number of guesses for the random method. Default: `5`.  
+`--keep_ratios_constant`: True/False argument to keep ratios constant in the Hierarchical method. Default: `False`.  
 
 Output:
-- `WAs` folder: Contains well assigner (WA) tables for each of the used method. These inform on how to pool the samples.  
+- `WAs` folder: Contains well assigner (WA) tables for each of the used method. These inform on how to pool the samples.
+-  `Metrics` file: Summary of key metrics for each method used
+ 
+| Metric | Definition | 
+|:------:|:------:|
+| Mean experiments |  |
+| Max compound per well |  |
+| N wells |  |
+| Mean extra experiments |  |
+| Mean steps |  |
 
 ### 2. **Decode group testing results**
 

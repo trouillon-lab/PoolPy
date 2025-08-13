@@ -1,18 +1,37 @@
+<img align="left" width="200" src="https://github.com/trouillon-lab/PoolPy/blob/main/docs/images/PoolPy_logo.png" />
+
+### A **Py**thon package to design **Pool**ing strategies.
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
 # PoolPy
 
-A Python package to design and decode group testing strategies.
+PoolPy is an open-source Python package for designing and evaluating combinatorial group testing strategies. It implements ten distinct pooling algorithms and guides users in selecting the optimal design for their testing scenario, providing both pooling layouts and decoding schemes.
+  
+We provide pre-computed designs for all methods across a large range of sample numbers on the [PoolPy web app](https://trouillon-lab.github.io/PoolPy/).  
+If your specific use case is not covered, you can compute the corresponding design and decode it as described below.
 
-We provide pre-computed designs for all methods across a large range of sample numbers on our [web app](https://trouillon-lab.github.io/PoolPy/). If your specific use case is not covered, you can compute the corresponding designs using the `pool_N.py` script, as described below.
-To decode the results of your test, use the XXX script.  
+### Why PoolPy?
 
-This package implements several of the most commonly used group testing strategies.
-Implemented methods:
+- Reduces the number of assays required for large-scale screening campaigns.
+- Compares performance across methods under your prevalence and sample-size constraints.
+- Built-in design generation and decoding pipelines for reproducibility and automation.
+
+### Implemented methods
+
+This package implements several of the most commonly used group testing strategies:
 - Hierarchical
 - Binary
 - Matrix
-- Multi-dimensional
+- Multi-dimensional (2-, 3- and 4-D)
 - Shifted transversal
-- Chinese remainder
+- Chinese remainder (standard, backtrack and special)
 - Random
 
 More details can be found in the associated publication.
@@ -80,18 +99,59 @@ Optional:
 `--guesses`: Number of guesses for the random method. Default: `5`.  
 
 Output:
-- `WAs` folder: Contains well assigner (WA) tables for each of the used method. These inform on how to pool the samples.
--  `Metrics` file: Summary of key metrics for each method used:
-    - `Mean experiments`:
-    - `Max compound per well`:
-    - `N wells`: (+ specific case of hierarchical)
-    -  `Percentage check`:
-    -  `Mean extra experiments`:
-    -  `Mean steps`:
+- `WAs` folder: Contains well assigner (WA) tables for each of the used method. These inform on how to pool the samples.  
 
 ### 2. **Decode group testing results**
 
-XXX
+You can decode locally the result of a pooling experiment by running the command:
+
+`python decode_N.py --differentiate diff --path_to_WA ./pooling_results --readout Readout`
+
+Required:  
+`--differentiate`: Maximum number of samples that can be positive to your test (diff).  
+`--path_to_WA`: Path where is the well assigner table for the used design.  
+`--readout`: A string either containing the readout or containing a path to a .csv file of the readout (Readout). If providing the readout as a string, use a comma-delimited list of positive samples.  
+
+
+## 🧪 Example: From Design to Decoding
+
+This example demonstrates how to generate a pooling plan for 100 samples, run your tests, and decode the results.
+
+---
+
+### Step 1 — Generate the pooling design
+
+In this example, we create a pooling scheme for 100 samples using the matrix pooling method, assuming at most **1 positive sample** in the set.
+
+```bash
+python pool_N.py --n_compounds 100 --differentiate 1 --method matrix --path ./matrix_design
+```
+
+**Outputs:**
+- `WA_Matrix_N_100_diff_1.csv` — Table mapping each sample to the pools where it should be added.   
+
+**Example `WA_Matrix_N_100_diff_1.csv` snippet:**
+
+|  | Pool 1 | Pool 2 | ... | Pool 20 |
+|:------:|:------:|:------:|:------:|:------:|
+| Sample 1 | 1 | 0 | ... | 0 |
+| Sample 2 | 1 | 0 | ... | 0 |
+| ... | ... | ... | ... | ... |
+| Sample 100 | 0 | 0 | ... | 1 |
+
+Presence or absence of a sample into a specific pool is denoted by 1 or 0, respectivelly.
+
+---
+### Step 2 — Perform pooled testing
+
+Run your tests according to the generated pools and record the results in a CSV file (`results.csv`), or as a list of positive pools.  
+For our example, we will assume that pools 2 and 17 were positive in our test.
+
+---
+### Step 3 — Decode the results
+
+
+
 
 ## 📦 Managing Dependencies
 
@@ -124,13 +184,7 @@ uv export > requirements.txt
 
 [MIT](https://choosealicense.com/licenses/mit/)
 
-## 🖥️ Platform Notes
 
-- **uv** supports **macOS, Linux, and Windows** natively.
-- The `.venv` directory is created in your project root and should **not** be committed to git.
-- All environment and dependency management is handled via `uv`—no need for `conda` or `pip` directly.
+## 📚 Citation
 
-
-## 📚 References
-
-- **uv documentation:** [https://docs.astral.sh/uv/](https://docs.astral.sh/uv/)
+If you use PoolPy in your research, please cite the PoolPy paper.

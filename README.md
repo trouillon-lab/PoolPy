@@ -126,7 +126,7 @@ You can decode locally the result of a pooling experiment by running the command
 Required:  
 `--differentiate`: Maximum number of samples that can be positive to your test (diff).  
 `--path_to_WA`: Path where is the well assigner table for the used design.  
-`--readout`: A string either containing the readout or containing a path to a .csv file of the readout (Readout). If providing the readout as a string, use a comma-delimited list of positive samples.  
+`--readout`: A string either containing the readout or containing a path to a .csv file of the readout (Readout). If providing the readout as a string, use a comma-delimited list of positive pools (e.g., for five pools with pool 2 being positive: 0,1,0,0,0).  
 
 &nbsp;
 
@@ -170,11 +170,34 @@ To note, we provide pre-computed designs across a large range of sample numbers 
 ### Step 2 — Perform pooled testing
 
 Pool your samples according to the obtained design. Then, run your tests on the generated pools and record the results in a CSV file (`results.csv`), or as a list of positive pools.  
-For our example, we will assume that pools 2 and 17 came back positive in our test.
+For our example, we will assume that pools 2 and 13 came back positive in our test.
 
 ---
 ### Step 3 — Decode the results
 
+Now we can decode the result of our pooled experiment (samples 2 and 13 positive), with the following command:
+
+```bash
+python decode_N.py --differentiate 1 --readout "0,1,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0" --path_to_WA .\matrix_design\N_100\diff_1\WAs\WA_Matrix_N_100_diff_1.csv
+```
+&nbsp;
+
+**Outputs:**
+<img align="right" width="300" src="https://github.com/trouillon-lab/PoolPy/blob/main/docs/images/matrix_github_example.png" />
+
+- `Matrix_diff_1_decoded.txt` — File containing the decoded results.
+
+Here, the sample number 13 is the positive sample!
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
+
+&nbsp;
 
 &nbsp;
 

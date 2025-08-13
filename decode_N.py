@@ -35,7 +35,15 @@ WA_df=pd.read_csv(dira, index_col=0)
 if readout_in.endswith('csv'):
     readout = np.genfromtxt('readout_in', delimiter=',', dtype=int)
 else:
-    readout = np.fromstring(readout_in, sep=',', dtype=int)    
+    readout = np.fromstring(readout_in, sep=',', dtype=int)   
+
+WA=WA_df.values
+n_compounds=WA.shape[1]
+
+if np.max(readout)>1 or len(readout)!=n_compounds:
+    readout_bin_ls = [1 if i in readout else 0 for i in range(n_compounds)]
+    readout=np.array(readout_bin_ls)
+ 
 
 st_dir=str(dira)
 inf_diff=re.sub('^.*_', '', st_dir)
@@ -51,9 +59,6 @@ if diff==-1:
 if diff!=inf_diff:
     print(f'WARNING: inferred differentiate of {inf_diff} different from passed differentiate of {diff}\n')
 
-
-WA=WA_df.values
-n_compounds=WA.shape[1]
 scrambler={1:np.arange(n_compounds)}
 for j in range(2,diff+1):
     scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})

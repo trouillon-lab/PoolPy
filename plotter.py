@@ -264,7 +264,7 @@ def plotter(dir_WAs, max_diff, min_diff, start=0, stop=np.inf, step=1, x_axis='b
         full_df_met=full_df_met,
         y_as=y_as,
         x_as=x_as,
-        cmap=cmc.batlow,
+        cmap=cmc.lapaz,
         xlabel_dict={'N': 'Sample Size', 'diff': 'Maximun number of positives'},
         base_title="Method Comparison",
         label_fontsize=14,

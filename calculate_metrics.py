@@ -56,7 +56,7 @@ def mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs):
 
 def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150, step=10, diff=2, **kwargs):
     N=start
-    ls_names_met=['Method', 'Mean experiments', 'Max compunds per pool', 'N pools', 'Percentage check', 'Mean extra experiments', 'Mean steps']
+    ls_names_met=['Method', 'Mean experiments', 'Max samples per pool', 'N pools', 'Percentage check', 'Mean extra experiments', 'Mean steps']
     
     while N<stop:
         Npath=os.path.join(dir_WAs,'N_'+str(N))
@@ -98,7 +98,7 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                     full_methods.append('Hierarchical')
                     df_met=pd.DataFrame(ls_met)
                     #dft=pd.DataFrame({'Method':[a[0] for a in ls_met], 'Mean Experiments':[a[1] for a in ls_met],
-                    #                    'Max compunds':[a[2] for a in ls_met], 'N wells':[a[3] for a in ls_met],
+                    #                    'Max compounds':[a[2] for a in ls_met], 'N wells':[a[3] for a in ls_met],
                     #                    'Percentage check':[a[4] for a in ls_met], 'Extra experiments':[a[5] for a in ls_met],
                     #                    'Mean steps':[a[6] for a in ls_met],})
 
@@ -156,7 +156,7 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
                     full_methods.append('Hierarchical')
                     df_met=pd.DataFrame(ls_met)
                     #dft=pd.DataFrame({'Method':[a[0] for a in ls_met], 'Mean Experiments':[a[1] for a in ls_met],
-                    #                    'Max compunds':[a[2] for a in ls_met], 'N wells':[a[3] for a in ls_met],
+                    #                    'Max compounds':[a[2] for a in ls_met], 'N wells':[a[3] for a in ls_met],
                     #                    'Percentage check':[a[4] for a in ls_met], 'Extra experiments':[a[5] for a in ls_met],
                     #                    'Mean steps':[a[6] for a in ls_met],})
 

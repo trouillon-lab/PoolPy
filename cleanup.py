@@ -131,8 +131,8 @@ def replace_method_filter_metrics_add_CT(dpath):
                         'Unnamed: 0': 'Ch. Rm. Bktrk',
                         'Method': 'Ch. Rm. Bktrk',
                         'Mean experiments': WA_bktrk.shape[1],
-                        'Max compunds per well': int(np.max(np.sum(WA_bktrk, axis=0))),
-                        'N wells': WA_bktrk.shape[1],
+                        'Max samples per pool': int(np.max(np.sum(WA_bktrk, axis=0))),
+                        'N pools': WA_bktrk.shape[1],
                         'Percentage check': 0,
                         'Mean extra experiments': 0,
                         'Mean steps': 1
@@ -150,8 +150,8 @@ def replace_method_filter_metrics_add_CT(dpath):
                             'Unnamed: 0': 'Ch. Rm. Special',
                             'Method': 'Ch. Rm. Special',
                             'Mean experiments': WA_special.shape[1],
-                            'Max compunds per well': int(np.max(np.sum(WA_special, axis=0))),
-                            'N wells': WA_special.shape[1],
+                            'Max samples per pool': int(np.max(np.sum(WA_special, axis=0))),
+                            'N pools': WA_special.shape[1],
                             'Percentage check': 0,
                             'Mean extra experiments': 0,
                             'Mean steps': 1
@@ -201,7 +201,7 @@ def adjust_mean_extra_experiments(df, N_value):
 def process_metrics_and_adjust_experiments(dpath):
     """
     Process all Metrics_N_*_diff_*.csv files:
-    - Replace 'Chinese trick' → 'Chinese reminder'
+    - Replace 'Chinese trick' → 'Chinese remainder'
     - Add rows for Ch. Rm. Bktrk and Ch. Rm. Special
     - After building the DataFrame, ensure 'Mean extra experiments' <= N_value.
       If not, set it to N_value.
@@ -241,8 +241,8 @@ def process_metrics_and_adjust_experiments(dpath):
                         'Unnamed: 0': 'Ch. Rm. Bktrk',
                         'Method': 'Ch. Rm. Bktrk',
                         'Mean experiments': WA_bktrk.shape[1],
-                        'Max compunds per well': int(np.max(np.sum(WA_bktrk, axis=0))),
-                        'N wells': WA_bktrk.shape[1],
+                        'Max samples per pool': int(np.max(np.sum(WA_bktrk, axis=0))),
+                        'N pools': WA_bktrk.shape[1],
                         'Percentage check': 0,
                         'Mean extra experiments': 0,
                         'Mean steps': 1
@@ -258,8 +258,8 @@ def process_metrics_and_adjust_experiments(dpath):
                             'Unnamed: 0': 'Ch. Rm. Special',
                             'Method': 'Ch. Rm. Special',
                             'Mean experiments': WA_special.shape[1],
-                            'Max compunds per well': int(np.max(np.sum(WA_special, axis=0))),
-                            'N wells': WA_special.shape[1],
+                            'Max samples per pool': int(np.max(np.sum(WA_special, axis=0))),
+                            'N pools': WA_special.shape[1],
                             'Percentage check': 0,
                             'Mean extra experiments': 0,
                             'Mean steps': 1
@@ -321,7 +321,7 @@ def remove_decoders_folders(root_path):
                 dirs.remove(dir_name)
 # === Usage ===
 # Set your root paths and variables
-dpath = 'D:\\precomputed'        # <-- Change this
+dpath = 'D:\\NEW_precomputed'        # <-- Change this
 
 clean_wa_files(dpath)
 remove_decoders_folders(dpath)

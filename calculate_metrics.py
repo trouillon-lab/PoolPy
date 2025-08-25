@@ -64,15 +64,35 @@ def sweep_metrics_precomp(dir_scramblers, dir_WAs, max_diff, start=50, stop=150,
         if max_diff>=1:
             if 'differentiate' in kwargs.keys():
                 del kwargs['differentiate']
+
+            for diffo in range(1, max_diff+1):
+                start_time = time.time()
+                dpath=os.path.join(Npath,'diff_'+str(diffo))
+                metname=os.path.join(dpath, 'Metrics_N_'+str(N)+'_diff_'+str(diffo)+'.csv')
+                if os.path.isfile(metname) and not kwargs['redo']:
+                    R_diff=diffo
+                    
             
+            if R_diff==max_diff:
+                print(f'N={N} skipped as already present')
+                N+=step
+                continue
+
             while diff<=max_diff:
 
                 start_time = time.time()
                 dpath=os.path.join(Npath,'diff_'+str(diff))
                 metname=os.path.join(dpath, 'Metrics_N_'+str(N)+'_diff_'+str(diff)+'.csv')
                 if os.path.isfile(metname) and not kwargs['redo']:
+                    print(f'Differentiate {diff} for N={N} skipped as already present; scrambler loaded')
+                    if diff==1:
+                        scrambler={1:np.arange(N)}
+                    else:
+                        this_sc_file=os.path.join(dir_scramblers, 'N_'+str(N),  'N_'+str(N)+'_diff_'+str(diff)+'.npz')
+                        this_scramblero=np.load(this_sc_file)
+                        this_scrambler=this_scramblero[this_scramblero.files[0]]
+                        scrambler.update({diff:this_scrambler})
                     diff+=1
-                    print(f'Differentiate {diff} for N={N} skipped as already present')
                     continue
                 ls_met=[]
                 full_methods=[]

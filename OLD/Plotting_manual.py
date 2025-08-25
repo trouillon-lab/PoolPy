@@ -17,8 +17,8 @@ import matplotlib.pyplot as plt
 
 main_path=os.path.abspath(r'C:\Users\nanoseq\Documents\GitHub\pooling')
 
-#dir_WAs=os.path.abspath(r'D:\precomputed')
-dir_WAs=os.path.abspath(r'D:\NEW_precomputed')
+dir_WAs=os.path.abspath(r'D:\precomputed')
+#dir_WAs=os.path.abspath(r'D:\NEW_precomputed')
 
 plt_path=os.path.join(dir_WAs,'AA_plots',str(date.today()))
 os.makedirs(plt_path, exist_ok=True)
@@ -144,7 +144,7 @@ for i in range(len(metrics_to_plot)):
         
         fig, ax = plt.subplots(figsize=(8, 5))
         
-        plt.text(0.05,0.9,'Differenciate '+str(diff), transform = ax.transAxes,fontsize=tick_fontsize)
+        plt.text(0.05,0.9,'Differentiate '+str(diff), transform = ax.transAxes,fontsize=tick_fontsize)
         
         for method in methods:
             

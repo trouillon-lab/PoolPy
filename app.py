@@ -4,166 +4,275 @@ import pandas as pd
 import os
 import pickle
 import numpy as np
+import os
+import pandas as pd
+import scipy.stats
 #import matplotlib.pyplot as plt
 summary_text = ""
 # Define the UI
 app_ui = ui.page_fluid(
     ui.tags.title("PoolPy"),
-    #Centered Title
-    ui.h2("PoolPy", style="text-align: center;"),
-    # Row with two input fields side by side (one on the left, one on the right)
-    ui.row(
-        ui.column(2),
-        ui.column(
-            5,
-            ui.input_numeric("n_samp", "Number of Samples:", value=20)
-        ),
-        ui.column(
-            2,
-            ui.input_numeric("differentiate", "Max number of positives:", value=1)
-        )
-    ),
-    # Submit button centered below inputs
-    ui.row(
-        ui.column(
-            12,
-            ui.input_action_button("submit", "Enter", style="display: block; margin-left: auto; margin-right: auto;")
-        )
-    ),
-    # Text output for displaying last submitted values, centered below inputs
-    ui.hr(),
-    ui.div(
-        ui.h4("Last submitted values:"),
-        ui.output_text_verbatim("last_val"),
-        style="text-align: center;"
-    ),
-    ui.hr(),
-    ui.div(
-        ui.h4("Database reply"),
-        ui.output_text_verbatim("database_r"),  
-        #ui.div(
-        #ui.download_button("download_pickle", "Download complete pickled file"),
-        #style="text-align: center; margin-top: 60px;"
-        #),
-        style="text-align: center;"
-    ),
-
-    #ui.hr(),
-    ui.panel_conditional(
-        "output.allow_downloads == 'true'",
-    ui.div(
-        ui.h4("Summary pooling strategy table", style="text-align: center;"),
-        # Wrap the table in a div and apply margin-left and margin-right for centering
-        ui.div(
-            ui.output_data_frame("summary_t"),
-            style="display: flex; justify-content: center;"  # Flexbox centering
-        ),
-        ui.div(
-            ui.output_ui("summary_text"),
-            style="margin: 18px 0 0 0; color: #555; font-size: 15px; text-align: center;"
-        ),
-        ui.div(
-            ui.download_button("download_summary", "Download summary"),
-            style="text-align: center; margin-top: 60px;"
-        )
-    )
-    ),
-
-    ui.hr(),
-    ui.div(
-        ui.h4("Command to run code locally"),
-        ui.output_text_verbatim("commands"),  
-        
-        style="text-align: center;"
-    ),
-
-
-    ui.panel_conditional(
-        "output.allow_downloads == 'true'",
-        ui.div(
-            ui.h4("Downloadable tables"),
-            #ui.output_text_verbatim("table_text"),  
-            ui.download_button("download_table_matrix", "Matrix"),
-            ui.download_button("download_table_2d", "2-dim"),
-            ui.download_button("download_table_3d", "3-dim"),
-            ui.download_button("download_table_4d", "4-dim"),
-            ui.download_button("download_table_random", "Random"),
-            ui.download_button("download_table_STD", "STD"),
-            ui.download_button("download_table_CT", "Chinese remainder"),
-            ui.download_button("download_table_CTB", "Chinese rm bktrk"),
-            ui.download_button("download_table_CTS", "Chinese rm special"),
-            ui.download_button("download_table_binary", "Binary"),
-            style="text-align: center;",
-        )
-    ),
-
-    ui.hr(),
-    ui.panel_conditional(
-    "output.allow_downloads == 'true'",
-        ui.div(
-            ui.h4("Command to run decoder locally"),
-            ui.output_text_verbatim("decode"),  
+    ui.navset_tab(
+        ui.nav_panel("Pooling Methods Comparison",
+            # Centered Title
+            ui.h2("PoolPy", style="text-align: center;"),
+            # Short description below the title
+            ui.div(
+                "This app evaluates combinatorial pooling performances of different methods. ",
+                ui.br(),
+                "For an overview head down to the ",
+                ui.a("methods and metrics", href="#methods-metrics", id="nav-methods-link", style="text-decoration: underline; cursor: pointer;"),
+                " section.",
+                " For a detailed description read our ",
+                ui.a("paper", href="#paper-link", style="text-decoration: underline;"),
+                ".",
+                ui.br(),
+                "If you are working with sample prevalence and are unsure about the number of positives in your experiment, feel free to consult the ",
+                ui.a("prevalence", href="#prevalence-section", id="nav-prevalence-link", style="text-decoration: underline; cursor: pointer;"),
+                " section.",
+                style="text-align: center; margin-bottom: 18px; font-size: 16px; color: #444;"
+            ),
+            ui.tags.script('''
+                document.addEventListener('DOMContentLoaded', function() {
+                    var methodsLink = document.getElementById('nav-methods-link');
+                    if (methodsLink) {
+                        methodsLink.addEventListener('click', function(event) {
+                            event.preventDefault();
+                            var tab = document.querySelector("[data-value='Methods & Metrics']");
+                            if (tab) tab.click();
+                        });
+                    }
+                    var prevalenceLink = document.getElementById('nav-prevalence-link');
+                    if (prevalenceLink) {
+                        prevalenceLink.addEventListener('click', function(event) {
+                            event.preventDefault();
+                            var tab = document.querySelector("[data-value='Prevalence']");
+                            if (tab) tab.click();
+                        });
+                    }
+                });
+            '''),
             
-            style="text-align: center;"
+            # Row with two input fields side by side (one on the left, one on the right)
+            ui.row(
+                ui.column(4),
+                ui.column(2, ui.input_numeric("n_samp", "Number of Samples:", value=20)),
+                ui.column(1),
+                ui.column(2, ui.input_numeric("differentiate", "Max number of positives:", value=1)),
+                ui.column(2),
+            ),
+            # ...existing code for Main page...
+            ui.row(
+                ui.column(
+                    12,
+                    ui.input_action_button("submit", "Enter", style="display: block; margin-left: auto; margin-right: auto;")
+                )
+            ),
+            ui.hr(),
+            ui.div(
+                ui.h4("Last submitted values:"),
+                ui.output_text_verbatim("last_val"),
+                style="text-align: center;"
+            ),
+            ui.hr(),
+            ui.div(
+                ui.h4("Database reply"),
+                ui.output_text_verbatim("database_r"),
+                style="text-align: center;"
+            ),
+            ui.panel_conditional(
+                "output.allow_downloads == 'true'",
+                ui.div(
+                    ui.h4("Summary pooling strategy table", style="text-align: center;"),
+                    ui.div(
+                        ui.output_ui("summary_colored_table"),
+                        style="display: flex; justify-content: center;"
+                    ),
+
+# Add a new output to render the colored summary table in the server function, not in the UI definition
+                    ui.div(
+                        ui.output_ui("summary_text"),
+                        style="margin: 18px 0 0 0; color: #555; font-size: 15px; text-align: center;"
+                    ),
+                    ui.div(
+                        ui.download_button("download_summary", "Download summary"),
+                        style="text-align: center; margin-top: 60px;"
+                    )
+                )
+            ),
+            ui.hr(),
+            ui.div(
+                ui.h4("Command to run code locally"),
+                ui.output_text_verbatim("commands"),
+                style="text-align: center;"
+            ),
+            ui.panel_conditional(
+                "output.allow_downloads == 'true'",
+                ui.div(
+                    ui.h4("Downloadable tables"),
+                    ui.download_button("download_table_matrix", "Matrix"),
+                    ui.download_button("download_table_2d", "2-dim"),
+                    ui.download_button("download_table_3d", "3-dim"),
+                    ui.download_button("download_table_4d", "4-dim"),
+                    ui.download_button("download_table_random", "Random"),
+                    ui.download_button("download_table_STD", "STD"),
+                    ui.download_button("download_table_CT", "Chinese remainder"),
+                    ui.download_button("download_table_CTB", "Chinese rm bktrk"),
+                    ui.download_button("download_table_CTS", "Chinese rm special"),
+                    ui.download_button("download_table_binary", "Binary"),
+                    style="text-align: center;",
+                )
+            ),
+            ui.hr(),
+            ui.panel_conditional(
+                "output.allow_downloads == 'true'",
+                ui.div(
+                    ui.h4("Command to run decoder locally"),
+                    ui.output_text_verbatim("decode"),
+                    style="text-align: center;"
+                ),
+            ),
+            ui.panel_conditional(
+                "output.extra_computation == 'true'",
+                ui.h4("Histogram Plot"),
+                ui.output_plot("histogram_plot")
+            ),
+            ui.panel_conditional(
+                "output.extra_computation == 'true'",
+                ui.h4("Downloadable Tables"),
+                ui.div(
+                    {"id": "download-section"},
+                    ui.output_ui("download_buttons")
+                )
+            ),
+            ui.div(
+                ui.output_text_verbatim("allow_downloads"),
+                style="position: fixed; bottom: 2px; right: 2px; opacity: 0.05; font-size: 8px; z-index: 1; pointer-events: none;"
+            ),
+            ui.div("", style="height: 80px;"),
+            ui.tags.script("""
+                function copyCommand(command) {
+                    navigator.clipboard.writeText(command).then(function() {
+                        alert('Copied to clipboard: ' + command);
+                    }).catch(function(error) {
+                        console.error('Failed to copy text: ', error);
+                    });
+                }
+            """),
+            ui.tags.script('''
+                document.getElementById('n_samp').addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        document.getElementById('submit').click();
+                    }
+                });
+                document.getElementById('differentiate').addEventListener('keydown', function(event) {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        document.getElementById('submit').click();
+                    }
+                });
+            ''')
         ),
-    ),
-
-
-    # Conditionally display the summary table if extra_computation is False
-    #ui.hr(),
-    ui.panel_conditional(
-        "output.extra_computation == 'true'",  # JavaScript condition to check if extra_computation is False
-        ui.h4("Histogram Plot"),
-        ui.output_plot("histogram_plot")  # Output container for the plot
-    ),
-
-    # Section for downloadable tables with dynamic names
-    #ui.hr(),
-    ui.panel_conditional(
-       "output.extra_computation == 'true'",  # JavaScript condition to check if extra_computation is False
-        ui.h4("Downloadable Tables"),
-        ui.div(
-            {"id": "download-section"},
-            ui.output_ui("download_buttons")  # Placeholder for dynamically generated download buttons with names
-        )
-    ),
-
-    ui.div(
-        ui.output_text_verbatim("allow_downloads"),
-        style="position: fixed; bottom: 2px; right: 2px; opacity: 0.05; font-size: 8px; z-index: 1; pointer-events: none;"
-    ),
-
-    # Add vertical space at the end of the page
-    ui.div("", style="height: 80px;"),
-
-    # JavaScript for copying text to clipboard
-    ui.tags.script("""
-        function copyCommand(command) {
-            navigator.clipboard.writeText(command).then(function() {
-                alert('Copied to clipboard: ' + command);
-            }).catch(function(error) {
-                console.error('Failed to copy text: ', error);
-            });
-        }
-    """),
-
-    # JavaScript to trigger button click on Enter key press for both input fields
-    ui.tags.script('''
-        document.getElementById('n_samp').addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();  // Prevent default form submission
-                document.getElementById('submit').click();  // Trigger button click
-            }
-        });
-
-        document.getElementById('differentiate').addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();  // Prevent default form submission
-                document.getElementById('submit').click();  // Trigger button click
-            }
-        });
-    ''')
-    #title="PoolPy"
+        ui.nav_panel("Methods & Metrics",
+            ui.h2("Methods & Metrics", style="text-align: center;"),
+            ui.div(
+                ui.h4("Pooling Methods Tested:"),
+                ui.tags.ul(
+                    ui.tags.li(ui.tags.b("Matrix"), ": Classic matrix pooling, each sample is included in a unique row and column pool."),
+                    ui.tags.li(ui.tags.b("Multidimensional (2D, 3D, 4D)"), ": Samples are arranged in higher-dimensional grids, each dimension representing a pooling axis."),
+                    ui.tags.li(ui.tags.b("Random"), ": Pools are formed by randomly assigning samples, often used as a baseline."),
+                    ui.tags.li(ui.tags.b("STD"), ": Standard design, a reference pooling method with fixed structure."),
+                    ui.tags.li(ui.tags.b("Chinese Remainder (bktrk, special)"), ": Pooling based on the Chinese Remainder Theorem, with variants for backtracking (bktrk) and special cases (special)."),
+                    ui.tags.li(ui.tags.b("Binary"), ": Each sample is assigned to pools according to a binary code, maximizing information per test.")
+                ),
+                ui.h4("Metrics in the Summary Table:"),
+                ui.tags.ul(
+                    ui.tags.li(ui.tags.b("Pooling strategy"), ": Name of the pooling method used."),
+                    ui.tags.li(ui.tags.b("Mean experiments"), ": Average number of tests required to identify the positive samples."),
+                    ui.tags.li(ui.tags.b("Max compounds per well"), ": Maximum number of samples combined in any single pool."),
+                    ui.tags.li(ui.tags.b("N pools"), ": Total number of pools used in first step of the strategy. (or in all steps for hierachical clustering)"),
+                    ui.tags.li(ui.tags.b("Percentage check"), ": Fraction of cases requiring additional verification or retesting."),
+                    ui.tags.li(ui.tags.b("Mean extra experiments"), ": Average number of extra tests needed beyond the initial pooling scheme.")
+                ),
+                style="max-width: 700px; margin: 0 auto; font-size: 16px; color: #333;"
+            )
+        ),
+        ui.nav_panel("Prevalence",
+                ui.h2("Prevalence", style="text-align: center;"),
+                ui.div(
+                    ui.div(
+                        "This section is meant to guide the decision of the best pooling strategy for each individual case. Below you will find two numerical tables.",
+                        ui.br(),
+                        "The right table reports the probability of making at least one mistake while reading the results of one combinatorial pooling.",
+                        ui.br(),
+                        "The left table reports the probability of making at least one mistake while reading the results of all the combinatorial poolings of the experiment combined.",
+                        style="text-align: center; color: #444; font-size: 16px;"
+                    ),
+                    style="text-align: center; margin-bottom: 18px;"
+                ),
+                ui.div(
+                    ui.row(
+                        ui.column(2),
+                        ui.column(3,
+                            ui.input_numeric("prev_n_samp", "Number of Samples:", value=100),
+                        ),
+                        ui.column(3,
+                            ui.div(
+                                ui.input_numeric(
+                                    "prev_prevalence",
+                                    "Prevalence (as fraction):",
+                                    value=0.01,
+                                ),
+                                style="min-width: 220px; max-width: 100%; width: 100%; display: flex; align-items: center;"
+                            )
+                        ),
+                        ui.column(3,
+                            ui.input_numeric("prev_max_error", "Maximum acceptable error:", value=0.05),
+                        ),
+                    ),
+                    style="margin-top: 30px;"
+                ),
+                ui.div(
+                    ui.input_action_button("prev_submit", "Enter", style="display: block; margin: 20px auto 0 auto;"),
+                    style="text-align: center;"
+                ),
+                ui.tags.script('''
+                    document.addEventListener('DOMContentLoaded', function() {
+                        ["prev_n_samp", "prev_prevalence", "prev_max_error"].forEach(function(id) {
+                            var el = document.getElementById(id);
+                            if (el) {
+                                el.addEventListener('keydown', function(event) {
+                                    if (event.key === 'Enter') {
+                                        event.preventDefault();
+                                        var btn = document.getElementById('prev_submit');
+                                        if (btn) btn.click();
+                                    }
+                                });
+                            }
+                        });
+                    });
+                '''),
+                ui.hr(),
+                ui.div(
+                    ui.h4("Last submitted values:"),
+                    ui.output_text_verbatim("last_val_prev"),
+                    style="text-align: center;"
+                ),
+                ui.div(
+                    ui.output_ui("prevalence_error_table"),
+                    style="margin-top: 30px; display: flex; justify-content: center;"
+                ),
+                ui.div(
+                    ui.output_ui("prevalence_legend"),
+                    style="margin-top: 18px; display: flex; justify-content: center;"
+                ),
+                ui.div(
+                    ui.output_ui("prevalence_explanation"),
+                    style="margin-top: 8px; display: flex; justify-content: center;"
+                ),
+            )
+    )
 )
 
 
@@ -213,8 +322,56 @@ def find_closest_n_folder(n, wa_directory):
     return None
 
 
-import os
-import pandas as pd
+# Function to generate expected error table for prevalence tab
+def expected_error_table(N, prevalence, max_diff=None, correct=False):
+    if max_diff is None:
+        max_diff = 4  # or set to N or another reasonable value
+    diff_values = np.arange(1, int(max_diff)+1)
+    pop_sizes = []
+    min_N=5
+    N_current = int(np.ceil(N))
+    factor=[]
+    NF=1
+    # Build the population sizes as described, always take the ceiling to be on the safe side
+    while N_current >= min_N:
+        pop_sizes.append(N_current)
+        factor.append(NF)
+        N_current = int(np.ceil(N_current / 2))
+        NF=int(NF*2)
+        if N_current < min_N:
+            break
+        pop_sizes.append(N_current)
+        factor.append(NF)
+        NF=int(NF*2.5)
+        N_current = int(np.ceil(N_current / 2.5))
+        if N_current < min_N:
+            break
+        pop_sizes.append(N_current)
+        factor.append(NF)
+        NF=int(NF*2)
+        N_current = int(np.ceil(N_current / 2))
+    # Remove duplicates and sort descending
+    #pop_sizes = sorted(set([x for x in pop_sizes if x >= min_N]), reverse=True)
+    
+    # Build the table
+    data = []
+    for N_val,NF in zip(pop_sizes,factor):
+        row = []
+        for diff in diff_values:
+            p_error = 1 - scipy.stats.binom.cdf(diff, N_val, prevalence)
+            if correct:
+                p_error=1-(1-p_error)**int(NF)
+            row.append(p_error)
+        data.append(row)
+    df = pd.DataFrame(data, index=pop_sizes, columns=diff_values)
+    # No minimum error logic needed
+    df.index.name = "N"
+    df.columns.name = "Differentiate"
+    return df
+
+
+
+
 
 def load_wa_matrices(folder_path):
     DFFS = {}
@@ -248,6 +405,74 @@ def load_wa_matrices(folder_path):
 
 # Define the server logic
 def server(input, output, session):
+
+    @output
+    @render.ui
+    def summary_colored_table():
+        df = output.summary_table.get()
+        if df is None or df.empty:
+            return ui.HTML("<div>No data available.</div>")
+        # Only color numeric columns
+        df_numeric = df.select_dtypes(include=[float, int])
+        # Build HTML table
+        html = '<table style="border-collapse: collapse; font-size: 16px;">'
+        # Header
+        html += '<tr>'
+        for col in df.columns:
+            th_style = 'border: 1px solid #aaa; padding: 8px 12px; text-align: center;'
+            if col == 'N pools':
+                th_style += ' min-width: 120px;'
+            html += f'<th style="{th_style}">{col}</th>'
+        html += '</tr>'
+
+        # Color logic
+        green_indices = {}
+        # Green for three smallest in 'Mean experiments' and 'Max compounds in a pool'
+        for col in ['Mean experiments', 'Max compounds in a pool']:
+            if col in df.columns:
+                col_vals = df[col]
+                idxs = pd.Series(col_vals).nsmallest(3).index.tolist()
+                green_indices[col] = idxs
+
+
+        # Red or green for 'Mean steps' (if <=3 with >1, color those red; if >3, color all ==1 green)
+        red_indices = []
+        if 'Mean steps' in df.columns:
+            col_vals = df['Mean steps']
+            gt1 = col_vals[col_vals > 1]
+            if 1 <= len(gt1) <= 3:
+                red_indices = gt1.index.tolist()
+            elif len(gt1) > 3:
+                green_indices['Mean steps'] = col_vals.index[col_vals == 1].tolist()
+
+        # Rows
+        for i, row in df.iterrows():
+            html += '<tr>'
+            for col in df.columns:
+                val = row[col]
+                td_style = 'border: 1px solid #aaa; padding: 8px 12px; text-align: center;'
+                if col == 'N pools':
+                    td_style += ' min-width: 120px;'
+                # Green logic
+                if col in green_indices and i in green_indices[col]:
+                    td_style += ' background-color: #b6fcb6; color: #111;'
+                # Red logic for Mean steps
+                if col == 'Mean steps' and i in red_indices:
+                    td_style += ' background-color: #ffcccc; color: #111;'
+                html += f'<td style="{td_style}">{val}</td>'
+            html += '</tr>'
+        html += '</table>'
+        return ui.HTML(html)
+    # For Prevalence tab: track last submitted values
+    output.last_val_prev = reactive.Value("")
+    # Prevalence error table output
+
+    # Prevalence tab reactives
+    output.prev_n_samp = reactive.Value(100)
+    output.prev_prevalence = reactive.Value(0.01)
+    output.prev_max_error = reactive.Value(0.05)
+
+            
     output.summary_text = reactive.Value("")
     output.last_values = reactive.Value("")
     output.database_reply = reactive.Value("")
@@ -258,6 +483,10 @@ def server(input, output, session):
     output.full_pickle = reactive.Value(0)
     output.debug = reactive.Value("")
     output.allow_downloads = reactive.Value(False)
+
+
+
+
 
 
     ls_met=['Pooling strategy', 'mean_experiments', 'max_compounds_per_well', 'n_wells', 'percentage_check', 'mean_extra_exp']
@@ -550,6 +779,27 @@ def server(input, output, session):
                 @render.text
                 def debug():
                     return  output.debug.get()
+                
+
+
+
+    @reactive.Effect
+    @reactive.event(input.prev_submit)
+    def _():
+        n = input.prev_n_samp()
+        p = input.prev_prevalence()
+        max_e = input.prev_max_error()
+        output.prev_n_samp.set(n)
+        output.prev_prevalence.set(p)
+        output.prev_max_error.set(max_e)
+        output.last_val_prev.set(f"Number of Samples: {n}, Prevalence: {p}, Max error: {max_e}")
+
+    @output
+    @render.text
+    def last_val_prev():
+        return output.last_val_prev.get()
+
+
     @output
     @render.text
     def allow_downloads():
@@ -670,6 +920,81 @@ def server(input, output, session):
             yield DFFS['Binary'].to_csv(index=True)
         except:
             yield pd.DataFrame().to_csv(index=True)
+
+    @output
+    @render.ui
+    def prevalence_error_table():
+        N = output.prev_n_samp.get()
+        prevalence = output.prev_prevalence.get()
+        max_err = output.prev_max_error.get()
+        df_orig = expected_error_table(N, prevalence, max_diff=4, correct=False)
+        df_corr = expected_error_table(N, prevalence, max_diff=4, correct=True)
+
+        def color_for_value(val_orig, val_corr):
+            if val_orig > max_err and val_corr > max_err:
+                return "background-color: #ffeaea; color: #111;"  # red
+            elif val_corr > max_err:
+                return "background-color: #ffffea; color: #111;"  # yellow
+            else:
+                return "background-color: #b6fcb6; color: #111;"  # green
+
+        # Build two tables side by side
+        html = '<div style="display: flex; flex-direction: row; gap: 32px; justify-content: center;">'
+
+        # Original table
+        html += '<div>'
+        html += '<div style="text-align: center; font-weight: bold; margin-bottom: 8px;">Single batch</div>'
+        html += '<table style="border-collapse: collapse; font-size: 18px; min-width: 300px;">'
+        html += '<tr><th style="border: 1px solid #aaa; padding: 10px 16px; text-align: center;">N \\ Differentiate</th>'
+        for col in df_orig.columns:
+            html += f'<th style="border: 1px solid #aaa; padding: 10px 16px; text-align: center;">{col}</th>'
+        html += '</tr>'
+        for idx, row in df_orig.iterrows():
+            html += f'<tr><th style="border: 1px solid #aaa; padding: 10px 16px; text-align: center;">{idx}</th>'
+            for j, val in enumerate(row):
+                val_corr = df_corr.loc[idx, df_corr.columns[j]] if idx in df_corr.index and df_corr.columns[j] in df_corr.columns else None
+                style = color_for_value(val, val_corr)
+                html += f'<td style="border: 1px solid #aaa; padding: 10px 16px; text-align: center; {style}">{val:.3g}</td>'
+            html += '</tr>'
+        html += '</table>'
+        html += '</div>'
+
+        # Corrected table
+        html += '<div>'
+        html += '<div style="text-align: center; font-weight: bold; margin-bottom: 8px;">Corrected for FWER</div>'
+        html += '<table style="border-collapse: collapse; font-size: 18px; min-width: 300px;">'
+        html += '<tr><th style="border: 1px solid #aaa; padding: 10px 16px; text-align: center;">N \\ Differentiate</th>'
+        for col in df_corr.columns:
+            html += f'<th style="border: 1px solid #aaa; padding: 10px 16px; text-align: center;">{col}</th>'
+        html += '</tr>'
+        for idx, row in df_corr.iterrows():
+            html += f'<tr><th style="border: 1px solid #aaa; padding: 10px 16px; text-align: center;">{idx}</th>'
+            for j, val_corr in enumerate(row):
+                val_orig = df_orig.loc[idx, df_orig.columns[j]] if idx in df_orig.index and df_orig.columns[j] in df_orig.columns else None
+                style = color_for_value(val_orig, val_corr)
+                html += f'<td style="border: 1px solid #aaa; padding: 10px 16px; text-align: center; {style}">{val_corr:.3g}</td>'
+            html += '</tr>'
+        html += '</table>'
+        html += '</div>'
+
+        html += '</div>'  # end flex
+        return ui.HTML(html)
+
+    @output
+    @render.ui
+    def prevalence_legend():
+        html = '<div style="font-size: 15px; text-align: center; margin-top: 18px;">'
+        html += '<div style="margin-bottom: 6px;"><span style="background-color: #ffeaea; color: #111; padding: 4px 14px; border-radius: 4px; border: 1px solid #eee;">Red: pooling error &gt; max error for both single pooling and FWER (all poolings combined)</span></div>'
+        html += '<div style="margin-bottom: 6px;"><span style="background-color: #ffffea; color: #111; padding: 4px 14px; border-radius: 4px; border: 1px solid #eee;">Yellow: pooling error ≤ max error for single pooling, but &gt; max error for FWER (all poolings combined)</span></div>'
+        html += '<div><span style="background-color: #b6fcb6; color: #111; padding: 4px 14px; border-radius: 4px; border: 1px solid #eee;">Green: pooling error ≤ max error for both single pooling and FWER (all poolings combined)</span></div>'
+        html += '</div>'
+        return ui.HTML(html)
+
+    @output
+    @render.ui
+    def prevalence_explanation():
+        html = '<div style="margin-top: 28px; font-size: 14px; color: #444; text-align: center;">These tables are a guide to help you decide what kind of pooling strategies might be right for your particular problem.</div>'
+        return ui.HTML(html)
 
 
 

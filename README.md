@@ -1,4 +1,4 @@
-<img align="left" width="200" src="https://github.com/trouillon-lab/PoolPy/blob/main/docs/images/PoolPy_logo.png" />
+<img align="left" width="200" src="https://github.com/trouillon-lab/PoolPy/blob/main/images/PoolPy_logo.png" />
 
 ### A **Py**thon package to design **Pool**ing strategies.
 #### [_Launch PoolPy web app_](https://trouillon-lab.github.io/PoolPy/)
@@ -183,7 +183,7 @@ python decode_N.py --differentiate 1 --readout "3,13" --path_to_WA .\matrix_desi
 &nbsp;
 
 **Outputs:**
-<img align="right" width="300" src="https://github.com/trouillon-lab/PoolPy/blob/main/docs/images/matrix_github_example_1.png" />
+<img align="right" width="300" src="https://github.com/trouillon-lab/PoolPy/blob/main/images/matrix_github_example_1.png" />
 - `Matrix_diff_1_decoded.txt` — File containing the decoded results with the positive samples.
 
 Here, the sample number 23 is the positive sample!

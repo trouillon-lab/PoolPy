@@ -101,7 +101,7 @@ Required:
 `--differentiate`: Maximum number of samples that can be positive to your test (diff).  
 Optional:  
 `--path`: The path in which results are saved. Default: current directory.  
-`--method`: Name of group testing method to use. Default: `all`. Alternatives: `binary`, `matrix`,`multidim`,`std`,`chinese_trick`,`random`.  
+`--method`: Name of group testing method to use. Default: `all`. Alternatives: `binary`, `matrix`,`multidim`,`std`,`chinese_trick`,`random`,`hierarchical`.  
 `--guesses`: Number of guesses for the random method. Default: `5`.  
 `--keep_ratios_constant`: True/False argument to keep ratios constant in the Hierarchical method. Default: `False`.  
 
@@ -203,18 +203,6 @@ Here, the sample number 23 is the positive sample!
 &nbsp;
 
 ## 📦 Managing Dependencies
-
-- **Add a new dependency:**
-
-```bash
-uv add <package-name>
-```
-
-- **Add development dependencies:**
-
-```bash
-uv add --dev <package-name>
-```
 
 - **Import from requirements.txt:**
 

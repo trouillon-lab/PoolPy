@@ -3,7 +3,7 @@
 ### A **Py**thon package to design **Pool**ing strategies.
 #### [_Launch PoolPy web app_](https://trouillon-lab.github.io/PoolPy/)
 &nbsp;
-
+[_To the PoolPy preprint_](https://arxiv.org/abs/2509.03481)
 &nbsp;
 
 &nbsp;
@@ -220,7 +220,7 @@ uv export > requirements.txt
 
 ## 📚 Citation
 
-If you use PoolPy in your research, please cite the PoolPy paper.
+If you use PoolPy in your research, please cite the [PoolPy paper](https://arxiv.org/abs/2509.03481).
 
 &nbsp;
 

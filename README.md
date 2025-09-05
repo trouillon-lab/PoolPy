@@ -1,9 +1,8 @@
 <img align="left" width="200" src="https://github.com/trouillon-lab/PoolPy/blob/main/images/PoolPy_logo.png" />
 
 ### A **Py**thon package to design **Pool**ing strategies.
-#### [_Launch PoolPy web app_](https://trouillon-lab.github.io/PoolPy/)
-&nbsp;
-[_To the PoolPy preprint_](https://arxiv.org/abs/2509.03481)
+#### ➡️ [_PoolPy web app_](https://trouillon-lab.github.io/PoolPy/)
+#### ➡️ [_PoolPy preprint_](https://arxiv.org/abs/2509.03481/)
 &nbsp;
 
 &nbsp;

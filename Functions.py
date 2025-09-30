@@ -321,12 +321,6 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
         return(WA.T)
 
 
-
-
-        
-
-
-
     WA=np.zeros((np.sum(primes), n_compounds))==1
     past_primes=0
     for prime in primes:

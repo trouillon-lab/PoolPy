@@ -62,12 +62,7 @@ if diff!=inf_diff:
 scrambler={1:np.arange(n_pools)}
 for j in range(2,diff+1):
     scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_pools),j)))})
-
-
-scrambler={1:np.arange(n_pools)}
-for j in range(2,diff+1):
-    scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_pools),j)))})
-
+    
 
 decoded=decode_precomp(well_assigner=WA,differentiate= diff, scrambler=scrambler, 
                readout=np.array(readout.astype(bool).astype(int)))

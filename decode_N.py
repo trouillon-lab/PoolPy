@@ -18,7 +18,7 @@ from Fast_functions import *
 
 parser = argparse.ArgumentParser(description='Parse some arguments')
 parser.add_argument('--differentiate', type=int, default=-1, help='An integer argument for the differentiate value. Is inferred from WA file name by default.')
-parser.add_argument('--path_to_WA', type=str, help="A string argument containing the path to the well assigner")
+parser.add_argument('--path_to_WA', type=str, help="A string argument containing the path to the well assigner. WA file name should follow format given by app or pool_N.py.")
 parser.add_argument('--readout', type=str, help="A string either containing the readout or containing a path a csv of the readout (readout in the form 0,1,0,1,0,0 or 3,6,14)")
 
 args = parser.parse_args()
@@ -80,6 +80,6 @@ with open(fdriro, 'w+') as f:
     if diff!=inf_diff:
         f.write(f'WARNING: inferred differentiate of {inf_diff} different from passed differentiate of {diff}\n')
 
-    f.write('Decoded file {dira} assuming differentiate {diff}.\n Possible positive samples combiantion are')
+    f.write(f'Decoded file {dira} assuming differentiate {diff}.\n Possible positive samples combinations are ')
     for line in decoded:
         f.write(f"Samples: {line}\n")

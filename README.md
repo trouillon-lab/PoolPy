@@ -124,7 +124,7 @@ You can decode locally the result of a pooling experiment by running the command
 
 Required:  
 `--differentiate`: Maximum number of samples that can be positive to your test (diff).  
-`--path_to_WA`: Path to the well assigner table for the used design. The WA file name has to be as followed: 'WA_{method}_N_{n_samp}_diff_{differentiate}.csv' with method, n_samp and differentiate as defined in pool_N.py arguments.
+`--path_to_WA`: Path to the well assigner table for the used design. The WA file name has to be as followed: `WA_{method}_N_{n_samp}_diff_{differentiate}.csv` with `method`, `n_samp` and `differentiate` as defined in pool_N.py arguments above.  
 `--readout`: A string either containing the readout or containing a path to a .csv file of the readout (Readout). If providing the readout as a string, use a comma-delimited list of positive pools (e.g., for five pools with pool 2 and 3 being positive: 0,1,1,0,0; or by simply listing the positive pools: 2,3).  
 
 &nbsp;

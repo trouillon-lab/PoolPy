@@ -17,8 +17,8 @@ from Fast_functions import *
 
 
 parser = argparse.ArgumentParser(description='Parse some arguments')
-parser.add_argument('--differentiate', type=int, default=-1, help='An integer argument with default 2')
-parser.add_argument('--path_to_WA', type=str, help="A string argument with default './pooling_results'")
+parser.add_argument('--differentiate', type=int, default=-1, help='An integer argument for the differentiate value. Is inferred from WA file name by default.')
+parser.add_argument('--path_to_WA', type=str, help="A string argument containing the path to the well assigner")
 parser.add_argument('--readout', type=str, help="A string either containing the readout or containing a path a csv of the readout (readout in the form 0,1,0,1,0,0 or 3,6,14)")
 
 args = parser.parse_args()
@@ -57,7 +57,7 @@ if diff==-1:
     diff=inf_diff
 
 if diff!=inf_diff:
-    print(f'WARNING: inferred differentiate of {inf_diff} different from passed differentiate of {diff}\n')
+    print(f'WARNING: differentiate of {inf_diff} inferred from WA file name different from passed differentiate of {diff}\n')
 
 scrambler={1:np.arange(n_pools)}
 for j in range(2,diff+1):

@@ -80,6 +80,6 @@ with open(fdriro, 'w+') as f:
     if diff!=inf_diff:
         f.write(f'WARNING: inferred differentiate of {inf_diff} different from passed differentiate of {diff}\n')
 
-    f.write(f'Decoded file {dira} assuming differentiate {diff}.\n Possible positive samples combinations are ')
+    f.write(f'Decoded file {dira} assuming differentiate {diff}.\n Possible positive samples combinations are\n')
     for line in decoded:
         f.write(f"Samples: {line}\n")

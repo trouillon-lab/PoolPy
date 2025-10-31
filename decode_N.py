@@ -33,15 +33,15 @@ readout_in=args_dict['readout']
 WA_df=pd.read_csv(dira, index_col=0)
 
 if readout_in.endswith('csv'):
-    readout = np.genfromtxt('readout_in', delimiter=',', dtype=int)
+    readout = pd.read_csv(readout_in,header=None).to_numpy()
 else:
     readout = np.fromstring(readout_in, sep=',', dtype=int)   
 
 WA=WA_df.values
-n_compounds=WA.shape[1]
+n_pools=WA.shape[1]
 
-if np.max(readout)>1 or len(readout)!=n_compounds:
-    readout_bin_ls = [1 if i in readout else 0 for i in range(n_compounds)]
+if np.max(readout)>1 or len(readout)!=n_pools:
+    readout_bin_ls = [1 if i in readout else 0 for i in range(n_pools)]
     readout=np.array(readout_bin_ls)
  
 
@@ -59,14 +59,14 @@ if diff==-1:
 if diff!=inf_diff:
     print(f'WARNING: inferred differentiate of {inf_diff} different from passed differentiate of {diff}\n')
 
-scrambler={1:np.arange(n_compounds)}
+scrambler={1:np.arange(n_pools)}
 for j in range(2,diff+1):
-    scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
+    scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_pools),j)))})
 
 
-scrambler={1:np.arange(n_compounds)}
+scrambler={1:np.arange(n_pools)}
 for j in range(2,diff+1):
-    scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
+    scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_pools),j)))})
 
 
 decoded=decode_precomp(well_assigner=WA,differentiate= diff, scrambler=scrambler, 

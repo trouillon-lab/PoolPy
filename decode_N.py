@@ -33,7 +33,7 @@ readout_in=args_dict['readout']
 WA_df=pd.read_csv(dira, index_col=0)
 
 if readout_in.endswith('csv'):
-    readout = pd.read_csv(readout_in,header=None).to_numpy()
+    readout = pd.read_csv(readout_in,header=None).to_numpy().reshape(-1)
 else:
     readout = np.fromstring(readout_in, sep=',', dtype=int)   
 

@@ -11,11 +11,14 @@ from Functions import *
 from Fast_functions import *
 import argparse
 
+
+list_method=['all','binary','matrix','multidim','std','chinese_trick','random','hierarchical','chinese_trick_bktrk','chinese_trick_special']
+
 parser = argparse.ArgumentParser(description='Parse some arguments')
 parser.add_argument('--differentiate', type=int, default=2, help='An integer argument with default 2')
 parser.add_argument('--n_samp', type=int, default=50, help='An integer argument with default 50')
 parser.add_argument('--guesses', type=int, default=5, help='An integer argument for guesses of random WA with default 20')
-parser.add_argument('--method', type=str, default='all', help="A string argument with default 'all'")
+parser.add_argument('--method', type=str, default='all', help="A string argument with default 'all'",choices=list_method)
 parser.add_argument('--path', type=str, default='./pooling_results', help="A string argument with default './pooling_results'")
 parser.add_argument('--keep_ratios_constant', type=str, default=False, help="True/False argument to keep ratios constant in the Hierarchical method")
 

@@ -100,7 +100,7 @@ Required:
 `--differentiate`: Maximum number of samples that can be positive to your test (diff).  
 Optional:  
 `--path`: The path in which results are saved. Default: current directory.  
-`--method`: Name of group testing method to use. Default: `all`. Alternatives: `binary`, `matrix`,`multidim`,`std`,`chinese_trick`,`random`,`hierarchical`.  
+`--method`: Name of group testing method to use. Default: `all`. Alternatives: `binary`, `matrix`,`multidim`,`std`,`chinese_trick`,`random`,`hierarchical`,`chinese_trick_bktrk`,`chinese_trick_special`.  
 `--guesses`: Number of guesses for the random method. Default: `5`.  
 `--keep_ratios_constant`: True/False argument to keep ratios constant in the Hierarchical method. Default: `False`.  
 

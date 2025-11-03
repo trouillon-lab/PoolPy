@@ -17,8 +17,8 @@ from Fast_functions import *
 
 
 parser = argparse.ArgumentParser(description='Parse some arguments')
-parser.add_argument('--differentiate', type=int, default=-1, help='An integer argument with default 2')
-parser.add_argument('--path_to_WA', type=str, help="A string argument with default './pooling_results'")
+parser.add_argument('--differentiate', type=int, default=-1, help='An integer argument for the differentiate value. Is inferred from WA file name by default.')
+parser.add_argument('--path_to_WA', type=str, help="A string argument containing the path to the well assigner. WA file name should follow format given by app or pool_N.py.")
 parser.add_argument('--readout', type=str, help="A string either containing the readout or containing a path a csv of the readout (readout in the form 0,1,0,1,0,0 or 3,6,14)")
 
 args = parser.parse_args()
@@ -33,15 +33,15 @@ readout_in=args_dict['readout']
 WA_df=pd.read_csv(dira, index_col=0)
 
 if readout_in.endswith('csv'):
-    readout = np.genfromtxt('readout_in', delimiter=',', dtype=int)
+    readout = pd.read_csv(readout_in,header=None).to_numpy().reshape(-1)
 else:
     readout = np.fromstring(readout_in, sep=',', dtype=int)   
 
 WA=WA_df.values
-n_compounds=WA.shape[1]
+n_pools=WA.shape[1]
 
-if np.max(readout)>1 or len(readout)!=n_compounds:
-    readout_bin_ls = [1 if i in readout else 0 for i in range(n_compounds)]
+if np.max(readout)>1 or len(readout)!=n_pools:
+    readout_bin_ls = [1 if i in readout else 0 for i in range(n_pools)]
     readout=np.array(readout_bin_ls)
  
 
@@ -57,17 +57,12 @@ if diff==-1:
     diff=inf_diff
 
 if diff!=inf_diff:
-    print(f'WARNING: inferred differentiate of {inf_diff} different from passed differentiate of {diff}\n')
+    print(f'WARNING: differentiate of {inf_diff} inferred from WA file name different from passed differentiate of {diff}\n')
 
-scrambler={1:np.arange(n_compounds)}
+scrambler={1:np.arange(n_pools)}
 for j in range(2,diff+1):
-    scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
-
-
-scrambler={1:np.arange(n_compounds)}
-for j in range(2,diff+1):
-    scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
-
+    scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_pools),j)))})
+    
 
 decoded=decode_precomp(well_assigner=WA,differentiate= diff, scrambler=scrambler, 
                readout=np.array(readout.astype(bool).astype(int)))
@@ -85,6 +80,6 @@ with open(fdriro, 'w+') as f:
     if diff!=inf_diff:
         f.write(f'WARNING: inferred differentiate of {inf_diff} different from passed differentiate of {diff}\n')
 
-    f.write('Decoded file {dira} assuming differentiate {diff}.\n Possible positive samples combiantion are')
+    f.write(f'Decoded file {dira} assuming differentiate {diff}.\n Possible positive samples combinations are\n')
     for line in decoded:
         f.write(f"Samples: {line}\n")

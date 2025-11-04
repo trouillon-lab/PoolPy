@@ -111,7 +111,7 @@ else:
                 readout=readout_bl)
         
         # Map filtered indices back to original indices
-        decoded = [[original_indices[idx] for idx in combination] for combination in decoded_pre]
+        decoded = [[int(original_indices[idx]) for idx in combination] for combination in decoded_pre]
         
         # Remove duplicate combinations (convert to tuples for uniqueness, then back to lists)
 
@@ -138,7 +138,7 @@ else:
 
 
 
-fdriro=os.path.join(os.path.dirname(os.path.dirname(dira)), pth_wa+'_decoded.txt')
+fdriro=pth_wa+'_decoded.txt'
 
 with open(fdriro, 'w+') as f:
     if len(decoded)>n_compounds:

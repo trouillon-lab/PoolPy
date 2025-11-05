@@ -215,7 +215,7 @@ app_ui = ui.page_fluid(
             ),
             ui.h2("Decoder", style="text-align: center; margin-top: 150px;"),
             ui.div(
-                ui.input_file("uploaded_csv", "Upload your Pooling strategy csv file (max 100kb)", accept=[".csv"], multiple=False),
+                ui.input_file("uploaded_csv_decoder", "Upload your Pooling strategy csv file (max 100kb)", accept=[".csv"], multiple=False),
                 style="display: flex; justify-content: center; margin-bottom: 22px;"
             ),
             ui.div(
@@ -409,7 +409,7 @@ app_ui = ui.page_fluid(
             ),
             ui.h2("Automation", style="text-align: center; margin-top: 150px;"),
             ui.div(
-                ui.input_file("uploaded_csv", "Upload your pooling strategy csv file (max 100kb)", accept=[".csv"], multiple=False),
+                ui.input_file("uploaded_csv_auto", "Upload your pooling strategy csv file (max 100kb)", accept=[".csv"], multiple=False),
                 style="display: flex; justify-content: center; margin-bottom: 32px;"
             ),
             ui.div(
@@ -1233,9 +1233,9 @@ def server(input, output, session):
         output.last_val_prev.set(f"Number of Samples: {n}, Prevalence: {p}, Max error: {max_e}")
 
     @reactive.Effect
-    @reactive.event(input.uploaded_csv)
+    @reactive.event(input.uploaded_csv_auto)
     def _():
-        fileinfo = input.uploaded_csv()
+        fileinfo = input.uploaded_csv_auto()
         if fileinfo is not None:
             if fileinfo[0]["size"] > 100 * 1024:
                 output.database_reply_auto.set("File too large. Please upload a CSV smaller than 100kb.")
@@ -1243,7 +1243,7 @@ def server(input, output, session):
             else:
                 output.database_reply_auto.set("File is ok, computing automated pooling scripts.")
                 output.allow_robot.set(True)
-                WA_df = parsed_file()
+                WA_df = parsed_file_auto()
                 WA=WA_df.values
                 offsetted=int((WA.shape[0]//96)+1)
                 ls_to_df=[]
@@ -1279,8 +1279,15 @@ def server(input, output, session):
                 
 
     @reactive.calc
-    def parsed_file():
-        file = input.uploaded_csv()
+    def parsed_file_auto():
+        file = input.uploaded_csv_auto()
+        if file is None:
+            return pd.DataFrame()
+        return pd.read_csv(file[0]["datapath"])
+    
+    @reactive.calc
+    def parsed_file_decoder():
+        file = input.uploaded_csv_decoder()
         if file is None:
             return pd.DataFrame()
         return pd.read_csv(file[0]["datapath"])
@@ -1288,7 +1295,7 @@ def server(input, output, session):
     @reactive.Effect
     @reactive.event(input.readout_submit)
     def _():
-        fileinfo = input.uploaded_csv()
+        fileinfo = input.uploaded_csv_decoder()
         output.database_reply_decoder.set("Please upload a pooling strategy file.")
         if fileinfo is not None:
             if fileinfo[0]["size"] > 100 * 1024:
@@ -1332,7 +1339,7 @@ def server(input, output, session):
                     msg=f'Processing file <b>{fileinfo[0]["name"]}</b> with maximum <b>{diff}</b> positive samples and readout: <br>'
                     msg+=f"{readout_list}<br>"
 
-                    WA_df = parsed_file()
+                    WA_df = parsed_file_decoder()
                     WA=WA_df.values
                     n_pools=WA.shape[1]
                     n_compounds=WA.shape[0]
@@ -1379,7 +1386,7 @@ def server(input, output, session):
                         # Remove duplicate combinations (convert to tuples for uniqueness, then back to lists)
 
                         if len(decoded)==0:
-                            msg+= '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value</b>'
+                            msg+= '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value'
                         elif len(decoded)>n_compounds:
                             decoded_set = list(set([x for combo in decoded for x in combo]))
                             decoded_set.sort()

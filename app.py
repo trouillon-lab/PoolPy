@@ -231,7 +231,7 @@ app_ui = ui.page_fluid(
                 ui.input_text(
                     "decoder_diff",
                     "Maximum positives (optional):",
-                    placeholder="Leave empty for worst case scenario inference"
+                    placeholder="Leave empty for auto inference"
                 ),
                 style="display: flex; justify-content: center; margin-bottom: 18px;"
             ),
@@ -1360,7 +1360,7 @@ def server(input, output, session):
                     if n_compounds<2:
                         if n_compounds==1:
                             decoded=[original_indices[0]]
-                            msg += 'The possible positives for the given well assigner, outcome, and differentiate are:<br>'
+                            msg += 'The possible positives for the given pooling strategy, outcome, and differentiate are:<br>'
                             for deco in decoded:
                                 msg += f'Samples: {deco}<br>'
                         else:
@@ -1389,7 +1389,7 @@ def server(input, output, session):
                                 f'The set of putative positives is {decoded_set}'
                             )
                         else:
-                            msg += 'The possible positives for the given well assigner, outcome, and differentiate are:<br>'
+                            msg += 'The possible positives for the given pooling strategy, outcome, and differentiate are:<br>'
                             for deco in decoded:
                                 msg += f'Samples: {deco}<br>'
 

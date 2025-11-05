@@ -1379,7 +1379,7 @@ def server(input, output, session):
                         # Remove duplicate combinations (convert to tuples for uniqueness, then back to lists)
 
                         if len(decoded)==0:
-                            msg+= 'We found no matches for the given parameters, check your input or try increasing the differentiate value'
+                            msg+= '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value</b>'
                         elif len(decoded)>n_compounds:
                             decoded_set = list(set([x for combo in decoded for x in combo]))
                             decoded_set.sort()

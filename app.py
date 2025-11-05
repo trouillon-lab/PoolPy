@@ -241,16 +241,18 @@ app_ui = ui.page_fluid(
             ),
             ui.tags.script('''
                 document.addEventListener('DOMContentLoaded', function() {
-                    var readoutInput = document.getElementById('readout_string');
-                    if (readoutInput) {
-                        readoutInput.addEventListener('keydown', function(event) {
-                            if (event.key === 'Enter') {
-                                event.preventDefault();
-                                var btn = document.getElementById('readout_submit');
-                                if (btn) btn.click();
-                            }
-                        });
-                    }
+                    ["readout_string", "decoder_diff"].forEach(function(id) {
+                        var el = document.getElementById(id);
+                        if (el) {
+                            el.addEventListener('keydown', function(event) {
+                                if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                    var btn = document.getElementById('readout_submit');
+                                    if (btn) btn.click();
+                                }
+                            });
+                        }
+                    });
                 });
             '''),
             ui.div(
@@ -448,7 +450,7 @@ def from_id_to_well(id, offset=0):
     row=id//12
     column=id-row*12
     well=chr(65 + row)
-    return str(plate+1+offset), str(well)+str(column)
+    return str(plate+1+offset), str(well)+str(column+1)
 
 
 def clean_WA(b):
@@ -1283,14 +1285,14 @@ def server(input, output, session):
         file = input.uploaded_csv_auto()
         if file is None:
             return pd.DataFrame()
-        return pd.read_csv(file[0]["datapath"])
+        return pd.read_csv(file[0]["datapath"], index_col=0)
     
     @reactive.calc
     def parsed_file_decoder():
         file = input.uploaded_csv_decoder()
         if file is None:
             return pd.DataFrame()
-        return pd.read_csv(file[0]["datapath"])
+        return pd.read_csv(file[0]["datapath"], index_col=0)
 
     @reactive.Effect
     @reactive.event(input.readout_submit)
@@ -1323,26 +1325,29 @@ def server(input, output, session):
                     msg = f"<b>Error:</b> Could not parse readout. Please enter only integers separated by commas.<br>"
                     output.database_reply_decoder.set(msg)
                     return
-                diff = input.decoder_diff()
+                diff_deco = input.decoder_diff()
                 try:
-                    diff = int(diff)
+                    diff_deco = int(diff_deco)
                 except :
-                    diff = -1
+                    diff_deco = -1
 
-                output.decoder_diff.set(diff)
-                diff=output.decoder_diff.get()
+                output.decoder_diff.set(diff_deco)
+                diff_deco=output.decoder_diff.get()
 
                 msg=f'Processing file <b>{fileinfo[0]["name"]}</b> <br>'
 
                 if len(readout_list)>0:
-                    readout_list.sort()
-                    msg=f'Processing file <b>{fileinfo[0]["name"]}</b> with maximum <b>{diff}</b> positive samples and readout: <br>'
-                    msg+=f"{readout_list}<br>"
-
                     WA_df = parsed_file_decoder()
                     WA=WA_df.values
                     n_pools=WA.shape[1]
                     n_compounds=WA.shape[0]
+                    if diff_deco==-1:
+                        diff_deco=n_compounds
+
+                    readout_list.sort()
+                    msg=f'Processing file <b>{fileinfo[0]["name"]}</b> with maximum <b>{diff_deco}</b> positive samples and readout: <br>'
+                    msg+=f"{readout_list}<br>"
+                    #msg+=f'{WA}'
                     readout=np.array(readout_list, dtype=int)
                     if max(readout)>n_pools:
                         invalid_entries = [val for val in readout_list if val > n_pools]
@@ -1357,27 +1362,29 @@ def server(input, output, session):
                     msg+=f'<br>The uploaded pooling strategy comprizes {n_compounds} compounds in {n_pools} pools.<br><br>'
                     readout_bl=np.array(readout.astype(bool).astype(int))
                     mask = ~np.any((WA == 1) & (readout_bl == 0), axis=1)
+                    #msg+=f'boolean readout {readout_bl}<br>'
                     original_indices = np.where(mask)[0]  # Get original row indices
                     filtered_WA = WA[mask]
                     n_compounds=filtered_WA.shape[0]
-                    
-                    if diff==-1:
-                        diff=n_compounds
+
+                    if diff_deco> n_compounds:
+                        diff_deco=n_compounds
+                    #msg+=f'<br>we have {filtered_WA.shape} shape of the filtered WA<br>'
 
                     if n_compounds<2:
                         if n_compounds==1:
                             decoded=[original_indices[0]]
-                            msg += 'The possible positives for the given pooling strategy, outcome, and differentiate are:<br>'
+                            msg += 'The only possible positive set of samples for the given pooling strategy, outcome, and differentiate is:<br>'
                             for deco in decoded:
                                 msg += f'Samples: {deco}<br>'
                         else:
                             msg += '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value</b>'
-
+                    
                     else:
                         scrambler={1:np.arange(n_compounds)}
-                        for j in range(2,diff+1):
+                        for j in range(2,diff_deco+1):
                             scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
-                        decoded_pre=decode_precomp(well_assigner=filtered_WA, differentiate= diff, scrambler=scrambler, 
+                        decoded_pre=decode_precomp(well_assigner=filtered_WA, differentiate= diff_deco, scrambler=scrambler, 
                                 readout=readout_bl)
                         
                         # Map filtered indices back to original indices
@@ -1387,6 +1394,11 @@ def server(input, output, session):
 
                         if len(decoded)==0:
                             msg+= '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value'
+
+                        elif len(decoded)==1:
+                            msg+=f'The only possible positive sets of samples for the given pooling strategy, outcome, and differentiate is:<br>'
+                            msg += f'<b>{decoded[0]}</b><br>'
+
                         elif len(decoded)>n_compounds:
                             decoded_set = list(set([x for combo in decoded for x in combo]))
                             decoded_set.sort()
@@ -1396,9 +1408,9 @@ def server(input, output, session):
                                 f'The set of putative positives is {decoded_set}'
                             )
                         else:
-                            msg += 'The possible positives for the given pooling strategy, outcome, and differentiate are:<br>'
+                            msg += f'The {len(decoded)} possible positive sets of samples for the given pooling strategy, outcome, and differentiate are:<br>'
                             for deco in decoded:
-                                msg += f'Samples: {deco}<br>'
+                                msg += f'<b>{deco}</b><br>'
 
                     output.database_reply_decoder.set(msg)
 
@@ -1412,79 +1424,8 @@ def server(input, output, session):
                     output.database_reply_decoder.set(msg)
 
 
-            elif False:
-                file_name = fileinfo[0]["name"] if fileinfo and "name" in fileinfo[0] else "No file uploaded"
-                output.database_reply_decoder.set("File and readout are ok, decoding.")
-                output.allow_decoder.set(True)
-                readout_str = input.readout_string()
-                # Now readout_str contains the string entered by the user, e.g. "0,1,1,0,0,0,1" or "3,7,4"
-                # You can process it as needed:
-                readout_list = [int(x.strip()) for x in readout_str.split(',') if x.strip() != '']
-                msg=f'Processing file {fileinfo[0]["name"]} with readout <br>'
-                msg+=f"{readout_list}<br>"
-                if len(readout_list)>0:
-                    output.database_reply_decoder.set(f"Readout received: {readout_list}")
-                    WA_df = parsed_file()
-                    WA=WA_df.values
-                    n_pools=WA.shape[1]
-                    n_compounds=WA.shape[0]
-                    readout=np.array(readout_list, dtype=int)
-                    if np.max(readout)>1 or len(readout)!=n_pools:
-                        readout_bin_ls = [1 if i in readout else 0 for i in range(n_pools)]
-                        readout=np.array(readout_bin_ls)
-
-                    readout_bl=np.array(readout.astype(bool).astype(int))
-                    mask = ~np.any((WA == 1) & (readout_bl == 0), axis=1)
-                    original_indices = np.where(mask)[0]  # Get original row indices
-                    filtered_WA = WA[mask]
-                    n_compounds=filtered_WA.shape[0]
-                    if diff==-1:
-                        diff=n_compounds
-
-                    if n_compounds<2:
-                        if n_compounds==1:
-                            decoded=[original_indices[0]]
-                            msg += 'The possible positives for the given well assigner, outcome, and differentiate are:<br>'
-                            for deco in decoded:
-                                msg += f'Samples: {deco}<br>'
-                            output.database_reply_decoder.set(msg)
-                        else:
-                            output.database_reply_decoder.set('We found no matches for the given parameters, check your input or try increasing the differentiate value')
-                    else:
-
-                        scrambler={1:np.arange(n_compounds)}
-                        for j in range(2,diff+1):
-                            scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
-                        decoded_pre=decode_precomp(well_assigner=filtered_WA, differentiate= diff, scrambler=scrambler, 
-                                readout=readout_bl)
-                        
-                        # Map filtered indices back to original indices
-                        decoded = [[int(original_indices[idx]) for idx in combination] for combination in decoded_pre]
-                        
-                        # Remove duplicate combinations (convert to tuples for uniqueness, then back to lists)
-
-                        if len(decoded)==0:
-                            output.database_reply_decoder.set('We found no matches for the given parameters, check your input or try increasing the differentiate value')
-                        elif len(decoded)>n_compounds:
-                            decoded_set = list(set([x for combo in decoded for x in combo]))
-                            decoded_set.sort()
-                            msg = (
-                                'The possible combinations of positive samples resulting in your readout is too large.<br>'
-                                'Either test all putative positives individually or change pooling strategy<br>'
-                                f'The set of putative positives is {decoded_set}'
-                            )
-                            output.database_reply_decoder.set(msg)
-                        else:
-                            msg = 'The possible positives for the given well assigner, outcome, and differentiate are:<br>'
-                            for deco in decoded:
-                                msg += f'Samples: {deco}<br>'
-                            output.database_reply_decoder.set(msg)
-                    message = output.database_reply_decoder.get()
-                    txt = f"Uploaded file: {file_name}\nReadout: {readout_str}\n\n{message.replace('<br>', '\n')}"
-                    output.decoder_text.set(txt)
-
-                else:
-                    output.database_reply_decoder.set("Please insert a non zero readout.")
+            #elif False:
+           
 
 
     @output

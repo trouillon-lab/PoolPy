@@ -490,7 +490,7 @@ app_ui = ui.page_fluid(
 
 WA_SUB_DIRECTORY='precomputed'
 #SCRAMBLER_DIRECTORY='.\output'
-MAX_DIFFERENTIATE=5
+MAX_DIFFERENTIATE=4
 MAX_N=1000
 
 

@@ -26,17 +26,25 @@ app_ui = ui.page_fluid(
             ui.h2("Pooling Methods Comparison", style="text-align: center; margin-top: 150px;"),
             # Short description below the title
             ui.div(
-                "This app evaluates the performances of different pooling methods. ",
+                "This app evaluates the performances of different pooling methods. Designs for specific use cases can be downloaded below.",
                 ui.br(),
-                "For an overview head down to the ",
-                ui.a("methods and metrics", href="#methods-metrics", id="nav-methods-link", style="text-decoration: underline; cursor: pointer;"),
+                "For details, see the ",
+                ui.a("Methods and Metrics", href="#methods-metrics", id="nav-methods-link", style="text-decoration: underline; cursor: pointer;"),
                 " section.",
-                " For a detailed description visit our ",
+                " For information on the code, visit our ",
                 ui.a("GitHub", href="https://github.com/trouillon-lab/PoolPy", style="text-decoration: underline;", target="_blank", rel="noopener noreferrer"),
                 ".",
                 ui.br(),
-                "If you only have prevalence estimation for your experiment, feel free to consult the ",
-                ui.a("prevalence", href="#prevalence-section", id="nav-prevalence-link", style="text-decoration: underline; cursor: pointer;"),
+                "To determine a max. number of positives based on prevalence, consult the ",
+                ui.a("Prevalence", href="#prevalence-section", id="nav-prevalence-link", style="text-decoration: underline; cursor: pointer;"),
+                " section.",
+                ui.br(),
+                "To decode results from a pooled experiment, consult the ",
+                ui.a("Decoder", href="#decoder-section", id="nav-decoder-link", style="text-decoration: underline; cursor: pointer;"),
+                " section.",
+                ui.br(),
+                "To generate a method file for a pipetting robot following a pooling design, consult the ",
+                ui.a("Automation", href="#automation-section", id="nav-automation-link", style="text-decoration: underline; cursor: pointer;"),
                 " section.",
                 style="text-align: center; margin-bottom: 18px; font-size: 16px; color: #444;"
             ),
@@ -58,6 +66,22 @@ app_ui = ui.page_fluid(
                             if (tab) tab.click();
                         });
                     }
+                    var decoderLink = document.getElementById('nav-decoder-link');
+                    if (decoderLink) {
+                        decoderLink.addEventListener('click', function(event) {
+                            event.preventDefault();
+                            var tab = document.querySelector("[data-value='Decoder']");
+                            if (tab) tab.click();
+                        });
+                    }
+                    var automationLink = document.getElementById('nav-automation-link');
+                    if (automationLink) {
+                        automationLink.addEventListener('click', function(event) {
+                            event.preventDefault();
+                            var tab = document.querySelector("[data-value='Automation']");
+                            if (tab) tab.click();
+                        });
+                    }
                 });
             '''),
             
@@ -66,7 +90,7 @@ app_ui = ui.page_fluid(
                 ui.column(4),
                 ui.column(2, ui.input_numeric("n_samp", "Number of Samples:", value=20)),
                 ui.column(1),
-                ui.column(2, ui.input_numeric("differentiate", "Max number of positives:", value=1)),
+                ui.column(2, ui.input_numeric("differentiate", "Max. number of positives:", value=1)),
                 ui.column(2),
             ),
             # ...existing code for Main page...
@@ -123,9 +147,9 @@ app_ui = ui.page_fluid(
                 ui.div(
                     ui.output_ui("fly_download_dip_title"),
                     ui.download_button("download_table_STD_fly", "STD"),
-                    ui.download_button("download_table_CT_fly", "Chinese remainder"),
-                    ui.download_button("download_table_CT_bktrk_fly", "Chinese remainder bktrk"),
-                    ui.download_button("download_table_CT_special_fly", "Chinese remainder special"),
+                    ui.download_button("download_table_CT_fly", "Chinese Remainder"),
+                    ui.download_button("download_table_CT_bktrk_fly", "Ch. Rm. Backtrack"),
+                    ui.download_button("download_table_CT_special_fly", "Ch. Rm. Special"),
                     style="text-align: center;",
                 ),
                 ui.div("", style="height: 20px;")
@@ -163,14 +187,14 @@ app_ui = ui.page_fluid(
                 ui.div("", style="height: 20px;"),
             ),
             ui.div(
-                ui.h4("Command to run code locally"),
+                ui.h4("Command to generate designs locally"),
                 ui.output_text_verbatim("commands"),
                 style="text-align: center;"
             ),
             ui.panel_conditional(
                 "output.allow_fly == 'true'",
                 ui.div(
-                    ui.h4("Command to run decoder locally"),
+                    ui.h4("Command to decode results locally"),
                     ui.output_text_verbatim("decode"),
                     style="text-align: center;"
                 ),
@@ -214,14 +238,25 @@ app_ui = ui.page_fluid(
                 style="display: block; padding: 0; margin: 0; text-align: centre;"
             ),
             ui.h2("Decoder", style="text-align: center; margin-top: 150px;"),
+            
+            # Short description below the title
             ui.div(
-                ui.input_file("uploaded_csv_decoder", "Upload your Pooling strategy csv file (max 100kb)", accept=[".csv"], multiple=False),
+                "Results from tests done following a pooling design from PoolPy can be decoded here.",
+                ui.br(),
+                "First, load your design file. Only csv designs files generated by PoolPy are accepted.",
+                ui.br(),
+                "Then, enter in the readout which pools were positive in your tests as a list of positive pools (e.g. 1,3,5).",
+                style="text-align: center; margin-bottom: 18px; font-size: 16px; color: #444;"
+            ),
+            
+            ui.div(
+                ui.input_file("uploaded_csv_decoder", "Upload your design csv file (max. 100kb)", accept=[".csv"], multiple=False),
                 style="display: flex; justify-content: center; margin-bottom: 22px;"
             ),
             ui.div(
                 ui.input_text(
                     "readout_string",
-                    "Insert your readout:",
+                    "Readout (positive samples):",
                     value="",
                     placeholder="Enter comma-separated values"
                 ),
@@ -230,7 +265,7 @@ app_ui = ui.page_fluid(
             ui.div(
                 ui.input_text(
                     "decoder_diff",
-                    "Maximum positives (optional):",
+                    "Max. number of positives (optional):",
                     placeholder="Leave empty for auto inference"
                 ),
                 style="display: flex; justify-content: center; margin-bottom: 18px;"
@@ -281,46 +316,45 @@ app_ui = ui.page_fluid(
             ui.div(
                 ui.h4("Differentiate-dependent Pooling Methods:"),
                 ui.div(
-                    "These methods change their output deisgns also based on the number of expeceted positived. They often offer a completely non adaptive strategy and are well suited for high values od differentiate",
+                    "These methods change their design also based on the number of expected positive samples. They often are non-adaptive strategy and are well suited for high differentiate values.",
                     style="margin-bottom: 10px; font-size: 15px; color: #444;"
                 ),
                 ui.tags.ul(
-                    ui.tags.li(ui.tags.b("Random"), ": Semi-adaptive method  where pools are formed by randomly assigning samples."),
-                    ui.tags.li(ui.tags.b("STD"), ": Non-adaptive design based on prime numbers and modulus operations."),
-                    ui.tags.li(ui.tags.b("Chinese Remainder (bktrk, special)"), ": Non-adaptive pooling based on the Chinese Remainder Theorem, with variants for backtracking (bktrk) and special cases (special)."),
-                    ui.tags.li(ui.tags.b("Hierachical"), ": Strictly adaptive method that step by step zooms in and partitions the set of possible postive samples. " \
-                    "For this method the N pools metric is a bit special: it is a list that represents the subsequents splits in fractions as equal as possible. " \
-                    "For example, let us consider a case with 20 samples with up to one positive; in the N pools column we have [3,3]. This means splitting the 20 samples in 3 pools as equal as possible (7,7,6 samples in our example; in any case there should never be more than 1 sample difference among pools). " \
-                    "Then split again the positive pool in 3 and finally test all samples of the positive pool(s) at the last step. " \
-                    "It is always implicit to split the last pool(s) that yielded a positive result(s) and test each sample individually. This step is accounted for in the Mean Experiment metric.",
+                    ui.tags.li(ui.tags.b("Random"), ": Semi-adaptive method where pools are formed by randomly assigning samples."),
+                    ui.tags.li(ui.tags.b("STD"), ": Non-adaptive method based on prime numbers and modulus operations."),
+                    ui.tags.li(ui.tags.b("Chinese Remainder methods"), ": Non-adaptive method based on the Chinese Remainder Theorem, with variants for backtracking (backtrack) and special cases (special)."),
+                    ui.tags.li(ui.tags.b("Hierachical"), ": Strictly adaptive method that iteratively partitions the set of possible positive samples." \
+                    "For this method, the N pools metric lists the number of splits at each stage. " \
+                    "For example, [3,3] means first divide samples into 3 pools (as equal as possible), then test and split any positive pool into 3 again." \
+                    "After testing of these pools, each sample from each positive pool finally needs to be individually tested." \
                     ),
                 ),
 
                 ui.h4("Differentiate-independent Pooling Methods:"),
                 ui.div(
-                    "These methods do not change their output deisgns also based on the number of expeceted positived. They are to be used with caution if differentiate >1",
+                    "These methods do not change their output design based on the number of expected positive samples. They are to be used with caution if more than 1 positive sample is expected.",
                     style="margin-bottom: 10px; font-size: 15px; color: #444;"
                 ),
                 ui.tags.ul(
-                    ui.tags.li(ui.tags.b("Matrix"), ": Semi-adaptive, very intuitive method where each sample is included in a unique row and column pool."),
-                    ui.tags.li(ui.tags.b("Multidimensional (3D, 4D)"), ": Semi-adaptive design where samples are arranged in higher-dimensional matrices, each coordinate in each dimension representing a pool."),
-                    ui.tags.li(ui.tags.b("Binary"), ": Semi-adaptive method where sample is assigned to pools according to a binary code, maximizing information per test."),
+                    ui.tags.li(ui.tags.b("Matrix"), ": Semi-adaptive method where each sample is included in a unique row and column pool."),
+                    ui.tags.li(ui.tags.b("Multidimensional (3D, 4D)"), ": Semi-adaptive method where samples are arranged in higher-dimensional matrices, each coordinate in each dimension representing a pool."),
+                    ui.tags.li(ui.tags.b("Binary"), ": Semi-adaptive method where samples are assigned to pools according to a binary code, maximizing information per test."),
                 ),
                 ui.h4("Metrics in the Summary Table:"),
                 ui.tags.ul(
-                    ui.tags.li(ui.tags.b("Pooling strategy"), ": Name of the pooling method used."),
+                    ui.tags.li(ui.tags.b("Method"), ": Name of the pooling method used."),
                     ui.tags.li(ui.tags.b("Mean experiments"), ": Average number of tests required to identify the positive samples."),
-                    ui.tags.li(ui.tags.b("Max compounds per well"), ": Maximum number of samples combined in any single pool."),
-                    ui.tags.li(ui.tags.b("N pools"), ": Total number of pools used in first step of the strategy. For Hierachical this is a list of splits, explained above."),
-                    ui.tags.li(ui.tags.b("Percentage check"), ": Fraction of cases requiring additional verification or retesting."),
-                    ui.tags.li(ui.tags.b("Mean extra experiments"), ": Average number of extra tests needed beyond the initial pooling scheme.")
+                    ui.tags.li(ui.tags.b("Max. samples per pool"), ": Maximum number of samples combined in any single pool."),
+                    ui.tags.li(ui.tags.b("N pools"), ": Total number of pools used in the first step of the strategy. For Hierachical this is a list of splits, explained above."),
+                    ui.tags.li(ui.tags.b("Percentage check"), ": Fraction of cases requiring additional verification or retesting beyond the first step."),
+                    ui.tags.li(ui.tags.b("Mean extra experiments"), ": Average number of extra tests needed beyond the first step.")
                 ),
                 ui.h4("Notation:"),
                 ui.tags.ul(
                     ui.tags.li(ui.tags.b("D"), ": Differentiate, maximum number of positive samples."),
                     ui.tags.li(ui.tags.b("S"), ": Number of samples to test."),
-                    ui.tags.li(ui.tags.b("ρ"), ": Prevalence of positives in the population"),
-                    ui.tags.li(ui.tags.b("W"), ": Total number of pools needed for a method"),
+                    ui.tags.li(ui.tags.b("ρ"), ": Prevalence of positives in the populatio.n"),
+                    ui.tags.li(ui.tags.b("W"), ": Total number of pools needed for a method."),
                 ),
                 style="max-width: 700px; margin: 0 auto; font-size: 16px; color: #333;"
             )
@@ -333,11 +367,13 @@ app_ui = ui.page_fluid(
                 ui.h2("Prevalence", style="text-align: center; margin-top: 150px;"),
                 ui.div(
                     ui.div(
-                        "This section is meant to guide the decision of the best pooling parameters for each individual case. Below you will find two numerical tables.",
+                        "This section is meant to guide the decision of pooling parameters for specific use cases. Particularly, this is to choose a max. number of positive samples and a number of test batches.",
                         ui.br(),
-                        "The left table reports the probability of making at least one mistake while reading the results of one combinatorial pooling.",
+                        "The two tables reflect cases where all samples are processsed into one single batch (left) or broken down into multiple batches (right).",
                         ui.br(),
-                        "The right table reports the probability of making at least one mistake while reading the results of all the combinatorial poolings of the experiment combined.",
+                        "The tables show the probability of making at least one mistake while reading the results of either one (left) or multiple combined (right) combinatorial pooling batch(es).",
+                        ui.br(),
+                        "Based on a provided prevalence estimate, error rates are reported over ranges of sample (and batch) numbers (S; rows) and of max. number of positive samples (D; columns).",
                         style="text-align: center; color: #444; font-size: 16px;"
                     ),
                     style="text-align: center; margin-bottom: 18px;"
@@ -398,10 +434,11 @@ app_ui = ui.page_fluid(
                     ui.output_ui("prevalence_legend"),
                     style="margin-top: 18px; display: flex; justify-content: center;"
                 ),
-                ui.div(
-                    ui.output_ui("prevalence_explanation"),
-                    style="margin-top: 8px; display: flex; justify-content: center;"
-                ),
+                #redundant?
+                # ui.div(
+                #     ui.output_ui("prevalence_explanation"),
+                #     style="margin-top: 8px; display: flex; justify-content: center;"
+                # ),
             ),
         
         ui.nav_panel("Automation",
@@ -410,8 +447,21 @@ app_ui = ui.page_fluid(
                 style="display: block; padding: 0; margin: 0; text-align: centre;"
             ),
             ui.h2("Automation", style="text-align: center; margin-top: 150px;"),
+            
+            # Short description below the title
             ui.div(
-                ui.input_file("uploaded_csv_auto", "Upload your pooling strategy csv file (max 100kb)", accept=[".csv"], multiple=False),
+                "This tool generates a method file for a pipetting robot to follow a pooling design file.",
+                ui.br(),
+                "Load your design file below. Only csv designs files generated by PoolPy are accepted.",
+                ui.br(),
+                "The generated file lists all pipetting steps required to generate the pools following the vendor's format. If your brand is not supported, reach out to us.",
+                ui.br(),
+                "Volumes and plate names might have to be adjusted to your specific use case.",
+                style="text-align: center; margin-bottom: 18px; font-size: 16px; color: #444;"
+            ),
+            
+            ui.div(
+                ui.input_file("uploaded_csv_auto", "Upload your pooling strategy csv file (max. 100kb)", accept=[".csv"], multiple=False),
                 style="display: flex; justify-content: center; margin-bottom: 32px;"
             ),
             ui.div(
@@ -1007,7 +1057,7 @@ def server(input, output, session):
         #print(n_samp)
         n_samp=output.last_submitted_n_samp.get()
         differentiate=output.last_submitted_differentiate.get()
-        last_values_text = f"Max number of samples: {n_samp}, Max positives: {differentiate}"
+        last_values_text = f"Max. number of samples: {n_samp}, Max. positives: {differentiate}"
         
         # Set output to display last submitted values
         output.last_values.set(last_values_text)
@@ -1023,7 +1073,7 @@ def server(input, output, session):
 
         elif differentiate > MAX_DIFFERENTIATE:
             output_text_1=f'Maximum number of positives ({differentiate}) too high. The precomputed maximum is {MAX_DIFFERENTIATE}.\n'
-            output_text_2 = '<span style="color: #228B22;">To locally run the code or download selected strategies calculated on the fly for your specific values follow the section below.</span>'
+            output_text_2 = '<span style="color: #228B22;">To download designs calculated on the fly for your specific values (or locally run the code), follow the section below.</span>'
             output_text=output_text_1+output_text_2
             output_text = output_text.replace('\n', '<br>')
             output.database_reply.set(output_text)
@@ -1035,7 +1085,7 @@ def server(input, output, session):
 
         elif n_samp > MAX_N:
             output_text_1=f'Maximum number of samples ({n_samp}) too high. The precomputed maximum is {MAX_N}.\n'
-            output_text_2 = '<span style="color: #228B22;">To locally run the code or download selected strategies calculated on the fly for your specific values follow the section below.</span>'
+            output_text_2 = '<span style="color: #228B22;">To download designs calculated on the fly for your specific values (or locally run the code), follow the section below.</span>'
             output_text=output_text_1+output_text_2
             output_text = output_text.replace('\n', '<br>')
             output.database_reply.set(output_text)
@@ -1062,9 +1112,9 @@ def server(input, output, session):
                     output.allow_downloads.set(True)
                     output.allow_fly.set(True)
                     if new_n!=n_samp or new_diff!=differentiate:
-                        output_text_1=f'There is no precomputed summary table or random design for {n_samp} samples with up to {differentiate} positives.\n'
-                        output_text_2=f'The next best precomputed summary table and random design are for {new_n} samples with up to {new_diff} positives shown below.\n'
-                        output_text_3=f'You can also locally run the code or download selected strategies calculated on the fly for your specific setting follow the section below.'
+                        output_text_1=f'There is no precomputed summary table for {n_samp} samples with up to {differentiate} positives.\n'
+                        output_text_2=f'The closest precomputed summary table is for {new_n} samples with up to {new_diff} positives, as shown below.\n'
+                        output_text_3='<span style="color: #228B22;">To download designs calculated on the fly for your specific values (or locally run the code), follow the section below.</span>'
                         output_text=output_text_1+output_text_2+output_text_3
                         output_text = output_text.replace('\n', '<br>')
                         output.database_reply.set(output_text)
@@ -1073,8 +1123,8 @@ def server(input, output, session):
                         output.reply_green.set(False)
                         
                     else: 
-                        output_text_1=f'There is a precomputed summary table and a random design for {n_samp} samples with up to {differentiate} positives.\n'
-                        output_text_2 = '<span style="color: #228B22;">To locally run the code or download selected strategies calculated on the fly for your specific values follow the section below.</span>'
+                        output_text_1=f'There is a precomputed summary table for {n_samp} samples with up to {differentiate} positives.\n'
+                        output_text_2 = '<span style="color: #228B22;">To download designs calculated on the fly for your specific values (or locally run the code), follow the section below.</span>'
                         output_text=output_text_1+output_text_2
                         output_text = output_text.replace('\n', '<br>')
                         output.database_reply.set(output_text)
@@ -1140,20 +1190,20 @@ def server(input, output, session):
                 if 'Mean experiments' in copio.columns:
                     copio = copio[copio['Mean experiments'] < n_samp]
 
-                #long_exps=f'If your experiments are <b>expensive</b>, the best method for you might be the <b>{copio.iloc[0,0]}</b> one.<br>'
+                #long_exps=f'If your experiments are <b>expensive</b>, the best method for you might be the <b>{copio.iloc[0,0]}</b>.<br>'
                 if 'Mean experiments' in copio.columns and 'Mean steps' in copio.columns:
                     copio = copio.sort_values(by=['Mean experiments', 'Mean steps'], ascending=[True, True])
-                    long_exps=f'IN If your experiments are <b>expensive</b>, the best method for you might be the <b>{copio.iloc[0,0]}</b> one.<br>'
+                    long_exps=f'If your experiments are <b>expensive</b>, the best method for you might be the <b>{copio.iloc[0,0]}</b>.<br>'
 
-                #expensive_exps=f'If your experiments are <b>long</b>, the best method for you might be the <b>{copio.iloc[0,0]}</b> one.<br>'
+                #expensive_exps=f'If your experiments are <b>long</b>, the best method for you might be the <b>{copio.iloc[0,0]}</b>.<br>'
                 if 'Mean experiments' in copio.columns and 'Mean steps' in copio.columns:
                     copio = copio.sort_values(by=['Mean steps', 'Mean experiments'], ascending=[True, True])
-                    expensive_exps=f'IN If your experiments are <b>long</b>, the best method for you might be the <b>{copio.iloc[0,0]}</b> one.<br>'
+                    expensive_exps=f'If your experiments are <b>long</b>, the best method for you might be the <b>{copio.iloc[0,0]}</b>.<br>'
                 
-                #low_pools=f'If you <b>cannot pool many samples</b> together, the best method for you might be the <b>{copio.iloc[0,0]}</b> one.<br>'
+                #low_pools=f'If you <b>cannot pool many samples</b> together, the best method for you might be the <b>{copio.iloc[0,0]}</b>.<br>'
                 if 'Mean experiments' in copio.columns and 'Max samples per pool' in copio.columns:
                     copio = copio.sort_values(by=['Max samples per pool', 'Mean experiments'], ascending=[True, True])                
-                    low_pools=f'IN If you <b>cannot pool many samples</b> together, the best method for you might be the <b>{copio.iloc[0,0]}</b> one.<br>'
+                    low_pools=f'If you <b>cannot pool many samples</b> together, the best method for you might be the <b>{copio.iloc[0,0]}</b>.<br>'
                 
 
                 
@@ -1194,8 +1244,8 @@ def server(input, output, session):
                 else:
                     output.debug.set(f"precomputed/ NOT found in {app_root}. Contents: {app_root_contents}")
                 #diff_folder, new_diff = find_closest_diff_folder(n_folder_path, differentiate)
-                output_text_1 = '<span style="color: #c00;">Something went wrong while looking for your file</span> <br>'
-                output_text_2 = '<span style="color: #228B22;">To locally run the code or download selected strategies calculated on the fly for your specific values follow the section below</span>'
+                output_text_1 = '<span style="color: #c00;">Something went wrong while looking for your file.</span> <br>'
+                output_text_2 = '<span style="color: #228B22;">To download designs calculated on the fly for your specific values (or locally run the code), follow the section below.</span>'
                 output_text=output_text_1+output_text_2
                 output_text = output_text.replace('\n', '<br>')
                 output.database_reply.set(output_text)
@@ -1206,14 +1256,16 @@ def server(input, output, session):
             
         # Prepare the correct command for pool_N.py based on its arguments
         command_p = f"python pool_N.py --n_samp {n_samp} --differentiate {differentiate} --method all --path your/path"
-        intro_command='You can always run the code locally for your specific case, for the values you selected you need to run:\n\n'
-        output.personalized_command.set(intro_command+command_p)
+        intro_command='You can also run the code locally to generate pooling designs. For the values selected above, run:\n'
+        mid_github_command='(see GitHub for details)\n\n'
+        output.personalized_command.set(intro_command+mid_github_command+command_p)
 
 
-        intro_command='You can run the decoder locally for your specific pooling strategy and readout:\n\n'
+        intro_command='To decode the results of your tests done with a designs from PoolPy, run:\n'
+        mid_github_command='(see GitHub for details)\n\n'
         decode_p = f"python decode_N.py --differentiate {differentiate} path_to_WA your/path/to/pooling_strategy.csv --readout path/to/readout.csv (or your readout)\n\n"
-        readout_exp='Your readout should either be in binary form (e.g . 1,0,0,1,0) or as a list of positive wells (e.g. 0,3)'
-        output.decoder.set(intro_command+decode_p+readout_exp)
+        readout_exp='Your readout should either be in binary form (e.g . 1,0,0,1,0) or as a list of positive pools (e.g. 0,3).'
+        output.decoder.set(intro_command+decode_p+mid_github_command+readout_exp)
 
             #md=np.max(np.array(list(f2)))
 
@@ -1232,7 +1284,7 @@ def server(input, output, session):
         n = output.prev_n_samp.get()
         p = output.prev_prevalence.get()
         max_e = output.prev_max_error.get()
-        output.last_val_prev.set(f"Number of Samples: {n}, Prevalence: {p}, Max error: {max_e}")
+        output.last_val_prev.set(f"Number of Samples: {n}, Prevalence: {p}, Max. error: {max_e}")
 
     @reactive.Effect
     @reactive.event(input.uploaded_csv_auto)
@@ -1345,21 +1397,21 @@ def server(input, output, session):
                         diff_deco=n_compounds
 
                     readout_list.sort()
-                    msg=f'Processing file <b>{fileinfo[0]["name"]}</b> with maximum <b>{diff_deco}</b> positive samples and readout: <br>'
+                    msg=f'Processing file <b>{fileinfo[0]["name"]}</b> with max. <b>{diff_deco}</b> positive samples and readout: <br>'
                     msg+=f"{readout_list}<br>"
                     #msg+=f'{WA}'
                     readout=np.array(readout_list, dtype=int)
                     if max(readout)>n_pools:
                         invalid_entries = [val for val in readout_list if val > n_pools]
                         msg += f"<br>The following entries in your readout are bigger than the number of pools ({n_pools}):<br> <b>{invalid_entries}</b>"
-                        msg+="<br>Please <b>correct your readout.</b><br>"
+                        msg+="<br>Please <b>correct your readout</b>.<br>"
 
                         output.database_reply_decoder.set(msg)
                         return
                     if np.max(readout)>1 or len(readout)!=n_pools:
                         readout_bin_ls = [1 if i in readout else 0 for i in range(n_pools)]
                         readout=np.array(readout_bin_ls)
-                    msg+=f'<br>The uploaded pooling strategy comprizes {n_compounds} compounds in {n_pools} pools.<br><br>'
+                    msg+=f'<br>The uploaded pooling strategy comprizes {n_compounds} samples in {n_pools} pools.<br><br>'
                     readout_bl=np.array(readout.astype(bool).astype(int))
                     mask = ~np.any((WA == 1) & (readout_bl == 0), axis=1)
                     #msg+=f'boolean readout {readout_bl}<br>'
@@ -1374,11 +1426,11 @@ def server(input, output, session):
                     if n_compounds<2:
                         if n_compounds==1:
                             decoded=[original_indices[0]]
-                            msg += 'The only possible positive set of samples for the given pooling strategy, outcome, and differentiate is:<br>'
+                            msg += 'The only possible set of positive samples for the given parameters is:<br>'
                             for deco in decoded:
-                                msg += f'Samples: {deco}<br>'
+                                msg += f'<b>Samples: {deco}</b><br>'
                         else:
-                            msg += '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value</b>'
+                            msg += '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value.</b>'
                     
                     else:
                         scrambler={1:np.arange(n_compounds)}
@@ -1393,22 +1445,22 @@ def server(input, output, session):
                         # Remove duplicate combinations (convert to tuples for uniqueness, then back to lists)
 
                         if len(decoded)==0:
-                            msg+= '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value'
+                            msg+= '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value.'
 
                         elif len(decoded)==1:
-                            msg+=f'The only possible positive sets of samples for the given pooling strategy, outcome, and differentiate is:<br>'
+                            msg+=f'The only possible set of positive samples for the given parameters is:<br>'
                             msg += f'<b>{decoded[0]}</b><br>'
 
                         elif len(decoded)>n_compounds:
                             decoded_set = list(set([x for combo in decoded for x in combo]))
                             decoded_set.sort()
                             msg += (
-                                'The possible combinations of positive samples resulting in your readout is too large.<br>'
-                                'Either test all putative positives individually or change pooling strategy<br>'
-                                f'The set of putative positives is {decoded_set}'
+                                '<b>Putative positive samples were identified</b>, but the exact combination could not be pinpointed.<br>'
+                                'Either test all putative positive samples individually or change pooling strategy. A lower differentiate (only if it makes sense) might narrow it down.<br>'
+                                f'The set of putative positive samples is <b>{decoded_set}</b>.'
                             )
                         else:
-                            msg += f'The {len(decoded)} possible positive sets of samples for the given pooling strategy, outcome, and differentiate are:<br>'
+                            msg += f'The {len(decoded)} possible sets of positive samples for the given parameters are:<br>'
                             for deco in decoded:
                                 msg += f'<b>{deco}</b><br>'
 
@@ -1420,7 +1472,7 @@ def server(input, output, session):
                     output.decoder_text.set(txt)
 
                 else:
-                    msg+='Please provide a readout in the correct format'
+                    msg+='Please provide a readout in the correct format.'
                     output.database_reply_decoder.set(msg)
 
 
@@ -1706,7 +1758,7 @@ def server(input, output, session):
         differentiate = output.last_submitted_differentiate.get()
         return ui.HTML(
             f'<div style="margin-bottom: 20px; font-size: 22px;">'
-            f'Downloadable <b>differentiate-indipendent</b> designs calculated on the fly for {n_samp} samples with up to {differentiate} positives'
+            f'<b>Differentiate-indipendent</b> designs calculated on the fly for {n_samp} samples with up to {differentiate} positives'
             f'<br> <b style="color: #c00;">Use with caution for differentiate &gt;1</b>'
             f'</div>'
         )
@@ -1718,7 +1770,7 @@ def server(input, output, session):
         differentiate = output.last_submitted_differentiate.get()
         return ui.HTML(
             f'<div style="margin-bottom: 20px; font-size: 22px;">'
-            f'Downloadable <b>differentiate-dependent</b> designs calculated on the fly for {n_samp} samples with up to {differentiate} positives'
+            f'<b>Differentiate-dependent</b> designs calculated on the fly for {n_samp} samples with up to {differentiate} positives'
             f'</div>'
         )
 
@@ -1986,16 +2038,16 @@ def server(input, output, session):
     @render.ui
     def prevalence_legend():
         html = '<div style="font-size: 15px; text-align: center; margin-top: 18px;">'
-        html += '<div style="margin-bottom: 6px;"><span style="background-color: #ffeaea; color: #111; padding: 4px 14px; border-radius: 4px; border: 1px solid #eee;">Red: pooling error &gt; max error for both single pooling and FWER (all poolings combined)</span></div>'
-        html += '<div style="margin-bottom: 6px;"><span style="background-color: #ffffea; color: #111; padding: 4px 14px; border-radius: 4px; border: 1px solid #eee;">Yellow: pooling error ≤ max error for single pooling, but &gt; max error for FWER (all poolings combined)</span></div>'
-        html += '<div><span style="background-color: #b6fcb6; color: #111; padding: 4px 14px; border-radius: 4px; border: 1px solid #eee;">Green: pooling error ≤ max error for both single pooling and FWER (all poolings combined)</span></div>'
+        html += '<div style="margin-bottom: 6px;"><span style="background-color: #ffeaea; color: #111; padding: 4px 14px; border-radius: 4px; border: 1px solid #eee;">Red: pooling error &gt; max. error for both single pooling and FWER (all poolings combined).</span></div>'
+        html += '<div style="margin-bottom: 6px;"><span style="background-color: #ffffea; color: #111; padding: 4px 14px; border-radius: 4px; border: 1px solid #eee;">Yellow: pooling error ≤ max. error for single pooling, but &gt; max. error for FWER (all poolings combined).</span></div>'
+        html += '<div><span style="background-color: #b6fcb6; color: #111; padding: 4px 14px; border-radius: 4px; border: 1px solid #eee;">Green: pooling error ≤ max. error for both single pooling and FWER (all poolings combined).</span></div>'
         html += '</div>'
         return ui.HTML(html)
 
     @output
     @render.ui
     def prevalence_explanation():
-        html = '<div style="margin-top: 28px; font-size: 14px; color: #444; text-align: center;">These tables are a guide to help you decide what kind of pooling strategies might be right for your particular problem.</div>'
+        html = '<div style="margin-top: 28px; font-size: 14px; color: #444; text-align: center;">These tables are meant to help decide on a pooling strategy for specific use cases.</div>'
         return ui.HTML(html)
     
 

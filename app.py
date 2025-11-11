@@ -1426,9 +1426,9 @@ def server(input, output, session):
                     if n_compounds<2:
                         if n_compounds==1:
                             decoded=[original_indices[0]]
-                            msg += 'The only possible set of positive samples for the given parameters is:<br>'
+                            msg += 'A single positive sample was found:<br>'
                             for deco in decoded:
-                                msg += f'<b>Samples: {deco}</b><br>'
+                                msg += f'<b>Sample: {deco}</b><br>'
                         else:
                             msg += '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value.</b>'
                     
@@ -1448,8 +1448,8 @@ def server(input, output, session):
                             msg+= '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value.'
 
                         elif len(decoded)==1:
-                            msg+=f'The only possible set of positive samples for the given parameters is:<br>'
-                            msg += f'<b>{decoded[0]}</b><br>'
+                            msg+=f'A single possible combination of positive samples was found. The positive samples are:<br>'
+                            msg += f'<b>Samples: {decoded[0]}</b><br>'
 
                         elif len(decoded)>n_compounds:
                             decoded_set = list(set([x for combo in decoded for x in combo]))
@@ -1457,12 +1457,14 @@ def server(input, output, session):
                             msg += (
                                 '<b>Putative positive samples were identified</b>, but the exact combination could not be pinpointed.<br>'
                                 'Either test all putative positive samples individually or change pooling strategy. A lower differentiate (only if it makes sense) might narrow it down.<br>'
-                                f'The set of putative positive samples is <b>{decoded_set}</b>.'
+                                f'There are up to {min([diff_deco,len(decoded_set)])} positive samples among the following samples: <b>{decoded_set}</b>.'
                             )
                         else:
-                            msg += f'The {len(decoded)} possible sets of positive samples for the given parameters are:<br>'
-                            for deco in decoded:
-                                msg += f'<b>{deco}</b><br>'
+                            msg += f'{len(decoded)} possible combinations of positive samples were found. The possible combinations are:<br>'
+                            for i,deco in enumerate(decoded):
+                                if i!=0:
+                                    msg+='or<br>'
+                                msg += f'Samples <b>{deco}</b><br>'
 
                     output.database_reply_decoder.set(msg)
 

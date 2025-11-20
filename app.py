@@ -353,7 +353,7 @@ app_ui = ui.page_fluid(
                 ui.tags.ul(
                     ui.tags.li(ui.tags.b("D"), ": Differentiate, maximum number of positive samples."),
                     ui.tags.li(ui.tags.b("S"), ": Number of samples to test."),
-                    ui.tags.li(ui.tags.b("ρ"), ": Prevalence of positives in the populatio.n"),
+                    ui.tags.li(ui.tags.b("ρ"), ": Prevalence of positives in the population."),
                     ui.tags.li(ui.tags.b("W"), ": Total number of pools needed for a method."),
                 ),
                 style="max-width: 700px; margin: 0 auto; font-size: 16px; color: #333;"

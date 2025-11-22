@@ -256,7 +256,7 @@ app_ui = ui.page_fluid(
             ui.div(
                 ui.input_text(
                     "readout_string",
-                    "Readout (positive samples):",
+                    "Readout (positive pools):",
                     value="",
                     placeholder="Enter comma-separated values"
                 ),

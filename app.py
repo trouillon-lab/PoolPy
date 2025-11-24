@@ -1193,12 +1193,12 @@ def server(input, output, session):
                 #long_exps=f'If your experiments are <b>expensive</b>, the best method for you might be the <b>{copio.iloc[0,0]}</b>.<br>'
                 if 'Mean experiments' in copio.columns and 'Mean steps' in copio.columns:
                     copio = copio.sort_values(by=['Mean experiments', 'Mean steps'], ascending=[True, True])
-                    long_exps=f'If your experiments are <b>expensive</b>, the best method for you might be the <b>{copio.iloc[0,0]}</b>.<br>'
+                    long_exps=f'If you mainly need to <b>reduce test number</b>, the best method for you might be the <b>{copio.iloc[0,0]}</b>.<br>'
 
                 #expensive_exps=f'If your experiments are <b>long</b>, the best method for you might be the <b>{copio.iloc[0,0]}</b>.<br>'
                 if 'Mean experiments' in copio.columns and 'Mean steps' in copio.columns:
                     copio = copio.sort_values(by=['Mean steps', 'Mean experiments'], ascending=[True, True])
-                    expensive_exps=f'If your experiments are <b>long</b>, the best method for you might be the <b>{copio.iloc[0,0]}</b>.<br>'
+                    expensive_exps=f'If you need results <b>quickly</b>, the best method for you might be the <b>{copio.iloc[0,0]}</b>.<br>'
                 
                 #low_pools=f'If you <b>cannot pool many samples</b> together, the best method for you might be the <b>{copio.iloc[0,0]}</b>.<br>'
                 if 'Mean experiments' in copio.columns and 'Max samples per pool' in copio.columns:

@@ -1,5 +1,6 @@
 from shiny import App, ui, reactive, render
 from pathlib import Path
+from math import comb
 import pandas as pd
 import os
 import pickle
@@ -10,6 +11,7 @@ import scipy.stats
 import re
 import itertools
 import string
+
 #import matplotlib.pyplot as plt
 summary_text = ""
 # Define the UI
@@ -250,7 +252,7 @@ app_ui = ui.page_fluid(
             ),
             
             ui.div(
-                ui.input_file("uploaded_csv_decoder", "Upload your design csv file (max. 100kb)", accept=[".csv"], multiple=False),
+                ui.input_file("uploaded_csv_decoder", "Upload your csv design file ", accept=[".csv"], multiple=False),
                 style="display: flex; justify-content: center; margin-bottom: 22px;"
             ),
             ui.div(
@@ -461,7 +463,7 @@ app_ui = ui.page_fluid(
             ),
             
             ui.div(
-                ui.input_file("uploaded_csv_auto", "Upload your pooling strategy csv file (max. 100kb)", accept=[".csv"], multiple=False),
+                ui.input_file("uploaded_csv_auto", "Upload your csv design file", accept=[".csv"], multiple=False),
                 style="display: flex; justify-content: center; margin-bottom: 32px;"
             ),
             ui.div(
@@ -525,6 +527,18 @@ def int_to_base(n, N):
     if result == "":
         result = "0"
     return sign + "".join(reversed(result))
+
+def set_compund_list(a):
+    b=[]
+    for aa in a:
+        add=True
+        for bb in b:
+            if set(aa)==set(bb):
+                add=False
+                continue
+        if add:
+            b.append(aa)
+    return(b)
 
 
 #Coumpound counter starts from 1
@@ -1291,8 +1305,8 @@ def server(input, output, session):
     def _():
         fileinfo = input.uploaded_csv_auto()
         if fileinfo is not None:
-            if fileinfo[0]["size"] > 100 * 1024:
-                output.database_reply_auto.set("File too large. Please upload a CSV smaller than 100kb.")
+            if fileinfo[0]["size"] > 10 * 1024 * 1024:
+                output.database_reply_auto.set("File too large. Please upload a CSV smaller than 10Mb.")
                 output.allow_robot.set(False)
             else:
                 output.database_reply_auto.set("File is ok, computing automated pooling scripts.")
@@ -1352,10 +1366,10 @@ def server(input, output, session):
         fileinfo = input.uploaded_csv_decoder()
         output.database_reply_decoder.set("Please upload a pooling strategy file.")
         if fileinfo is not None:
-            if fileinfo[0]["size"] > 100 * 1024:
-                output.database_reply_decoder.set("File too large. Please upload a CSV smaller than 100kb.")
+            if fileinfo[0]["size"] > 10 * 1024 * 1024:
+                output.database_reply_decoder.set("File too large. Please upload a CSV smaller than 10Mb.")
                 output.allow_decoder.set(False)
-            elif fileinfo[0]["size"] < 100 * 1024:
+            elif fileinfo[0]["size"] < 10 * 1024 * 1024:
                 file_name = fileinfo[0]["name"] if fileinfo and "name" in fileinfo[0] else "No file uploaded"
                 #output.database_reply_decoder.set("File and readout are ok, decoding.")
                 output.allow_decoder.set(True)
@@ -1405,7 +1419,6 @@ def server(input, output, session):
                         invalid_entries = [val for val in readout_list if val > n_pools]
                         msg += f"<br>The following entries in your readout are bigger than the number of pools ({n_pools}):<br> <b>{invalid_entries}</b>"
                         msg+="<br>Please <b>correct your readout</b>.<br>"
-
                         output.database_reply_decoder.set(msg)
                         return
                     if np.max(readout)>1 or len(readout)!=n_pools:
@@ -1418,7 +1431,6 @@ def server(input, output, session):
                     original_indices = np.where(mask)[0]  # Get original row indices
                     filtered_WA = WA[mask]
                     n_compounds=filtered_WA.shape[0]
-
                     if diff_deco> n_compounds:
                         diff_deco=n_compounds
                     #msg+=f'<br>we have {filtered_WA.shape} shape of the filtered WA<br>'
@@ -1426,30 +1438,51 @@ def server(input, output, session):
                     if n_compounds<2:
                         if n_compounds==1:
                             decoded=[original_indices[0]]
-                            msg += 'A single positive sample was found:<br>'
+                            msg += '<span style="color: #2ecc40;"><b>A single positive sample was found:</b></span><br>'
                             for deco in decoded:
-                                msg += f'<b>Sample: {deco}</b><br>'
+                                msg += f'<span style="color: #2ecc40;"><b>Sample: {deco}</b></span><br>'
                         else:
-                            msg += '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value.</b>'
-                    
+                            msg += '<span style="color: #c00;"><b>We found no matches for the given parameters, check your input or try increasing the differentiate value.</b></span>'                    
                     else:
+                        ls_combs=[comb(n_compounds,i) for i in range(diff_deco)]
+                        max_combs=np.sum(ls_combs)
+                        if max_combs>1e4:
+                            decoded = [int(original_indices[idx]) for idx in range(len(original_indices))]
+                            msg += (
+                                '<b>Putative positive samples were identified</b>, but the app does not have the computational power to attempt to decode the exact combination.<br>'
+                                'Either test all putative positive samples individually or change pooling strategy. A lower differentiate (only if it makes sense) might narrow it down.<br>'
+                                f'There are up to {min([diff_deco,len(decoded)])} positive samples among the following samples: <b>{decoded}</b>.'
+                            )   
+                            output.database_reply_decoder.set(msg)
+                            return
+                        
+
                         scrambler={1:np.arange(n_compounds)}
                         for j in range(2,diff_deco+1):
                             scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
+
                         decoded_pre=decode_precomp(well_assigner=filtered_WA, differentiate= diff_deco, scrambler=scrambler, 
                                 readout=readout_bl)
-                        
                         # Map filtered indices back to original indices
-                        decoded = [[int(original_indices[idx]) for idx in combination] for combination in decoded_pre]
-                        
+                        decoders = [combination if isinstance(combination, list) else [combination] for combination in decoded_pre]
+                        decoded = [[int(original_indices[idx]) for idx in combination] for combination in decoders]
+                        #msg+=f'{decoded_multi} <br><br>'
+                        #decoded=set_compund_list(decoded_multi)
+                        #msg+=f'{decoded} <br><br>'
                         # Remove duplicate combinations (convert to tuples for uniqueness, then back to lists)
 
                         if len(decoded)==0:
                             msg+= '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value.'
 
                         elif len(decoded)==1:
-                            msg+=f'A single possible combination of positive samples was found. The positive samples are:<br>'
-                            msg += f'<b>Samples: {decoded[0]}</b><br>'
+
+                            if len(decoded[0])==1:
+                                msg += '<span style="color: #2ecc40;"><b>A single positive sample was found:</span></b><br>'
+                                for deco in decoded[0]:
+                                    msg += f'<span style="color: #2ecc40;"><b>Sample: {deco}</b></span><br>' 
+                            else:
+                                msg+=f'<span style="color: #2ecc40;"><b>A single possible combination of positive samples was found. The positive samples are:</span></b><br>'
+                                msg += f'<span style="color: #2ecc40;"><b>Samples: {", ".join(map(str, decoded[0]))}</b></span><br>'
 
                         elif len(decoded)>n_compounds:
                             decoded_set = list(set([x for combo in decoded for x in combo]))
@@ -1464,7 +1497,7 @@ def server(input, output, session):
                             for i,deco in enumerate(decoded):
                                 if i!=0:
                                     msg+='or<br>'
-                                msg += f'Samples <b>{deco}</b><br>'
+                                msg += f'<b>Samples: {", ".join(map(str, deco))}</b><br>'
 
                     output.database_reply_decoder.set(msg)
 
@@ -1646,7 +1679,7 @@ def server(input, output, session):
         if 'Chinese special' in DFFS.keys():
             yield DFFS['Chinese special'].to_csv(index=True)
         else:
-            yield DFFS['Chinese bktrk'].to_csv(index=True)
+             yield "The Chinese remainder special method is available only for a maximum number of positives equal to 2 or 3"
 
     @output
     @render.download(filename=lambda: "binary_pooling.csv")
@@ -1749,9 +1782,7 @@ def server(input, output, session):
             DFFS=clean_WA(DFF)
             yield DFFS.to_csv(index=True)
         else:
-            DFF=assign_wells_chinese(n_compounds=output.last_submitted_n_samp.get(), differentiate=output.last_submitted_differentiate.get(), backtrack=True)
-            DFFS=clean_WA(DFF)
-            yield DFFS.to_csv(index=True)
+            yield "The Chinese remainder special method is available only for a maximum number of positives equal to 2 or 3"
 
     @output
     @render.ui

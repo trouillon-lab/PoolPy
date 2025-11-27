@@ -325,9 +325,9 @@ app_ui = ui.page_fluid(
                     ui.tags.li(ui.tags.b("Random"), ": Semi-adaptive method where pools are formed by randomly assigning samples."),
                     ui.tags.li(ui.tags.b("STD"), ": Non-adaptive method based on prime numbers and modulus operations."),
                     ui.tags.li(ui.tags.b("Chinese Remainder methods"), ": Non-adaptive method based on the Chinese Remainder Theorem, with variants for backtracking (backtrack) and special cases (special)."),
-                    ui.tags.li(ui.tags.b("Hierachical"), ": Strictly adaptive method that iteratively partitions the set of possible positive samples." \
+                    ui.tags.li(ui.tags.b("Hierachical"), ": Strictly adaptive method that iteratively partitions the set of possible positive samples. " \
                     "For this method, the N pools metric lists the number of splits at each stage. " \
-                    "For example, [3,3] means first divide samples into 3 pools (as equal as possible), then test and split any positive pool into 3 again." \
+                    "For example, [3,3] means first divide samples into 3 pools (as equal as possible), then test and split any positive pool into 3 again. " \
                     "After testing of these pools, each sample from each positive pool finally needs to be individually tested." \
                     ),
                 ),

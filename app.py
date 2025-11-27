@@ -504,6 +504,40 @@ def from_id_to_well(id, offset=0):
     well=chr(65 + row)
     return str(plate+1+offset), str(well)+str(column+1)
 
+def validate_WA_df(df):
+    """
+    Check columns are 'Pool n' and index labels are 'Sample n' (n integer).
+    Also check that all values are binary (0 or 1).
+    Returns (True, success_message) or (False, error_message).
+    """
+    if df is None or df.empty:
+        ret_text = "<span style='color: #c00; font-weight: bold;'>DataFrame is empty</span>"
+        return False, ret_text
+
+    col_pat = re.compile(r"^Pool (\d+)$")
+    idx_pat = re.compile(r"^Sample (\d+)$")
+
+    # validate columns
+    for c in df.columns:
+        if not col_pat.match(str(c)):
+            ret_text = f"<span style='color: #c00; font-weight: bold;'>Column name '{c}' does not match 'Pool n' format</span>"
+            return False, ret_text
+
+    # validate index
+    for i in df.index:
+        if not idx_pat.match(str(i)):
+            ret_text = f"<span style='color: #c00; font-weight: bold;'>Index label '{i}' does not match 'Sample n' format</span>"
+            return False, ret_text
+
+    # validate binary data
+    if not df.isin([0, 1]).all().all():
+        ret_text = "<span style='color: #c00; font-weight: bold;'>File contains non-binary values. All values must be 0 or 1.</span>"
+        return False, ret_text
+
+    # Success message in green
+    ret_text = "<span style='color: #2ecc40; font-weight: bold;'>File is correctly formatted.</span>"
+    return True, ret_text
+
 
 def clean_WA(b):
     b1=b.astype(int)
@@ -1305,13 +1339,22 @@ def server(input, output, session):
     def _():
         fileinfo = input.uploaded_csv_auto()
         if fileinfo is not None:
+            file_name = fileinfo[0]["name"]
             if fileinfo[0]["size"] > 10 * 1024 * 1024:
-                output.database_reply_auto.set("File too large. Please upload a CSV smaller than 10Mb.")
+                output.database_reply_auto.set("File too large. Please upload a csv smaller than 10Mb.")
+                output.allow_robot.set(False)
+            elif not file_name.lower().endswith('.csv'):
+                output.database_reply_auto.set(f"Please upload a csv file: {file_name} is not in csv format.")
                 output.allow_robot.set(False)
             else:
+                WA_df = parsed_file_auto()
+                valid, validation_msg = validate_WA_df(WA_df)
+                if not valid:
+                    output.database_reply_auto.set(validation_msg)
+                    output.allow_robot.set(False)
+                    return
                 output.database_reply_auto.set("File is ok, computing automated pooling scripts.")
                 output.allow_robot.set(True)
-                WA_df = parsed_file_auto()
                 WA=WA_df.values
                 offsetted=int((WA.shape[0]//96)+1)
                 ls_to_df=[]
@@ -1341,7 +1384,7 @@ def server(input, output, session):
                 output.opentron_csv.set(opentron_out)
 
 
-                output.database_reply_auto.set("Automated pooling scripts ready.")
+                output.database_reply_auto.set(f"Automated pooling scripts for {file_name} ready.")
 
                 
                 
@@ -1366,10 +1409,20 @@ def server(input, output, session):
         fileinfo = input.uploaded_csv_decoder()
         output.database_reply_decoder.set("Please upload a pooling strategy file.")
         if fileinfo is not None:
+            file_name = fileinfo[0]["name"]
             if fileinfo[0]["size"] > 10 * 1024 * 1024:
-                output.database_reply_decoder.set("File too large. Please upload a CSV smaller than 10Mb.")
+                output.database_reply_decoder.set("File too large. Please upload a csv smaller than 10Mb.")
                 output.allow_decoder.set(False)
-            elif fileinfo[0]["size"] < 10 * 1024 * 1024:
+            elif not file_name.lower().endswith('.csv'):
+                output.database_reply_auto.set(f"Please upload a csv file: {file_name} is not in csv format.")
+                output.allow_robot.set(False)
+            else:
+                WA_df = parsed_file_decoder()
+                valid, validation_msg = validate_WA_df(WA_df)
+                if not valid:
+                    output.database_reply_decoder.set(validation_msg)
+                    output.allow_decoder.set(False)
+                    return
                 file_name = fileinfo[0]["name"] if fileinfo and "name" in fileinfo[0] else "No file uploaded"
                 #output.database_reply_decoder.set("File and readout are ok, decoding.")
                 output.allow_decoder.set(True)

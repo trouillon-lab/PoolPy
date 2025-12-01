@@ -88,4 +88,49 @@ else:
     decoders = [combination if isinstance(combination, list) else [combination] for combination in decoded_pre]
     decoded = [[int(original_indices[idx]) for idx in combination] for combination in decoders]
 
+    if len(decoded)==0:
+        msg+= '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value.'
+
+    elif len(decoded)==1:
+
+        if len(decoded[0])==1:
+            msg += '<span style="color: #2ecc40;"><b>A single positive sample was found:</span></b><br>'
+            for deco in decoded[0]:
+                msg += f'<span style="color: #2ecc40;"><b>Sample: {deco}</b></span><br>' 
+        else:
+            msg+=f'<span style="color: #2ecc40;"><b>A single possible combination of positive samples was found. The positive samples are:</span></b><br>'
+            msg += f'<span style="color: #2ecc40;"><b>Samples: {", ".join(map(str, decoded[0]))}</b></span><br>'
+
+    elif len(decoded)>n_compounds:
+        decoded_set = list(set([x for combo in decoded for x in combo]))
+        decoded_set.sort()
+        msg += (
+            '<b>Putative positive samples were identified</b>, but the exact combination could not be pinpointed.<br>'
+            'Either test all putative positive samples individually or change pooling strategy. A lower differentiate (only if it makes sense) might narrow it down.<br>'
+            f'There are up to {min([diff_deco,len(decoded_set)])} positive samples among the following samples: <b>{decoded_set}</b>.'
+        )
+    else:
+        msg += f'{len(decoded)} possible combinations of positive samples were found. The possible combinations are:<br>'
+        for i,deco in enumerate(decoded):
+            if i!=0:
+                msg+='or<br>'
+            msg += f'<b>Samples: {", ".join(map(str, deco))}</b><br>'
+
+message = re.sub(r'</?b>', '', msg)
+txt = f"Uploaded file: {dira}\nReadout: {readout_in}\n\n{message.replace('<br>', '\n')}"
+
+
+# Print the message to stdout
+print(txt)
+
+# Save the message to a file under a 'decoded' folder next to the WA file
+wa_dir = os.path.dirname(dira)
+decoded_dir = os.path.join(wa_dir, 'decoded')
+os.makedirs(decoded_dir, exist_ok=True)
+base_name = os.path.splitext(os.path.basename(dira))[0]
+out_path = os.path.join(decoded_dir, f"{base_name}_decoded.txt")
+with open(out_path, 'w', encoding='utf-8') as f:
+    f.write(txt)
+
+
 

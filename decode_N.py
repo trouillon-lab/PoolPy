@@ -2,6 +2,7 @@ import numpy as np
 import math
 import re
 import itertools
+from itertools import combinations as comb
 import pandas as pd
 import argparse
 import pickle
@@ -28,7 +29,7 @@ args_dict = vars(args)
 
 
 dira=args_dict['path_to_WA']
-diff=args_dict['differentiate']
+diff_deco=args_dict['differentiate']
 readout_in=args_dict['readout']
 WA_df=pd.read_csv(dira, index_col=0)
 
@@ -42,49 +43,49 @@ n_compounds=WA.shape[1]
 
 if np.max(readout)>1 or len(readout)!=n_compounds:
     readout_bin_ls = [1 if i in readout else 0 for i in range(n_compounds)]
-    readout=np.array(readout_bin_ls)
+    readout_bl=np.array(readout_bin_ls)
  
 
 st_dir=str(dira)
-inf_diff=re.sub('^.*_', '', st_dir)
-inf_diff=re.sub('\\.csv$', '', inf_diff)
-inf_diff=int(inf_diff)
-
-method=re.sub('.*WA_', '', dira)
-method=re.sub('_.*$', '', method)
-
-if diff==-1:
-    diff=inf_diff
-
-if diff!=inf_diff:
-    print(f'WARNING: inferred differentiate of {inf_diff} different from passed differentiate of {diff}\n')
-
-scrambler={1:np.arange(n_compounds)}
-for j in range(2,diff+1):
-    scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
 
 
-scrambler={1:np.arange(n_compounds)}
-for j in range(2,diff+1):
-    scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
+mask = ~np.any((WA == 1) & (readout_bl == 0), axis=1)
+                    #msg+=f'boolean readout {readout_bl}<br>'
+original_indices = np.where(mask)[0]  # Get original row indices
+filtered_WA = WA[mask]
+n_compounds=filtered_WA.shape[0]
+if diff_deco> n_compounds:
+    diff_deco=n_compounds
+#msg+=f'<br>we have {filtered_WA.shape} shape of the filtered WA<br>'
+msg=''
+if n_compounds<2:
+    if n_compounds==1:
+        decoded=[original_indices[0]]
+        msg += '<span style="color: #2ecc40;"><b>A single positive sample was found:</b></span><br>'
+        for deco in decoded:
+            msg += f'<span style="color: #2ecc40;"><b>Sample: {deco}</b></span><br>'
+    else:
+        msg += '<span style="color: #c00;"><b>We found no matches for the given parameters, check your input or try increasing the differentiate value.</b></span>'                    
+else:
+    ls_combs=[comb(n_compounds,i) for i in range(diff_deco)]
+    max_combs=np.sum(ls_combs)
+    if max_combs>1e4:
+        decoded = [int(original_indices[idx]) for idx in range(len(original_indices))]
+        msg += (
+            '<b>Putative positive samples were identified</b>, but the app does not have the computational power to attempt to decode the exact combination.<br>'
+            'Either test all putative positive samples individually or change pooling strategy. A lower differentiate (only if it makes sense) might narrow it down.<br>'
+            f'There are up to {min([diff_deco,len(decoded)])} positive samples among the following samples: <b>{decoded}</b>.'
+        )   
+    
+
+    scrambler={1:np.arange(n_compounds)}
+    for j in range(2,diff_deco+1):
+        scrambler.update({j:np.array(list(comb(np.arange(n_compounds),j)))})
+
+    decoded_pre=decode_precomp(well_assigner=filtered_WA, differentiate= diff_deco, scrambler=scrambler, 
+            readout=readout_bl)
+    # Map filtered indices back to original indices
+    decoders = [combination if isinstance(combination, list) else [combination] for combination in decoded_pre]
+    decoded = [[int(original_indices[idx]) for idx in combination] for combination in decoders]
 
 
-decoded=decode_precomp(well_assigner=WA,differentiate= diff, scrambler=scrambler, 
-               readout=np.array(readout.astype(bool).astype(int)))
-
-print('The possible positives for the given well assigner, outcome, and differentiate are:')
-for deco in decoded:
-    print('Samples:', deco)
-
-s1driro=os.path.join(os.path.dirname(os.path.dirname(dira)), 'decoded')
-if not os.path.isdir(s1driro):
-    os.mkdir(s1driro)
-fdriro=os.path.join(s1driro, f'{method}_diff_{diff}_decoded.txt')
-
-with open(fdriro, 'w+') as f:
-    if diff!=inf_diff:
-        f.write(f'WARNING: inferred differentiate of {inf_diff} different from passed differentiate of {diff}\n')
-
-    f.write('Decoded file {dira} assuming differentiate {diff}.\n Possible positive samples combiantion are')
-    for line in decoded:
-        f.write(f"Samples: {line}\n")

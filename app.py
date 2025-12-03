@@ -1356,7 +1356,7 @@ def server(input, output, session):
                 output.database_reply_auto.set("File is ok, computing automated pooling scripts.")
                 output.allow_robot.set(True)
                 WA=WA_df.values
-                offsetted=int((WA.shape[0]//96)+1)
+                offsetted=int(np.ceil(WA.shape[0]/96))
                 ls_to_df=[]
                 for i,j in zip(*np.where(WA==1)):
                     d_plate, d_well= from_id_to_well(i)

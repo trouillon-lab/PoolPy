@@ -8,6 +8,8 @@ import pickle
 import time
 import os
 import copy
+from itertools import combinations as comb
+
 
 
 from Functions import *
@@ -53,6 +55,26 @@ def mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs):
     rounds=np.sum(counts>1)/np.sum(counts>0)+1
     p_check=np.round(np.sum(counts[counts>1])/np.sum(counts)*100)
     return BT+ET, ET,  rounds, p_check
+
+def mean_metrics_fast(well_assigner, differentiate, max_checks=1e5):
+    BT=well_assigner.shape[1]
+    n_compounds=well_assigner.shape[0]
+    if n_compounds**differentiate>10*max_checks:
+        max_combs=n_compounds**differentiate
+    else:
+        ls_combs=[comb(n_compounds,i) for i in range(differentiate)]
+        max_combs=np.sum(ls_combs)
+    if max_combs>max_checks:
+        rnd_pos=np.random.choice(np.arange(n_compounds),differentiate)
+        decoded=fast_decode(well_assigner=well_assigner, differentiate=differentiate, 
+                            readout=rnd_pos)
+    else:
+        for difo in range(differentiate+1):
+            pass
+
+
+
+
 
 
 

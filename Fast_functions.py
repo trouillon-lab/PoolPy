@@ -1,5 +1,5 @@
 from Functions import *
-
+from itertools import combinations as comb
 
 
 ####################################################################################################################################################################################################################
@@ -9,6 +9,44 @@ from Functions import *
 ####################################################################################################################################################################################################################
 ####################################################################################################################################################################################################################
 ####################################################################################################################################################################################################################
+
+def fast_decode(well_assigner:np.array, differentiate:int, readout:np.ndarray, 
+                max_differentiate=-1, sweep=False, **kwargs):
+    WA=well_assigner
+    n_compounds=WA.shape[1]
+
+    if np.max(readout)>1 or len(readout)!=n_compounds:
+        readout_bin_ls = [1 if i in readout else 0 for i in range(n_compounds)]
+        readout_bl=np.array(readout_bin_ls)
+    mask = ~np.any((WA == 1) & (readout_bl == 0), axis=1)
+                    #msg+=f'boolean readout {readout_bl}<br>'
+    original_indices = np.where(mask)[0]  # Get original row indices
+    filtered_WA = WA[mask]
+    n_compounds=filtered_WA.shape[0]
+    if differentiate> n_compounds:
+        diff_deco=n_compounds
+        if n_compounds<2:
+            if n_compounds==1:
+                decoded=[original_indices[0]]   
+    else:
+        ls_combs=[comb(n_compounds,i) for i in range(differentiate)]
+        max_combs=np.sum(ls_combs)
+        if max_combs>1e4:
+            decoded = [int(original_indices[idx]) for idx in range(len(original_indices))]
+        
+
+        scrambler={1:np.arange(n_compounds)}
+        for j in range(2,differentiate+1):
+            scrambler.update({j:np.array(list(comb(np.arange(n_compounds),j)))})
+
+        decoded_pre=decode_precomp(well_assigner=filtered_WA, differentiate= differentiate, scrambler=scrambler, 
+                readout=readout_bl)
+        # Map filtered indices back to original indices
+        decoders = [combination if isinstance(combination, list) else [combination] for combination in decoded_pre]
+        decoded = [[int(original_indices[idx]) for idx in combination] for combination in decoders]
+        
+    return decoded
+
 
 def decode_precomp(well_assigner:np.array, differentiate:int, 
                    scrambler:dict, readout:np.ndarray, max_differentiate=-1, sweep=False, **kwargs) -> list:

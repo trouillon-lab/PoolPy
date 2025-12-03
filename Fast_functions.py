@@ -13,9 +13,10 @@ from itertools import combinations as comb
 def fast_decode(well_assigner:np.array, differentiate:int, readout:np.ndarray, 
                 max_differentiate=-1, sweep=False, **kwargs):
     WA=well_assigner
-    n_compounds=WA.shape[1]
+    n_pools=WA.shape[1]
+    n_compunds=WA.shape[0]
 
-    if np.max(readout)>1 or len(readout)!=n_compounds:
+    if np.max(readout)>1 or len(readout)!=n_pools:
         readout_bin_ls = [1 if i in readout else 0 for i in range(n_compounds)]
         readout_bl=np.array(readout_bin_ls)
     mask = ~np.any((WA == 1) & (readout_bl == 0), axis=1)

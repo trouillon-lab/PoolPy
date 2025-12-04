@@ -1,6 +1,6 @@
 from shiny import App, ui, reactive, render
 from pathlib import Path
-from math import comb
+import math
 import pandas as pd
 import os
 import pickle
@@ -1497,7 +1497,7 @@ def server(input, output, session):
                         else:
                             msg += '<span style="color: #c00;"><b>We found no matches for the given parameters, check your input or try increasing the differentiate value.</b></span>'                    
                     else:
-                        ls_combs=[comb(n_compounds,i) for i in range(diff_deco)]
+                        ls_combs=[math.comb(n_compounds,i) for i in range(diff_deco)]
                         max_combs=np.sum(ls_combs)
                         if max_combs>1e4:
                             decoded = [int(original_indices[idx]) for idx in range(len(original_indices))]

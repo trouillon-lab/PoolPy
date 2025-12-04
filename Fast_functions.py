@@ -1,5 +1,4 @@
 from Functions import *
-from itertools import combinations as comb
 
 
 ####################################################################################################################################################################################################################
@@ -30,7 +29,7 @@ def fast_decode(well_assigner:np.array, differentiate:int, readout:np.ndarray,
             if n_compounds==1:
                 decoded=[original_indices[0]]   
     else:
-        ls_combs=[comb(n_compounds,i) for i in range(differentiate)]
+        ls_combs=[itertools.combinations(n_compounds,i) for i in range(differentiate)]
         max_combs=np.sum(ls_combs)
         if max_combs>1e4:
             decoded = [int(original_indices[idx]) for idx in range(len(original_indices))]
@@ -38,7 +37,7 @@ def fast_decode(well_assigner:np.array, differentiate:int, readout:np.ndarray,
 
         scrambler={1:np.arange(n_compounds)}
         for j in range(2,differentiate+1):
-            scrambler.update({j:np.array(list(comb(np.arange(n_compounds),j)))})
+            scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
 
         decoded_pre=decode_precomp(well_assigner=filtered_WA, differentiate= differentiate, scrambler=scrambler, 
                 readout=readout_bl)

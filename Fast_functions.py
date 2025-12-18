@@ -298,14 +298,137 @@ def is_consistent_precomp(well_assigner:np.array, differentiate:int, scrambler:d
         return(-1)
 
 
+def fast_decode(well_assigner:np.array, differentiate:int, readout:np.ndarray, 
+                max_checks=1e4, **kwargs):
+    WA=well_assigner
+    n_pools=WA.shape[1]
+
+
+    if np.max(readout)>1 or len(readout)!=n_pools:
+        readout_bin_ls = [1 if i in readout else 0 for i in range(n_compounds)]
+        readout_bl=np.array(readout_bin_ls)
+    else:
+        readout_bl=readout
+    mask = ~np.any((WA == 1) & (readout_bl == 0), axis=1)
+                    #msg+=f'boolean readout {readout_bl}<br>'
+    original_indices = np.where(mask)[0]  # Get original row indices
+    filtered_WA = WA[mask]
+    n_compounds=filtered_WA.shape[0]
+    if n_compounds<differentiate:
+        differentiate=n_compounds
+    if n_compounds<2:
+        if n_compounds==1:
+            decoded=[original_indices[0]] 
+        else:
+            decoded=[]
+
+    else:
+        MC=0
+        MP=1
+        ls_combs=[]
+        ls_diffs=[]
+        difo=differentiate
+        while (MC<max_checks or MP>mp) and difo>0:
+            MCI=math.comb(n_compounds,differentiate)
+            MC+=MCI
+            mp=MCI/MC
+            ls_combs.append(MCI)
+            ls_diffs.append(difo)
+            difo-=1
+        if MC>max_checks:
+            decoded = [int(original_indices[idx]) for idx in range(len(original_indices))]
+        
+        else:
+            scrambler={1:np.arange(n_compounds)}
+            for j in range(2,differentiate+1):
+                scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
+            decoded_pre=decode_precomp(well_assigner=filtered_WA, differentiate= differentiate, scrambler=scrambler, 
+                    readout=readout_bl)
+            # Map filtered indices back to original indices
+            decoders = [combination if isinstance(combination, list) else [combination] for combination in decoded_pre]
+            decoded = [[int(original_indices[idx]) for idx in combination] for combination in decoders]
+        
+    return decoded
+
+
+def is_consistent_precomp(well_assigner:np.array, differentiate:int, scrambler:dict) -> list:
+    if differentiate==0:
+        return(True,well_assigner, np.array([1]*well_assigner.shape[0]))
+    N=well_assigner.shape[0]
+    for i in range(differentiate):
+        diff=i+1
+        if diff ==1:
+            full_well_assigner=well_assigner.copy()
+        else:
+            this_sc=scrambler[diff]
+            #print(this_sc)
+            #print(well_assigner)
+            #print(diff)
+            
+            full_well_assigner=np.concatenate((full_well_assigner,np.any(well_assigner[this_sc], axis=1)))
+    _, counts=np.unique(full_well_assigner, axis=0, return_counts=True)
+    if len(counts)<full_well_assigner.shape[0]:
+        return(False, full_well_assigner, counts)
+    elif len(counts)==full_well_assigner.shape[0]:
+        return(True,full_well_assigner, counts)
+    else:
+        print("Something is fishy")
+        return(-1)
+    
 def mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs):
     BT=well_assigner.shape[1]
     _,_, counts= is_consistent_precomp(well_assigner, differentiate, scrambler) 
     ET=extra_tests(counts)  
     ET =ET if ET<well_assigner.shape[0] else well_assigner.shape[0]
-    rounds=np.sum(counts>1)/np.sum(counts>0)+1
-    p_check=np.round(np.sum(counts[counts>1])/np.sum(counts)*100)
+    ER=np.sum(counts[counts>1])/np.sum(counts)
+    rounds=ER+1
+    p_check=np.round(ER*100)
     return BT+ET, ET,  rounds, p_check
+
+def mean_metrics_fast(well_assigner, differentiate, max_checks=1e4, scaler=1, mp=1e-5, **kwargs):
+    BT=well_assigner.shape[1]
+    n_compounds=well_assigner.shape[0]
+    MC=0
+    MP=1
+    ls_combs=[]
+    ls_diffs=[]
+    difo=differentiate
+    while (MC<max_checks or MP>mp) and difo>0:
+        MCI=math.comb(n_compounds,differentiate)
+        MC+=MCI
+        mp=MCI/MC
+        ls_combs.append(MCI)
+        ls_diffs.append(difo)
+        difo-=1
+        
+
+    if MC>max_checks:
+        counts=[]
+        probi=np.array(ls_combs, dtype=float)
+        probi/=np.sum(probi)
+        differis=np.random.choice(ls_diffs, int(max_checks*scaler), p=probi)
+        #differo=differentiate
+        #for _ in range(int(max_checks*scaler)):
+        for differo in differis:
+            rnd_pos=np.random.choice(np.arange(n_compounds), differo, replace=False)
+            readout=np.any(well_assigner[rnd_pos], axis=0)
+            decoded=fast_decode(well_assigner=well_assigner, differentiate=differo, 
+                                readout=readout, max_checks=int(max_checks/10+5))
+            counts.append(len(decoded))
+        counts=np.array(counts)
+        ET=np.sum(counts-1)/len(counts)
+        ET =ET if ET<well_assigner.shape[0] else well_assigner.shape[0]
+        ER=np.sum(counts>1)/np.sum(counts>0)
+        rounds=ER+1
+        p_check=np.round(ER*100)
+        return BT+ET, ET,  rounds, p_check
+    else:
+        scrambler={1:np.arange(n_compounds)}
+        for j in range(2,differentiate+1):
+            scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
+        
+        return mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs)
+                
 
 
 

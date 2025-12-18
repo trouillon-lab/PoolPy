@@ -76,17 +76,16 @@ else:
             'Either test all putative positive samples individually or change pooling strategy. A lower differentiate (only if it makes sense) might narrow it down.<br>'
             f'There are up to {min([diff_deco,len(decoded)])} positive samples among the following samples: <b>{decoded}</b>.'
         )   
-    
+    else:
+        scrambler={1:np.arange(n_compounds)}
+        for j in range(2,diff_deco+1):
+            scrambler.update({j:np.array(list(comb(np.arange(n_compounds),j)))})
 
-    scrambler={1:np.arange(n_compounds)}
-    for j in range(2,diff_deco+1):
-        scrambler.update({j:np.array(list(comb(np.arange(n_compounds),j)))})
-
-    decoded_pre=decode_precomp(well_assigner=filtered_WA, differentiate= diff_deco, scrambler=scrambler, 
-            readout=readout_bl)
-    # Map filtered indices back to original indices
-    decoders = [combination if isinstance(combination, list) else [combination] for combination in decoded_pre]
-    decoded = [[int(original_indices[idx]) for idx in combination] for combination in decoders]
+        decoded_pre=decode_precomp(well_assigner=filtered_WA, differentiate= diff_deco, scrambler=scrambler, 
+                readout=readout_bl)
+        # Map filtered indices back to original indices
+        decoders = [combination if isinstance(combination, list) else [combination] for combination in decoded_pre]
+        decoded = [[int(original_indices[idx]) for idx in combination] for combination in decoders]
 
     if len(decoded)==0:
         msg+= '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value.'

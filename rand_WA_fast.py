@@ -107,6 +107,9 @@ def is_consistent_precomp(well_assigner:np.array, differentiate:int, scrambler:d
         print("Something is fishy")
         return(-1)
     
+def extra_tests(counts:np.array)->float:
+    return(np.sum(counts*(counts-1))/np.sum(counts))
+    
 def mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs):
     BT=well_assigner.shape[1]
     _,_, counts= is_consistent_precomp(well_assigner, differentiate, scrambler) 
@@ -117,7 +120,7 @@ def mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs):
     p_check=np.round(ER*100)
     return BT+ET, ET,  rounds, p_check
 
-def mean_metrics_fast(well_assigner, differentiate, max_checks=1e4, scaler=1, mp=1e-5, **kwargs):
+def mean_metrics_fast(well_assigner, differentiate, max_checks=1e3, scaler=0.3, mp=1e-5, **kwargs):
     BT=well_assigner.shape[1]
     n_compounds=well_assigner.shape[0]
     MC=0

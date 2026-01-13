@@ -236,8 +236,9 @@ def evaluate_rand_design(n_compounds:int,  differentiate:int, scrambler:dict, n_
                                                             differentiate=differentiate,scrambler=scrambler,**kwargs)
                 return well_assigner, mean_exp, p_check
             return well_assigner
-        #mean_exp, _, _, p_check= mean_metrics_fast(well_assigner=well_assigner,
-        #                                            differentiate=differentiate, scrambler=scrambler, **kwargs)
+        else:
+            mean_exp, _, _, p_check= mean_metrics_fast(well_assigner=well_assigner,
+                                                    differentiate=differentiate, scrambler=scrambler, **kwargs)
         if p_check<1:
             if return_me:
                 return well_assigner,  mean_exp, p_check

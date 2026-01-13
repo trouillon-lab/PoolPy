@@ -66,9 +66,31 @@ def fast_decode(well_assigner:np.array, differentiate:int, readout:np.ndarray,
             decoded = [[int(original_indices[idx]) for idx in combination] for combination in decoders]
         
     return decoded
-
-
 def is_consistent_precomp(well_assigner:np.array, differentiate:int, scrambler:dict) -> list:
+    if differentiate==0:
+        return(True,well_assigner, np.array([1]*well_assigner.shape[0]))
+    N=well_assigner.shape[0]
+    for i in range(differentiate):
+        diff=i+1
+        if diff ==1:
+            full_well_assigner=well_assigner.copy()
+        else:
+            this_sc=scrambler[diff]
+            #print(this_sc)
+            #print(well_assigner)
+            #print(diff)
+            
+            full_well_assigner=np.concatenate((full_well_assigner,np.any(well_assigner[this_sc], axis=1)))
+    _, counts=np.unique(full_well_assigner, axis=0, return_counts=True)
+    if len(counts)<full_well_assigner.shape[0]:
+        return(False, full_well_assigner, counts)
+    elif len(counts)==full_well_assigner.shape[0]:
+        return(True,full_well_assigner, counts)
+    else:
+        print("Something is fishy")
+        return(-1)
+
+def is_consistent_precomp_fast(well_assigner:np.array, differentiate:int, scrambler:dict) -> list:
     if differentiate==0:
         return(True,well_assigner, np.array([1]*well_assigner.shape[0]))
     N=well_assigner.shape[0]
@@ -102,7 +124,17 @@ def mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs):
     p_check=np.round(ER*100)
     return BT+ET, ET,  rounds, p_check
 
-def mean_metrics_fast(well_assigner, differentiate, max_checks=1e4, scaler=1, mp=1e-5, **kwargs):
+def mean_metrics_precomp_new(well_assigner, differentiate, scrambler, **kwargs):
+    BT=well_assigner.shape[1]
+    _,_, counts= is_consistent_precomp(well_assigner, differentiate, scrambler) 
+    ET=extra_tests(counts)  
+    ET =ET if ET<well_assigner.shape[0] else well_assigner.shape[0]
+    ER=np.sum(counts[counts>1])/np.sum(counts)
+    rounds=ER+1
+    p_check=np.round(ER*100)
+    return BT+ET, ET,  rounds, p_check
+
+def mean_metrics_fast(well_assigner, differentiate, max_checks=1e0, scaler=1e4, mp=1e-5, **kwargs):
     BT=well_assigner.shape[1]
     n_compounds=well_assigner.shape[0]
     MC=0
@@ -131,7 +163,13 @@ def mean_metrics_fast(well_assigner, differentiate, max_checks=1e4, scaler=1, mp
             readout=np.any(well_assigner[rnd_pos], axis=0)
             decoded=fast_decode(well_assigner=well_assigner, differentiate=differo, 
                                 readout=readout, max_checks=int(max_checks/10+5))
-            counts.append(len(decoded))
+            try:
+                decoded_set=set([x for xx in decoded for x in xx])
+                NC0=len(decoded_set)
+                NC=np.min(NC0,len(decoded))
+            except:
+                NC=len(decoded)
+            counts.append(NC)
         counts=np.array(counts)
         ET=np.sum(counts-1)/len(counts)
         ET =ET if ET<well_assigner.shape[0] else well_assigner.shape[0]

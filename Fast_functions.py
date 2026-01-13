@@ -385,7 +385,7 @@ def mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs):
     p_check=np.round(ER*100)
     return BT+ET, ET,  rounds, p_check
 
-def mean_metrics_fast(well_assigner, differentiate, max_checks=1e4, scaler=1, mp=1e-5, **kwargs):
+def mean_metrics_fast(well_assigner, differentiate, max_checks=1e0, scaler=1e4, mp=1e-5, **kwargs):
     BT=well_assigner.shape[1]
     n_compounds=well_assigner.shape[0]
     MC=0
@@ -414,7 +414,13 @@ def mean_metrics_fast(well_assigner, differentiate, max_checks=1e4, scaler=1, mp
             readout=np.any(well_assigner[rnd_pos], axis=0)
             decoded=fast_decode(well_assigner=well_assigner, differentiate=differo, 
                                 readout=readout, max_checks=int(max_checks/10+5))
-            counts.append(len(decoded))
+            try:
+                decoded_set=set([x for xx in decoded for x in xx])
+                NC0=len(decoded_set)
+                NC=np.min(NC0,len(decoded))
+            except:
+                NC=len(decoded)
+            counts.append(NC)
         counts=np.array(counts)
         ET=np.sum(counts-1)/len(counts)
         ET =ET if ET<well_assigner.shape[0] else well_assigner.shape[0]
@@ -428,7 +434,64 @@ def mean_metrics_fast(well_assigner, differentiate, max_checks=1e4, scaler=1, mp
             scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
         
         return mean_metrics_precomp(well_assigner, differentiate, scrambler, **kwargs)
-                
+    
+                 
+def calculate_metrics_hierarchical_fast(n_compounds,  differentiate:int, checks=1e4,  **kwargs):
+    keep_ratios_constant=kwargs['keep_ratios_constant']
+    id_samps=np.arange(n_compounds)
+    details={}
+    
+    if keep_ratios_constant:
+        BM=[0,np.inf]
+        for ratiof in np.arange(2,np.ceil(np.sqrt(n_compounds))):
+            ratio=int(ratiof)
+            NP=0
+            FM=0
+            for n_pos in np.arange(differentiate+1):
+                for id_pos in itertools.combinations(np.arange(n_compounds),n_pos):
+                    posx=np.array(id_pos)
+                    measures=iterative_splitter(id_samps,posx,ratio)
+                    FM+=measures
+                    NP+=1
+                    
+            layers=int(np.ceil(np.log(n_compounds)/np.log(ratio)))
+            MC=int(np.ceil(n_compounds/ratio))
+
+            details.update({ratio:[BM[1], MC, BM[0], int(np.round((NP-1)/(NP),2)*100), BM[1]-BM[0],layers]})
+            if FM/NP<BM[1]:
+                BM=[ratio,FM/NP]
+        layers=int(np.ceil(np.log(n_compounds)/np.log(BM[0])))
+        MC=int(np.ceil(n_compounds/BM[0]))
+        return([BM[1], MC, BM[0], int(np.round((NP-1)/(NP),2)*100), BM[1]-BM[0],layers, details ]) 
+
+    else:
+        BM=[[0],np.inf]
+        
+        if 'ls_splits' in kwargs.keys():
+            list_splits=[kwargs['ls_splits']]
+        else:
+            list_splits=uneven_wrapper(n_compounds)
+        ls_id=0
+        for splito in list_splits:
+            NP=0
+            FM=0
+            for n_pos in np.arange(differentiate+1):
+                for id_pos in itertools.combinations(np.arange(n_compounds),n_pos):
+                    posx=np.array(id_pos)
+                    measures=iterative_uneven_splitter(id_samps,posx,splito)
+                    FM+=measures
+                    NP+=1
+                    
+            layers=len(splito)+1
+            MC=int(np.ceil(n_compounds/splito[0]))
+            details.update({ls_id:[BM[1], MC, BM[0], int(np.round((NP-1)/(NP),2)*100), BM[1]-BM[0][0],layers]})
+            ls_id+=1
+            if FM/NP<BM[1]:
+                BM=[splito,FM/NP]
+        layers=len(BM[0])+1
+        MC=int(np.ceil(n_compounds/BM[0][0]))
+        return([BM[1], MC, BM[0], int(np.round((NP-1)/(NP),2)*100), BM[1]-BM[0][0],layers, details ])
+
 
 
 

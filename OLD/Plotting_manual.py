@@ -16,6 +16,60 @@ import matplotlib as mpl
 import seaborn as sns
 import textwrap
 
+from matplotlib.patches import Ellipse
+import matplotlib.transforms as transforms
+
+def confidence_ellipse(x, y, ax, n_std=3.0, facecolor='none', **kwargs):
+    """
+    Create a plot of the covariance confidence ellipse of *x* and *y*.
+
+    Parameters
+    ----------
+    x, y : array-like, shape (n, )
+        Input data.
+
+    ax : matplotlib.axes.Axes
+        The Axes object to draw the ellipse into.
+
+    n_std : float
+        The number of standard deviations to determine the ellipse's radiuses.
+
+    **kwargs
+        Forwarded to `~matplotlib.patches.Ellipse`
+
+    Returns
+    -------
+    matplotlib.patches.Ellipse
+    """
+    if x.size != y.size:
+        raise ValueError("x and y must be the same size")
+
+    cov = np.cov(x, y)
+    pearson = cov[0, 1]/np.sqrt(cov[0, 0] * cov[1, 1])
+    # Using a special case to obtain the eigenvalues of this
+    # two-dimensional dataset.
+    ell_radius_x = np.sqrt(1 + pearson)
+    ell_radius_y = np.sqrt(1 - pearson)
+    ellipse = Ellipse((0, 0), width=ell_radius_x * 2, height=ell_radius_y * 2,
+                      facecolor=facecolor, **kwargs)
+
+    # Calculating the standard deviation of x from
+    # the squareroot of the variance and multiplying
+    # with the given number of standard deviations.
+    scale_x = np.sqrt(cov[0, 0]) * n_std
+    mean_x = np.mean(x)
+
+    # calculating the standard deviation of y ...
+    scale_y = np.sqrt(cov[1, 1]) * n_std
+    mean_y = np.mean(y)
+
+    transf = transforms.Affine2D() \
+        .rotate_deg(45) \
+        .scale(scale_x, scale_y) \
+        .translate(mean_x, mean_y)
+
+    ellipse.set_transform(transf + ax.transData)
+    return ax.add_patch(ellipse)
 #%% Prepare path and data
 
 main_path=os.path.abspath(r'C:\Users\nanoseq\Documents\GitHub\pooling')
@@ -42,7 +96,6 @@ step=1
 min_diff=1
 max_diff=4
 
-
 #Plotting parameters
 
 cmap=cmc.lapaz
@@ -65,7 +118,7 @@ def sample_palette(palette, n):
 cmap_hex = [mpl.colors.to_hex(c) for c in cmc.lapaz.colors]
 
 
-# Get data
+# Get datadraws
 
 
 y_as_inf=[]
@@ -190,9 +243,10 @@ for i in range(len(metrics_to_plot)):
         #subset df
         df_filtered=full_df_met[full_df_met['diff']==diff]
         
-        ylim_max=max(df_filtered[metric_to_plot])*1.05 #to keep same ylim across diffs
+        ylim_max=max(df_filtered[metric_to_plot])*1.05
         
-        fig, ax = plt.subplots(figsize=(8, 5))
+        # fig, ax = plt.subplots(figsize=(8, 5))
+        fig, ax = plt.subplots(figsize=(7, 5))
         
         plt.text(0.05,0.9,'Differentiate '+str(diff), transform = ax.transAxes,fontsize=tick_fontsize)
         
@@ -221,7 +275,9 @@ for i in range(len(metrics_to_plot)):
                     linewidth=line_width,
                     zorder=1
                 )
-                ax.annotate(xy=(x_sorted[-1],y_sorted[-1]), xytext=(5,0), textcoords='offset points',
+                # ax.annotate(xy=(x_sorted[-1],y_sorted[-1]), xytext=(5,0), textcoords='offset points',
+                #             text=method, va='center',color=color_dict[method],fontsize=tick_fontsize,alpha=0.7)
+                ax.annotate(xy=(x_sorted[-1],y_sorted[-1]), xytext=(20,0), textcoords='offset points',
                             text=method, va='center',color=color_dict[method],fontsize=tick_fontsize,alpha=0.7)
                 
                 # Scatter: with jitter
@@ -240,6 +296,7 @@ for i in range(len(metrics_to_plot)):
         if metric_to_plot=='test_per_sample':
             ax.hlines(y=1, xmin=0, xmax=max_N, linewidth=1, color='lightgrey',linestyles='--')
             ax.axhspan(1, 1000, alpha=0.75,color='white')
+            ylim_max=1.1
         
         ax.set_xlabel(xlabel, fontsize=label_fontsize)
         ax.set_ylabel(ylabel, fontsize=label_fontsize)
@@ -253,8 +310,8 @@ for i in range(len(metrics_to_plot)):
         
         
         #ax.spines[['top', 'right']].set_visible(False)
-        for spine in ax.spines.values():
-            spine.set_visible(False)
+        # for spine in ax.spines.values():
+        #     spine.set_visible(False)
             
         plt.tight_layout()
         
@@ -288,120 +345,391 @@ for i in range(len(metrics_to_plot)):
     
 #%% Plot test/sample vs group size 
     
-# #metric_to_plot='Max samples per pool'
-# metric_to_plot='groupsize_vs_N'
+#metric_to_plot='Max samples per pool'
+metric_to_plot='groupsize_vs_N'
 
-# x_col='test_per_sample'
+x_col='test_per_sample'
 
-# ylabel='Relative group size'
-# xlabel='Test per sample'
-
-
-# title=False
+ylabel='Relative group size'
+xlabel='Test per sample'
 
 
-# methods = list(full_df_met['Method'].unique())
-# n_methods = len(methods)
-# colors = [cmap(x) for x in np.linspace(0, 0.9, n_methods)]
-# color_dict = dict(zip(methods, colors))
-# rng = np.random.default_rng(seed=42)  # For reproducibility
+title=False
 
-# #loop across diffs
-# for diff in range(min_diff,max_diff+1):
 
-#     #subset df
-#     df_filtered=full_df_met[full_df_met['diff']==diff]
-#     df_filtered=df_filtered[df_filtered['N'].isin([500])]
+methods = list(full_df_met['Method'].unique())
+n_methods = len(methods)
+colors = [cmap(x) for x in np.linspace(0, 0.9, n_methods)]
+color_dict = dict(zip(methods, colors))
+rng = np.random.default_rng(seed=42)  # For reproducibility
+
+#loop across diffs
+for diff in range(min_diff,max_diff+1):
+
+    #subset df
+    df_filtered=full_df_met[full_df_met['diff']==diff]
+    df_filtered=df_filtered[df_filtered['N'].isin([100])]
     
-#     fig, ax = plt.subplots(figsize=(4, 5))
+    fig, ax = plt.subplots(figsize=(5.5, 5))
     
-#     plt.text(0.05,0.9,'Differentiate '+str(diff), transform = ax.transAxes,fontsize=tick_fontsize)
+    plt.text(0.05,0.9,'Differentiate '+str(diff), transform = ax.transAxes,fontsize=tick_fontsize)
     
-#     for method in methods:
+    for method in methods:
         
-#         #Filter binary methods above diff 1
-#         if diff>1 and method=='Binary': ######################################################################### Binary removed here
-#             continue
+        #Filter binary methods above diff 1
+        if diff>1 and method=='Binary': ######################################################################### Binary removed here
+            continue
         
-#         try:
-#             grp = df_filtered[df_filtered['Method'] == method]
-#             y_vals = grp[metric_to_plot].values
-#             # Jitter x values
-#             x_vals = grp[x_col].values + rng.uniform(-jitter, jitter, size=len(grp)) if jitter > 0 else grp[x_col].values
-#             # Sort by jittered x for line plotting
-#             sort_idx = np.argsort(x_vals)
-#             x_sorted = x_vals[sort_idx]
-#             y_sorted = y_vals[sort_idx]
-#             # Line: through jittered points
+        try:
+            grp = df_filtered[df_filtered['Method'] == method]
+            y_vals = grp[metric_to_plot].values
+            # Jitter x values
+            x_vals = grp[x_col].values + rng.uniform(-jitter, jitter, size=len(grp)) if jitter > 0 else grp[x_col].values
+            # Sort by jittered x for line plotting
+            sort_idx = np.argsort(x_vals)
+            x_sorted = x_vals[sort_idx]
+            y_sorted = y_vals[sort_idx]
+            # Line: through jittered points
 
-#             ax.scatter(
-#                 x_sorted, y_sorted,s=200,
-#                 color=color_dict[method],
-#                 alpha=0.5,
-#                 zorder=1
-#             )
-#             # ax.plot(
-#             #     x_sorted, y_sorted,
-#             #     color=color_dict[method],
-#             #     alpha=0.3,
-#             #     linewidth=line_width,
-#             #     zorder=1
-#             # )
-#             ax.annotate(xy=(x_sorted[-1],y_sorted[-1]), xytext=(15,0), textcoords='offset points',
-#                         text=method, va='center',color=color_dict[method],fontsize=tick_fontsize,alpha=0.7)
-#             # Scatter: with jitter
-#             # ax.scatter(
-#             #     x_vals, y_vals,
-#             #     label=method,
-#             #     color=color_dict[method],
-#             #     s=scatter_size,
-#             #     alpha=scatter_alpha,
-#             #     zorder=2
-#             # )
-#         except:
-#             continue
+            ax.scatter(
+                x_sorted, y_sorted,s=200,
+                color=color_dict[method],
+                edgecolor='black',
+                alpha=0.8,
+                zorder=1
+            )
+            # ax.plot(
+            #     x_sorted, y_sorted,
+            #     color=color_dict[method],
+            #     alpha=0.3,
+            #     linewidth=line_width,
+            #     zorder=1
+            # )
+            
+            # ax.annotate(xy=(x_sorted[-1],y_sorted[-1]), xytext=(15,0), textcoords='offset points',
+            #             text=method, va='center',color=color_dict[method],fontsize=tick_fontsize,alpha=0.7)
+            
+            # Scatter: with jitter
+            # ax.scatter(
+            #     x_vals, y_vals,
+            #     label=method,
+            #     color=color_dict[method],
+            #     s=scatter_size,
+            #     alpha=scatter_alpha,
+            #     zorder=2
+            # )
+        except:
+            continue
     
-#     ax.set_xlabel(xlabel, fontsize=label_fontsize)
-#     ax.set_ylabel(ylabel, fontsize=label_fontsize)
+    if metric_to_plot=='groupsize_vs_N':
+        ax.vlines(x=1, ymin=0, ymax=1, linewidth=1, color='lightgrey',linestyles='--')
+        ax.axvspan(1, 1000, alpha=0.75,color='white')
     
-#     ax.set_xlim(xmin=0,xmax=0.3)
-#     ax.set_ylim(ymin=0,ymax=0.55)
-    
-#     if title:
-#         ax.set_title(title, fontsize=label_fontsize + 2)
-#     ax.tick_params(axis='both', labelsize=tick_fontsize)
-    
-    
-#     #ax.spines[['top', 'right']].set_visible(False)
-#     for spine in ax.spines.values():
-#         spine.set_visible(False)
         
-#     plt.tight_layout()
+    ax.set_xlabel(xlabel, fontsize=label_fontsize)
+    ax.set_ylabel(ylabel, fontsize=label_fontsize)
     
-#     # Place legend outside the plot
-#     # ax.legend(
-#     #     title='Method',
-#     #     fontsize=label_fontsize,
-#     #     bbox_to_anchor=(1.05, 1),
-#     #     loc='upper left',
-#     #     borderaxespad=0.
-#     # )
+    ax.set_xlim(xmin=0,xmax=1.2)
+    ax.set_ylim(ymin=0,ymax=0.55)
     
-    
-#     save_path = os.path.join(
-#         plt_path, f"{metric_to_plot.replace(' ','_')}_N_{max_N}_diff_{diff}"
-#     )
+    if title:
+        ax.set_title(title, fontsize=label_fontsize + 2)
+    ax.tick_params(axis='both', labelsize=tick_fontsize)
     
     
-#     if plt_path:
-#         plt.savefig(save_path+'_dualplot_v2.png', bbox_inches='tight',format='png',dpi=150)
-#         plt.savefig(save_path+'_dualplot.svg', bbox_inches='tight',format='svg',dpi=150)
+    #ax.spines[['top', 'right']].set_visible(False)
+    # for spine in ax.spines.values():
+    #     spine.set_visible(False)
         
-#     plt.show()
+    plt.tight_layout()
+    
+    # Place legend outside the plot
+    # ax.legend(
+    #     title='Method',
+    #     fontsize=label_fontsize,
+    #     bbox_to_anchor=(1.05, 1),
+    #     loc='upper left',
+    #     borderaxespad=0.
+    # )
     
     
+    save_path = os.path.join(
+        plt_path, f"{metric_to_plot.replace(' ','_')}_N_{max_N}_diff_{diff}"
+    )
     
     
+    if plt_path:
+        plt.savefig(save_path+'_dualplot.png', bbox_inches='tight',format='png',dpi=150)
+        plt.savefig(save_path+'_dualplot.svg', bbox_inches='tight',format='svg',dpi=150)
+        
+    plt.show()
+    
+
+#%% Plot test/sample vs group size  OVER ALL DIFFs   
+
+
+#metric_to_plot='Mean steps'
+#metric_to_plot='groupsize_vs_N'
+metrics_to_plot_=['groupsize_vs_N','Mean steps']
+
+for metric_to_plot in metrics_to_plot_:
+
+    N_to_plot=100
+    
+    x_col='test_per_sample'
+    
+    ylabel='Relative group size'
+    xlabel='Test per sample'
+    
+    marker_size_circle=200
+    marker_size_square=120
+    
+    
+    if metric_to_plot=='groupsize_vs_N':
+        ylim_max=0.55
+        ylim_min=0
+        ylabel='Relative group size'
+        arrow_head_size=0.02
+    elif metric_to_plot=='Mean steps':
+        ylim_max=5
+        ylim_min=0
+        ylabel='Number of steps'
+        arrow_head_size=0.04
+    
+    title=False
+    
+    #Plot only specific methods ?
+    methods=list(full_df_met['Method'].unique())
+    methods_list=methods.copy()
+    #methods=['Shifted transversal']
+    
+    #subset df to take only N to plot
+    df_filtered_alldiff=full_df_met[full_df_met['N'].isin([N_to_plot])].copy()
+    
+    #get markers
+    df_filtered_alldiff['marker_style']="o" #default
+    df_filtered_alldiff['marker_style']=df_filtered_alldiff['marker_style'].astype('str')
+    df_filtered_alldiff['marker_size']=marker_size_circle #default
+    
+    #Add marker info for number of steps
+    # for idx in df_filtered_alldiff.index:
+    #     if df_filtered_alldiff.loc[idx,'Mean steps']>1:
+    #         df_filtered_alldiff.loc[idx,'marker_style']='s'
+    #         df_filtered_alldiff.loc[idx,'marker_size']=marker_size_square
+            
+    #Alternatively, use marker for diff
+    for idx in df_filtered_alldiff.index:
+        if df_filtered_alldiff.loc[idx,'diff']>1:
+            if df_filtered_alldiff.loc[idx,'diff']==2:
+                df_filtered_alldiff.loc[idx,'marker_style']='s'
+                df_filtered_alldiff.loc[idx,'marker_size']=marker_size_square
+            elif df_filtered_alldiff.loc[idx,'diff']==3:
+                df_filtered_alldiff.loc[idx,'marker_style']='^'
+            elif df_filtered_alldiff.loc[idx,'diff']==4:
+                df_filtered_alldiff.loc[idx,'marker_style']='p'
+    
+    n_methods = len(methods)
+    colors = [cmap(x) for x in np.linspace(0, 0.9, n_methods)]
+    color_dict = dict(zip(methods, colors))
+    
+    # for method in methods_list:
+    #     methods=[method]
+    
+    fig, ax = plt.subplots(figsize=(5.5, 5))
+    
+    #Plot arrows if more than one diff
+    if max_diff>1:
+        for method in methods:
+        
+            #subset df
+            df_filtered=df_filtered_alldiff[df_filtered_alldiff['Method']==method]
+        
+            for diff in range(min_diff,max_diff+1):
+                
+                try:
+                    x0=df_filtered[df_filtered['diff']==diff][x_col].values[0]
+                    y0=df_filtered[df_filtered['diff']==diff][metric_to_plot].values[0]
+                    x1=df_filtered[df_filtered['diff']==diff+1][x_col].values[0]
+                    y1=df_filtered[df_filtered['diff']==diff+1][metric_to_plot].values[0]
+                    dx=(x1-x0)*0.9
+                    dy=(y1-y0)*0.9
+                    ax.arrow(x0,y0,dx,dy,
+                              shape='full', color=color_dict[method], lw=1, length_includes_head=True, 
+                              zorder=0, head_length=arrow_head_size, head_width=arrow_head_size, alpha=0.3)
+                    
+                except:
+                    continue
+    
+    
+    #Plot markers
+    for diff in range(min_diff,max_diff+1):
+    
+        #subset df
+        df_filtered=df_filtered_alldiff[df_filtered_alldiff['diff']==diff]
+    
+        for method in methods:
+            
+            # #Filter binary methods above diff 1
+            # if diff>1 and method=='Binary': ######################################################################### Binary removed here
+            #     continue
+            
+            try:
+                grp = df_filtered[df_filtered['Method'] == method]
+                markers_to_plot=grp['marker_style'].astype('string').values[0]
+    
+                ax.scatter(
+                    grp[x_col], grp[metric_to_plot],s=grp['marker_size'],
+                    color=color_dict[method],
+                    edgecolor='black',
+                    marker=markers_to_plot,
+                    alpha=(0.8/diff)+0.2,
+                    zorder=1
+                )
+                
+                # ax.annotate(xy=(grp[x_col].values[-1],grp[metric_to_plot].values[-1]), xytext=(15,0), textcoords='offset points',
+                #             text=method, va='center',color=color_dict[method],fontsize=tick_fontsize,alpha=0.7)
+                
+            except:
+                continue
+        
+    if x_col=='test_per_sample':
+        ax.axvspan(1, 1000, alpha=0.75,color='white')
+        ax.vlines(x=1, ymin=0, ymax=10, linewidth=1, color='lightgrey',linestyles='--',zorder=1)
+    
+        
+    ax.set_xlabel(xlabel, fontsize=label_fontsize)
+    ax.set_ylabel(ylabel, fontsize=label_fontsize)
+    
+    ax.set_xlim(xmin=0,xmax=1.2)
+    ax.set_ylim(ymin=ylim_min,ymax=ylim_max)
+    
+    
+    if title:
+        ax.set_title(title, fontsize=label_fontsize + 2)
+    ax.tick_params(axis='both', labelsize=tick_fontsize)
+    
+    
+    #ax.spines[['top', 'right']].set_visible(False)
+    # for spine in ax.spines.values():
+    #     spine.set_visible(False)
+        
+    plt.tight_layout()
+    
+    save_path = os.path.join(
+        plt_path, f"{metric_to_plot.replace(' ','_')}_N_{max_N}_diff_{diff}"
+    )
+    
+    
+    if plt_path:
+        plt.savefig(save_path+'_dualplot_allDiffs.png', bbox_inches='tight',format='png',dpi=150)
+        plt.savefig(save_path+'_dualplot_allDiffs.svg', bbox_inches='tight',format='svg',dpi=150)
+        
+    plt.show()
+
+#%% Plot FITS of test/sample vs group size  OVER ALL DIFFs   
+
+N_to_plot=100
+
+#metric_to_plot='Max samples per pool'
+metric_to_plot='groupsize_vs_N'
+
+x_col='test_per_sample'
+
+ylabel='Relative group size'
+xlabel='Test per sample'
+
+marker_size_circle=200
+marker_size_square=120
+
+title=False
+
+diffs=[x for x in range(min_diff,max_diff+1)]
+n_diff=len(diffs)
+
+colors = [cmap(x) for x in np.linspace(0, 0.6, n_diff)]
+color_dict = dict(zip(diffs, colors))
+
+
+
+#subset df to take only N to plot
+df_filtered_alldiff=full_df_met[full_df_met['N'].isin([N_to_plot])].copy()
+
+fig, ax = plt.subplots(figsize=(5.5, 5))
+
+
+#Plot fits
+for diff in range(min_diff,max_diff+1):
+    
+    #subset df
+    df_filtered=df_filtered_alldiff[df_filtered_alldiff['diff']==diff]
+    
+    x=df_filtered[x_col]
+    y=df_filtered[metric_to_plot]
+    
+    if diff==1: 
+        markers_to_plot='o'
+        marker_size=marker_size_circle
+    elif diff==2: 
+        markers_to_plot='s'
+        marker_size=marker_size_square
+    elif diff==3: 
+        markers_to_plot='^'
+        marker_size=marker_size_circle
+    elif diff==4: 
+        markers_to_plot='p'
+        marker_size=marker_size_circle
+    
+    # ax.plot(np.unique(x), np.poly1d(np.polyfit(x, y, 1))(np.unique(x)),
+    #         color=color_dict[diff],
+    #         linewidth=3,
+    #         zorder=1
+    #         )
+    
+    ax.scatter(
+        x, y,
+        edgecolor='black',
+        color=color_dict[diff],
+        marker=markers_to_plot,
+        s=marker_size/2,
+        alpha=0.3,
+    )
+    
+    #Plot confidence ellipse over n_std standard deviations
+    confidence_ellipse(x, y, ax, n_std=1 , edgecolor=color_dict[diff],linewidth=2)
+    
+if metric_to_plot=='groupsize_vs_N':
+    ax.vlines(x=1, ymin=0, ymax=1, linewidth=1, color='lightgrey',linestyles='--')
+    ax.axvspan(1, 1000, alpha=0.75,color='white')
+
+    
+ax.set_xlabel(xlabel, fontsize=label_fontsize)
+ax.set_ylabel(ylabel, fontsize=label_fontsize)
+
+ax.set_xlim(xmin=0,xmax=1.2)
+ax.set_ylim(ymin=0,ymax=0.55)
+
+
+if title:
+    ax.set_title(title, fontsize=label_fontsize + 2)
+ax.tick_params(axis='both', labelsize=tick_fontsize)
+
+
+#ax.spines[['top', 'right']].set_visible(False)
+# for spine in ax.spines.values():
+#     spine.set_visible(False)
+    
+plt.tight_layout()
+
+save_path = os.path.join(
+    plt_path, f"{metric_to_plot.replace(' ','_')}_N_{max_N}_diff_{diff}"
+)
+
+
+if plt_path:
+    plt.savefig(save_path+'_dualplot_FIT_allDiffs.png', bbox_inches='tight',format='png',dpi=150)
+    plt.savefig(save_path+'_dualplot_FIT_allDiffs.svg', bbox_inches='tight',format='svg',dpi=150)
+    
+plt.show()
     
 #%% Plot by diff
 
@@ -527,9 +855,9 @@ for method in methods:
         )
         
         
-        if plt_path:
-            plt.savefig(save_path+'.png', bbox_inches='tight',format='png',dpi=150)
-            plt.savefig(save_path+'.svg', bbox_inches='tight',format='svg',dpi=150)
+        # if plt_path:
+        #     plt.savefig(save_path+'.png', bbox_inches='tight',format='png',dpi=150)
+        #     plt.savefig(save_path+'.svg', bbox_inches='tight',format='svg',dpi=150)
             
         plt.show()
 
@@ -665,8 +993,8 @@ for i, diff in enumerate(diffs):
         fontsize=8,
     )
     plot_file = os.path.join(plt_path, f'Prevalence_{N_max}_N_vs_p_error_Diff_{str(diff).replace('.','-')}')
-    plt.savefig(plot_file+'.svg', dpi=150, format='svg')
-    plt.savefig(plot_file+'.png', dpi=150, format='png')
+    # plt.savefig(plot_file+'.svg', dpi=150, format='svg')
+    # plt.savefig(plot_file+'.png', dpi=150, format='png')
     plt.show()
 
 
@@ -677,7 +1005,7 @@ for i, diff in enumerate(diffs):
 metrics_to_plot=['test_per_sample','groupsize_vs_N']
 ylabels=['Test per sample','Relative group size']
 
-N_to_plot=[20,40,60,80,99]
+N_to_plot=[20,40,60,80,100]
 
 methods = list(full_df_met['Method'].unique())
 n_methods = len(methods)
@@ -719,7 +1047,7 @@ for j,methods in enumerate(methods_split):
             #subset df
             df_filtered=full_df_met[full_df_met['N']==N]
             
-            fig, ax = plt.subplots(figsize=(4, 5))
+            fig, ax = plt.subplots(figsize=(4, 4))
             
             plt.text(0.05,0.9,'n = '+str(N), transform = ax.transAxes,fontsize=tick_fontsize)
             
@@ -753,7 +1081,7 @@ for j,methods in enumerate(methods_split):
                 ax.hlines(y=1, xmin=0, xmax=max_N, linewidth=1, color='lightgrey',linestyles='--')
                 ax.axhspan(1, 1000, alpha=0.75,color='white')
                 
-                ax.set_ylim(ymin=0,ymax=2)
+                ax.set_ylim(ymin=0,ymax=1.1)
             
             else:
                 ax.set_ylim(ymin=0,ymax=0.55)
@@ -768,8 +1096,8 @@ for j,methods in enumerate(methods_split):
             
             
             #ax.spines[['top', 'right']].set_visible(False)
-            for spine in ax.spines.values():
-                spine.set_visible(False)
+            # for spine in ax.spines.values():
+            #     spine.set_visible(False)
                 
             plt.tight_layout()
             
@@ -811,7 +1139,7 @@ colors_prevalence = [cmap(x) for x in np.linspace(0, 0.8, n_prevalence)]
 color_dict_prevalence = dict(zip(prevalences, colors_prevalence))
 
 
-N_to_plot=[20,40,60,80,99]
+N_to_plot=[20,40,60,80,100]
 
 
 for i in range(len(metrics_to_plot)):
@@ -831,7 +1159,7 @@ for i in range(len(metrics_to_plot)):
         #subset df
         df_filtered=df_prevalence[df_prevalence['N']==N]
         
-        fig, ax = plt.subplots(figsize=(4, 5))
+        fig, ax = plt.subplots(figsize=(4, 4))
         
         plt.text(0.05,0.9,'n = '+str(N), transform = ax.transAxes,fontsize=tick_fontsize)
         
@@ -880,8 +1208,8 @@ for i in range(len(metrics_to_plot)):
         
         
         #ax.spines[['top', 'right']].set_visible(False)
-        for spine in ax.spines.values():
-            spine.set_visible(False)
+        # for spine in ax.spines.values():
+        #     spine.set_visible(False)
             
         plt.tight_layout()
         

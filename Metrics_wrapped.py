@@ -17,6 +17,9 @@ def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--directory', type=str, default='./wrapped', help='Base directory containing N_* folders')
 	parser.add_argument('--cleanup', type=str, default='True', help='Remove existing metrics files before computing new ones')
+	parser.add_argument('--start', type=int, default=None, help='Starting N value (inclusive)')
+	parser.add_argument('--stop', type=int, default=None, help='Stopping N value (inclusive)')
+	parser.add_argument('--step', type=int, default=10, help='Step size for N values')
 	args = parser.parse_args()
 	
 	cleanup = args.cleanup in ['True', 'true', True, '1']
@@ -25,7 +28,30 @@ def main():
 	total_files = 0
 	
 	# Get all N folders
-	n_folders = sorted([f for f in os.listdir(args.directory) if f.startswith('N_')])
+	all_n_folders = sorted([f for f in os.listdir(args.directory) if f.startswith('N_')])
+	
+	# Filter N folders based on start/stop/step if provided
+	if args.start is not None or args.stop is not None:
+		n_folders = []
+		for n_folder in all_n_folders:
+			try:
+				n_val = int(n_folder.split('_', 1)[1])
+			except ValueError:
+				continue
+			
+			# Check if N value is in the desired range
+			if args.start is not None and n_val < args.start:
+				continue
+			if args.stop is not None and n_val > args.stop:
+				continue
+			if args.start is not None and args.step is not None:
+				# Check if N value matches the step pattern
+				if (n_val - args.start) % args.step != 0:
+					continue
+			
+			n_folders.append(n_folder)
+	else:
+		n_folders = all_n_folders
 	
 	for n_folder in n_folders:
 		n_dir = os.path.join(args.directory, n_folder)

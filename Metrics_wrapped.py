@@ -27,40 +27,46 @@ def main():
 	overall_start = time.time()
 	total_files = 0
 	
-	# Get all N folders
-	all_n_folders = sorted([f for f in os.listdir(args.directory) if f.startswith('N_')])
-	
-	# Filter N folders based on start/stop/step if provided
-	if args.start is not None or args.stop is not None:
-		n_folders = []
+	# Determine N values to process
+	if args.start is not None and args.stop is not None:
+		# Generate N values from start to stop with step
+		n_values = range(args.start, args.stop + 1, args.step)
+	elif args.start is not None:
+		# Start specified but no stop - get all existing folders >= start
+		all_n_folders = sorted([f for f in os.listdir(args.directory) if f.startswith('N_')])
+		n_values = []
 		for n_folder in all_n_folders:
 			try:
 				n_val = int(n_folder.split('_', 1)[1])
+				if n_val >= args.start:
+					n_values.append(n_val)
 			except ValueError:
 				continue
-			
-			# Check if N value is in the desired range
-			if args.start is not None and n_val < args.start:
+	elif args.stop is not None:
+		# Stop specified but no start - get all existing folders <= stop
+		all_n_folders = sorted([f for f in os.listdir(args.directory) if f.startswith('N_')])
+		n_values = []
+		for n_folder in all_n_folders:
+			try:
+				n_val = int(n_folder.split('_', 1)[1])
+				if n_val <= args.stop:
+					n_values.append(n_val)
+			except ValueError:
 				continue
-			if args.stop is not None and n_val > args.stop:
-				continue
-			if args.start is not None and args.step is not None:
-				# Check if N value matches the step pattern
-				if (n_val - args.start) % args.step != 0:
-					continue
-			
-			n_folders.append(n_folder)
 	else:
-		n_folders = all_n_folders
+		# No start/stop specified - get all existing folders
+		all_n_folders = sorted([f for f in os.listdir(args.directory) if f.startswith('N_')])
+		n_values = []
+		for n_folder in all_n_folders:
+			try:
+				n_values.append(int(n_folder.split('_', 1)[1]))
+			except ValueError:
+				continue
 	
-	for n_folder in n_folders:
+	for n_val in sorted(n_values):
+		n_folder = f'N_{n_val}'
 		n_dir = os.path.join(args.directory, n_folder)
 		if not os.path.isdir(n_dir):
-			continue
-		
-		try:
-			n_val = int(n_folder.split('_', 1)[1])
-		except ValueError:
 			continue
 		
 		n_start_time = time.time()

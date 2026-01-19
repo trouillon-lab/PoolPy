@@ -410,12 +410,15 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
             if np.prod(npc)>=ND and np.sum(npc)<T:
                 T=np.sum(npc)
                 best_id=id_combo
-        combo=ls_iter[best_id]
-        carr=np.array(combo)
-        flt=carr>0
-        this_primes=nprimes[flt]
-        this_exp=carr[flt]
-        npc=this_primes**this_exp
+        try:
+            combo=ls_iter[best_id]
+            carr=np.array(combo)
+            flt=carr>0
+            this_primes=nprimes[flt]
+            this_exp=carr[flt]
+            npc=this_primes**this_exp
+        except:
+            npc=nprimes
 
         WA=np.zeros((np.sum(npc), n_compounds))==1
         past_primes=0
@@ -444,7 +447,7 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
                 for j in range(n_compounds):
                     WA[k,j]=True if int(ls_nc3[j][i])==int(ls_nc3[j][ii]) else False
                 k+=1
-        return q,t
+        return WA
     
     if special_diff and differentiate==3:
         q=np.ceil(np.log(n_compounds)/np.log(2)).astype(int)
@@ -459,7 +462,7 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
                         for j in range(n_compounds):
                             WA[k,j]=True if int(ls_nc3[j][i])==nu and int(ls_nc3[j][ii])==nuu else False
                         k+=1
-        return q,t
+        return WA
 
 
     WA=np.zeros((np.sum(primes), n_compounds))==1
@@ -816,18 +819,19 @@ def mean_metrics_fast(well_assigner, differentiate, max_checks=1e0, scaler=1e3, 
     for differo in differis:
         rnd_pos=np.random.choice(np.arange(n_compounds), differo, replace=False)
         readout=np.any(well_assigner[rnd_pos], axis=0)
-        decoded=fast_decode(well_assigner=well_assigner, differentiate=differo, 
-                            readout=readout, max_checks=int(max_checks/10+5))
+        decoded=fast_decode(well_assigner=well_assigner, differentiate=differentiate, 
+                            readout=readout, max_checks=int(max_checks*scaler/10+5))
         try:
             decoded_set=set([x for xx in decoded for x in xx])
             NC0=len(decoded_set)
-            NC=np.min(NC0,len(decoded))
+            NC=np.min([NC0,len(decoded)])
         except:
             NC=len(decoded)
         counts.append(NC)
     counts=np.array(counts)
-    ET=np.max(counts-1)#/len(counts)
-    #ET =ET if ET>1 else 0#if ET<well_assigner.shape[0] else well_assigner.shape[0]
+    #ET=np.max(counts-1)#/len(counts)
+    ET=np.sum(counts)/len(counts)
+    ET =ET if ET>1 else 0#if ET<well_assigner.shape[0] else well_assigner.shape[0]
     ER=np.sum(counts>1)/np.sum(counts>0)
     rounds=ER+1
     p_check=np.round(ER*100)
@@ -1049,9 +1053,9 @@ def check_Rand_in_WApath(WApath):
     except Exception as e:
         return str(e)
 
-def append_random_metrics_to_summary(dpath, N, diff, nw, ms, pc, me):
+def append_random_metrics_to_metrics(dpath, N, diff, nw, ms, pc, me, max_dilution):
     """Append random design metrics to the summary CSV file if it exists."""
-    summary_file = os.path.join(dpath, f'Summary_N_{N}_diff_{diff}.csv')
+    summary_file = os.path.join(dpath, f'Metrics_N_{N}_diff_{diff}.csv')
     if not os.path.exists(summary_file):
         return False
     
@@ -1059,26 +1063,41 @@ def append_random_metrics_to_summary(dpath, N, diff, nw, ms, pc, me):
         # Read existing CSV
         df = pd.read_csv(summary_file)
         
+        if 'Max dilution' not in df.columns:
+            df['Max dilution'] = np.nan
+        
+        # Ensure N and diff columns exist
+        if 'N' not in df.columns:
+            df['N'] = N
+        if 'diff' not in df.columns:
+            df['diff'] = diff
+
         # Check if Random row already exists
         if (df['Pooling strategy'] == 'Random').any():
             # Update existing Random row
-            df.loc[df['Pooling strategy'] == 'Random', 'Max experiments'] = me
+            df.loc[df['Pooling strategy'] == 'Random', 'N'] = N
+            df.loc[df['Pooling strategy'] == 'Random', 'diff'] = diff
+            df.loc[df['Pooling strategy'] == 'Random', 'Mean experiments'] = me
             df.loc[df['Pooling strategy'] == 'Random', 'Max samples per pool'] = ms
             df.loc[df['Pooling strategy'] == 'Random', 'N pools'] = nw
             df.loc[df['Pooling strategy'] == 'Random', 'Percentage check'] = pc
+            df.loc[df['Pooling strategy'] == 'Random', 'Max dilution'] = max_dilution
             extra = max(me - nw, 0.0)
-            df.loc[df['Pooling strategy'] == 'Random', 'Max extra experiments'] = extra
+            df.loc[df['Pooling strategy'] == 'Random', 'Mean extra experiments'] = extra
             df.loc[df['Pooling strategy'] == 'Random', 'Mean steps'] = 1 + pc/100.0
         else:
             # Append new Random row
             extra = max(me - nw, 0.0)
             random_row = {
+                'N': N,
+                'diff': diff,
                 'Pooling strategy': 'Random',
-                'Max experiments': me,
+                'Mean experiments': me,
                 'Max samples per pool': ms,
                 'N pools': nw,
                 'Percentage check': pc,
-                'Max extra experiments': extra,
+                'Max dilution': max_dilution,
+                'Mean extra experiments': extra,
                 'Mean steps': 1 + pc/100.0
             }
             df = pd.concat([df, pd.DataFrame([random_row])], ignore_index=True)
@@ -1086,6 +1105,8 @@ def append_random_metrics_to_summary(dpath, N, diff, nw, ms, pc, me):
         # Round numeric columns
         numeric_cols = df.select_dtypes(include=[np.number]).columns
         df[numeric_cols] = df[numeric_cols].round(2)
+        
+        # Reorder columns to have N and diff first
         
         # Write back to CSV
         df.to_csv(summary_file, index=False)
@@ -1148,14 +1169,15 @@ def rand_sweep_diff(n_compounds, max_diff, Npath, max_prev, **kwargs):
             np.savetxt(thisfile, WA_rand.astype(int), delimiter=",", fmt='%d')
 
             # Append to summary CSV if it exists
-            append_random_metrics_to_summary(
+            append_random_metrics_to_metrics(
                 dpath=dpath,
                 N=n_compounds,
                 diff=diff,
                 nw=WA_rand.shape[1],
                 ms=np.max(np.sum(WA_rand, axis=0)),
                 pc=int(perc_check),
-                me=np.round(min_tests, 2)
+                me=np.round(min_tests, 2),
+                max_dilution=int(np.max(np.sum(WA_rand, axis=1)))
             )
 
         else:
@@ -1198,14 +1220,15 @@ def rand_sweep_diff(n_compounds, max_diff, Npath, max_prev, **kwargs):
             np.savetxt(thisfile, WA_rand.astype(int), delimiter=",", fmt='%d')
 
             # Append to summary CSV if it exists
-            append_random_metrics_to_summary(
+            append_random_metrics_to_metrics(
                 dpath=dpath,
                 N=n_compounds,
                 diff=diff,
                 nw=WA_rand.shape[1],
                 ms=np.max(np.sum(WA_rand, axis=0)),
                 pc=int(perc_check),
-                me=np.round(min_tests, 2)
+                me=np.round(min_tests, 2),
+                max_dilution=int(np.max(np.sum(WA_rand, axis=1)))
             )
 
         DTS=np.round((time.time() - start_time),2)
@@ -1265,9 +1288,25 @@ def process_n_compounds(**kwargs):
     max_prev = kwargs['max_prev']
     timeit = kwargs.get('timeit', False)
     
+    # Cleanup non-random WA files if requested - do this at the very beginning
+    cleanup = kwargs.get('cleanup', False)
+    if cleanup in ['True', 'true', True, 'WA', 'full', 'one_liner']:
+        n_dir = os.path.join(save_dir, f'N_{n_compounds}')
+        if os.path.exists(n_dir):
+            for diff_entry in os.listdir(n_dir):
+                if not diff_entry.startswith('diff_'):
+                    continue
+                diff_dir = os.path.join(n_dir, diff_entry, 'WAs')
+                if os.path.exists(diff_dir):
+                    for fname in os.listdir(diff_dir):
+                        if fname.endswith('.csv') and not fname.startswith('WA_Random_N_'):
+                            os.remove(os.path.join(diff_dir, fname))
+                            if timeit:
+                                print(f"Removed {fname} from {diff_dir}")
+    
     # Generate multidim methods dynamically
     multidim_methods = []
-    for i in np.arange(3, int(np.ceil(np.log(n_compounds)))):
+    for i in np.arange(3, int(np.ceil(np.log(n_compounds)))+1):
         if i > max_dims:
             continue
         multidim_methods.append(f'multidim-{i}')
@@ -1339,16 +1378,31 @@ def process_n_compounds(**kwargs):
                         print(f"Warning: Base file missing for {method} at diff={diff}")
         
         # Handle diff-dependent methods
-        for method in ['STD', 'Chinese trick']:
+        for method in ['STD', 'Chinese remainder', 'Ch. rm. bktrk']:
             dst_file = get_wa_filename(save_dir, n_compounds, diff, method)
             
             if not os.path.exists(dst_file):
                 # Compute only if file doesn't exist
                 if method == 'STD':
                     WA = assign_wells_STD(**current_kwargs)
-                else:  # Chinese trick
+                elif method == 'Chinese remainder':
                     WA = assign_wells_chinese(**current_kwargs)
+                else:  # Ch. rm. bktrk
+                    WA = assign_wells_chinese(backtrack=True, **current_kwargs)
                 
+                np.savetxt(dst_file, WA.astype(int), delimiter=",", fmt='%d')
+                if timeit:
+                    print(f"Computed {method} for diff={diff}")
+            elif timeit:
+                print(f"Skipping {method} for diff={diff} (already exists)")
+        
+        # Handle Chinese special (only for diff 2 or 3)
+        if diff in [2, 3]:
+            method = 'Chinese special'
+            dst_file = get_wa_filename(save_dir, n_compounds, diff, method)
+            
+            if not os.path.exists(dst_file):
+                WA = assign_wells_chinese(special_diff=True, **current_kwargs)
                 np.savetxt(dst_file, WA.astype(int), delimiter=",", fmt='%d')
                 if timeit:
                     print(f"Computed {method} for diff={diff}")
@@ -1382,4 +1436,63 @@ def make_all_deterministic_WAs(start=50, stop=150, step=10, **kwargs):
 
         current += step
 
+
+
+
+def parse_method(filename: str) -> str:
+	match = re.match(r"^WA_(?P<method>.+)_N_\d+_diff_\d+.*\.csv$", filename)
+	return match.group('method') if match else 'unknown'
+
+
+def iter_wa_files(base_dir: str):
+	for n_entry in sorted(os.listdir(base_dir)):
+		if not n_entry.startswith('N_'):
+			continue
+		n_dir = os.path.join(base_dir, n_entry)
+		if not os.path.isdir(n_dir):
+			continue
+		try:
+			n_val = int(n_entry.split('_', 1)[1])
+		except ValueError:
+			continue
+
+		for diff_entry in sorted(os.listdir(n_dir)):
+			if not diff_entry.startswith('diff_'):
+				continue
+			diff_dir = os.path.join(n_dir, diff_entry)
+			if not os.path.isdir(diff_dir):
+				continue
+			try:
+				diff_val = int(diff_entry.split('_', 1)[1])
+			except ValueError:
+				continue
+
+			wa_dir = os.path.join(diff_dir, 'WAs')
+			if not os.path.isdir(wa_dir):
+				continue
+
+			for fname in sorted(os.listdir(wa_dir)):
+				if not fname.endswith('.csv'):
+					continue
+				yield n_val, diff_val, parse_method(fname), os.path.join(wa_dir, fname)
+
+
+def compute_metrics(n_compounds: int, diff: int, wa: np.ndarray):
+	mean_exp, extra, rounds, p_check = mean_metrics_fast(well_assigner=wa, differentiate=diff)
+	nw = wa.shape[1]
+	ms = int(np.max(np.sum(wa, axis=0)))
+	max_dilution = int(np.max(np.sum(wa, axis=1)))+1
+	me = float(np.round(mean_exp, 2))
+	pc = int(p_check)
+	return {
+		'N': n_compounds,
+		'diff': diff,
+		'Mean experiments': me,
+		'Max samples per pool': ms,
+		'N pools': nw,
+		'Percentage check': pc,
+		'Max experiments per sample': max_dilution,
+		'Mean extra experiments': float(np.round(extra, 2)),
+		'Mean steps': rounds
+	}
 

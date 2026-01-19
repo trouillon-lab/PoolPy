@@ -14,6 +14,7 @@ parser.add_argument('--directory', type=str, default='./wrapped')
 parser.add_argument('--max_diff', type=int, default=10)
 parser.add_argument('--max_dims', type=int, default=np.inf)
 parser.add_argument('--timeit', type=str, default='True')
+parser.add_argument('--cleanup', type=str, default='True')
 parser.add_argument('--max_prev', type=float, default=0.1)
 
 args = parser.parse_args()
@@ -27,6 +28,7 @@ save_dir = args.directory
 max_diff = args.max_diff
 max_dims = args.max_dims
 timeit = args.timeit == 'True'
+cleanup = args.cleanup == 'True'
 
 dict_kwargs = {
     'differentiate': 2,
@@ -38,7 +40,8 @@ dict_kwargs = {
     'save_dir': save_dir,
     'max_diff': max_diff,
     'max_dims': max_dims,
-    'max_prev':args.max_prev
+    'max_prev':args.max_prev,
+    'cleanup':cleanup
 }
 
 make_all_deterministic_WAs(**dict_kwargs)

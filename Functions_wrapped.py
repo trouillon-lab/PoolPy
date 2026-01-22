@@ -1063,8 +1063,8 @@ def append_random_metrics_to_metrics(dpath, N, diff, nw, ms, pc, me, max_dilutio
         # Read existing CSV
         df = pd.read_csv(summary_file)
         
-        if 'Max dilution' not in df.columns:
-            df['Max dilution'] = np.nan
+        if 'Max experiments per sample' not in df.columns:
+            df['Max experiments per sample'] = np.nan
         
         # Ensure N and diff columns exist
         if 'N' not in df.columns:

@@ -1081,7 +1081,7 @@ def append_random_metrics_to_metrics(dpath, N, diff, nw, ms, pc, me, max_dilutio
             df.loc[df['Pooling strategy'] == 'Random', 'Max samples per pool'] = ms
             df.loc[df['Pooling strategy'] == 'Random', 'N pools'] = nw
             df.loc[df['Pooling strategy'] == 'Random', 'Percentage check'] = pc
-            df.loc[df['Pooling strategy'] == 'Random', 'Max dilution'] = max_dilution
+            df.loc[df['Pooling strategy'] == 'Random', 'Max experiments per sample'] = max_dilution
             extra = max(me - nw, 0.0)
             df.loc[df['Pooling strategy'] == 'Random', 'Mean extra experiments'] = extra
             df.loc[df['Pooling strategy'] == 'Random', 'Mean steps'] = 1 + pc/100.0
@@ -1096,7 +1096,7 @@ def append_random_metrics_to_metrics(dpath, N, diff, nw, ms, pc, me, max_dilutio
                 'Max samples per pool': ms,
                 'N pools': nw,
                 'Percentage check': pc,
-                'Max dilution': max_dilution,
+                'Max experiments per sample': max_dilution,
                 'Mean extra experiments': extra,
                 'Mean steps': 1 + pc/100.0
             }

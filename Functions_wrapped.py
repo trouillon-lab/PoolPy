@@ -447,7 +447,7 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
                 for j in range(n_compounds):
                     WA[k,j]=True if int(ls_nc3[j][i])==int(ls_nc3[j][ii]) else False
                 k+=1
-        return WA
+        return (WA.T)
     
     if special_diff and differentiate==3:
         q=np.ceil(np.log(n_compounds)/np.log(2)).astype(int)
@@ -462,7 +462,7 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
                         for j in range(n_compounds):
                             WA[k,j]=True if int(ls_nc3[j][i])==nu and int(ls_nc3[j][ii])==nuu else False
                         k+=1
-        return WA
+        return (WA.T)
 
 
     WA=np.zeros((np.sum(primes), n_compounds))==1
@@ -816,11 +816,12 @@ def mean_metrics_fast(well_assigner, differentiate, max_checks=1e0, scaler=1e3, 
     differis=np.random.choice(ls_diffs, int(max_checks*scaler), p=probi)
     #differo=differentiate
     #for _ in range(int(max_checks*scaler)):
+    MC=np.max([int(max_checks*scaler/10+5), n_compounds+1])
     for differo in differis:
         rnd_pos=np.random.choice(np.arange(n_compounds), differo, replace=False)
         readout=np.any(well_assigner[rnd_pos], axis=0)
         decoded=fast_decode(well_assigner=well_assigner, differentiate=differentiate, 
-                            readout=readout, max_checks=int(max_checks*scaler/10+5))
+                            readout=readout, max_checks=MC)
         try:
             decoded_set=set([x for xx in decoded for x in xx])
             NC0=len(decoded_set)

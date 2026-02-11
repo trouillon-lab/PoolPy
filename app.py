@@ -11,6 +11,8 @@ import scipy.stats
 import re
 import itertools
 import string
+import ast
+import csv
 
 #import matplotlib.pyplot as plt
 summary_text = ""
@@ -28,11 +30,10 @@ app_ui = ui.page_fluid(
             ui.h2("Pooling Methods Comparison", style="text-align: center; margin-top: 150px;"),
             # Short description below the title
             ui.div(
-                "This app evaluates the performances of different pooling methods. Designs for specific use cases can be downloaded below.",
+                "This app evaluates the performances of different pooling methods for different experimentals scenarios. ",
                 ui.br(),
-                "For details, see the ",
-                ui.a("Methods and Metrics", href="#methods-metrics", id="nav-methods-link", style="text-decoration: underline; cursor: pointer;"),
-                " section.",
+                "Designs for specific use cases can be downloaded below.",
+                ui.br(),
                 " For information on the code, visit our ",
                 ui.a("GitHub", href="https://github.com/trouillon-lab/PoolPy", style="text-decoration: underline;", target="_blank", rel="noopener noreferrer"),
                 ".",
@@ -48,15 +49,19 @@ app_ui = ui.page_fluid(
                 "To generate a method file for a pipetting robot following a pooling design, consult the ",
                 ui.a("Automation", href="#automation-section", id="nav-automation-link", style="text-decoration: underline; cursor: pointer;"),
                 " section.",
+                ui.br(),
+                "For a user guide or details on the different methods see the ",
+                ui.a("Help", href="#help-section", id="nav-help-link", style="text-decoration: underline; cursor: pointer;"),
+                " section.",
                 style="text-align: center; margin-bottom: 18px; font-size: 16px; color: #444;"
             ),
             ui.tags.script('''
                 document.addEventListener('DOMContentLoaded', function() {
-                    var methodsLink = document.getElementById('nav-methods-link');
-                    if (methodsLink) {
-                        methodsLink.addEventListener('click', function(event) {
+                    var helpLink = document.getElementById('nav-help-link');
+                    if (helpLink) {
+                        helpLink.addEventListener('click', function(event) {
                             event.preventDefault();
-                            var tab = document.querySelector("[data-value='Methods & Metrics']");
+                            var tab = document.querySelector("[data-value='Help']");
                             if (tab) tab.click();
                         });
                     }
@@ -138,7 +143,16 @@ app_ui = ui.page_fluid(
                     )
                 )
             ),
-            ui.hr(),
+            ui.div(
+                ui.output_ui("fly_summary_status"),
+                style="text-align: center; margin: 20px 0;"
+            ),
+            ui.div(
+                ui.output_ui("fly_summary_colored_table"),
+                style="display: flex; justify-content: center; margin-bottom: 20px;"
+            ),
+
+            ui.div("", style="height: 42px;"),
             ui.div(
                 ui.h4("Downloads & code"),
                 style="text-align: center;"
@@ -171,7 +185,7 @@ app_ui = ui.page_fluid(
                 ui.div("", style="height: 20px;")
             ),
             ui.panel_conditional(
-                "output.allow_downloads == 'true'",
+                "output.allow_downloads == 'lala'", # change lala with true to make available
                 ui.div(
                     ui.h4("Downloadable precomputed random design", style="margin-bottom: 20px;"),
                     #ui.download_button("download_table_matrix", "Matrix"),
@@ -262,7 +276,20 @@ app_ui = ui.page_fluid(
                     value="",
                     placeholder="Enter comma-separated values"
                 ),
-                style="display: flex; justify-content: center; margin-bottom: 18px;"
+                ui.input_action_button("submit_text_readout", "Send", style="margin-left: 10px;"),
+                style="display: flex; justify-content: center; align-items: center; margin-bottom: 18px; gap: 10px;"
+            ),
+            ui.div(
+                ui.tags.div(
+                    "OR",
+                    style="text-align: center; font-weight: bold; margin-bottom: 12px; font-size: 16px; color: #666;"
+                ),
+                ui.div(
+                    ui.input_file("uploaded_csv_readout", "Upload readout as CSV file", accept=[".csv"], multiple=False),
+                    ui.input_action_button("submit_csv_readout", "Send", style="margin-left: 10px;"),
+                    style="display: flex; justify-content: center; align-items: center; gap: 10px;"
+                ),
+                style="display: flex; flex-direction: column; align-items: center; margin-bottom: 18px;"
             ),
             ui.div(
                 ui.input_text(
@@ -270,11 +297,7 @@ app_ui = ui.page_fluid(
                     "Max. number of positives (optional):",
                     placeholder="Leave empty for auto inference"
                 ),
-                style="display: flex; justify-content: center; margin-bottom: 18px;"
-            ),
-            ui.div(
-                ui.input_action_button("readout_submit", "Enter", style="display: block; margin: 0 auto; margin-bottom: 32px;"),
-                style="text-align: center;"
+                style="display: flex; justify-content: center; margin-bottom: 32px;"
             ),
             ui.tags.script('''
                 document.addEventListener('DOMContentLoaded', function() {
@@ -284,7 +307,7 @@ app_ui = ui.page_fluid(
                             el.addEventListener('keydown', function(event) {
                                 if (event.key === 'Enter') {
                                     event.preventDefault();
-                                    var btn = document.getElementById('readout_submit');
+                                    var btn = document.getElementById('submit_text_readout');
                                     if (btn) btn.click();
                                 }
                             });
@@ -297,7 +320,15 @@ app_ui = ui.page_fluid(
                 style="text-align: center; margin-bottom: 18px; font-size: 16px; color: #444;"
             ),
             ui.panel_conditional(
-                "output.allow_decoder == 'true'",
+                "output.allow_decoder == 'true' && output.decoder_is_csv == 'true'",
+                ui.div(
+                    ui.download_button("download_decoder_csv", "Download decoded CSV"),
+                    ui.download_button("download_sample_probabilities", "Download sample probabilities"),
+                    style="display: flex; justify-content: center; gap: 32px; margin-bottom: 32px;"
+                ),
+            ),
+            ui.panel_conditional(
+                "output.allow_decoder == 'true' && output.decoder_is_text == 'true'",
                 ui.div(
                     ui.download_button("download_decoder_output", "Download decoder output"),
                     style="display: flex; justify-content: center; gap: 32px; margin-bottom: 32px;"
@@ -307,60 +338,16 @@ app_ui = ui.page_fluid(
                 ui.output_text_verbatim("allow_decoder"),
                 style="position: fixed; bottom: 2px; right: 2px; opacity: 0.05; font-size: 8px; z-index: 1; pointer-events: none;"
             ),
-        ),
-
-        ui.nav_panel("Methods & Metrics",
             ui.div(
-                ui.output_image("logo_img_methods", height='0px'),
-                style="display: block; padding: 0; margin: 0; text-align: cenrte;"
+                ui.output_text_verbatim("decoder_is_text"),
+                style="position: fixed; bottom: 2px; right: 2px; opacity: 0.05; font-size: 8px; z-index: 1; pointer-events: none;"
             ),
-            ui.h2("Methods & Metrics",  style="text-align: center; margin-top: 150px;"),
             ui.div(
-                ui.h4("Differentiate-dependent Pooling Methods:"),
-                ui.div(
-                    "These methods change their design also based on the number of expected positive samples. They often are non-adaptive strategy and are well suited for high differentiate values.",
-                    style="margin-bottom: 10px; font-size: 15px; color: #444;"
-                ),
-                ui.tags.ul(
-                    ui.tags.li(ui.tags.b("Random"), ": Semi-adaptive method where pools are formed by randomly assigning samples."),
-                    ui.tags.li(ui.tags.b("STD"), ": Non-adaptive method based on prime numbers and modulus operations."),
-                    ui.tags.li(ui.tags.b("Chinese Remainder methods"), ": Non-adaptive method based on the Chinese Remainder Theorem, with variants for backtracking (backtrack) and special cases (special)."),
-                    ui.tags.li(ui.tags.b("Hierachical"), ": Strictly adaptive method that iteratively partitions the set of possible positive samples. " \
-                    "For this method, the N pools metric lists the number of splits at each stage. " \
-                    "For example, [3,3] means first divide samples into 3 pools (as equal as possible), then test and split any positive pool into 3 again. " \
-                    "After testing of these pools, each sample from each positive pool finally needs to be individually tested." \
-                    ),
-                ),
-
-                ui.h4("Differentiate-independent Pooling Methods:"),
-                ui.div(
-                    "These methods do not change their output design based on the number of expected positive samples. They are to be used with caution if more than 1 positive sample is expected.",
-                    style="margin-bottom: 10px; font-size: 15px; color: #444;"
-                ),
-                ui.tags.ul(
-                    ui.tags.li(ui.tags.b("Matrix"), ": Semi-adaptive method where each sample is included in a unique row and column pool."),
-                    ui.tags.li(ui.tags.b("Multidimensional (3D, 4D)"), ": Semi-adaptive method where samples are arranged in higher-dimensional matrices, each coordinate in each dimension representing a pool."),
-                    ui.tags.li(ui.tags.b("Binary"), ": Semi-adaptive method where samples are assigned to pools according to a binary code, maximizing information per test."),
-                ),
-                ui.h4("Metrics in the Summary Table:"),
-                ui.tags.ul(
-                    ui.tags.li(ui.tags.b("Method"), ": Name of the pooling method used."),
-                    ui.tags.li(ui.tags.b("Mean experiments"), ": Average number of tests required to identify the positive samples."),
-                    ui.tags.li(ui.tags.b("Max. samples per pool"), ": Maximum number of samples combined in any single pool."),
-                    ui.tags.li(ui.tags.b("N pools"), ": Total number of pools used in the first step of the strategy. For Hierachical this is a list of splits, explained above."),
-                    ui.tags.li(ui.tags.b("Percentage check"), ": Fraction of cases requiring additional verification or retesting beyond the first step."),
-                    ui.tags.li(ui.tags.b("Mean extra experiments"), ": Average number of extra tests needed beyond the first step.")
-                ),
-                ui.h4("Notation:"),
-                ui.tags.ul(
-                    ui.tags.li(ui.tags.b("D"), ": Differentiate, maximum number of positive samples."),
-                    ui.tags.li(ui.tags.b("S"), ": Number of samples to test."),
-                    ui.tags.li(ui.tags.b("ρ"), ": Prevalence of positives in the population."),
-                    ui.tags.li(ui.tags.b("W"), ": Total number of pools needed for a method."),
-                ),
-                style="max-width: 700px; margin: 0 auto; font-size: 16px; color: #333;"
-            )
+                ui.output_text_verbatim("decoder_is_csv"),
+                style="position: fixed; bottom: 2px; right: 2px; opacity: 0.05; font-size: 8px; z-index: 1; pointer-events: none;"
+            ),
         ),
+
         ui.nav_panel("Prevalence",
                 ui.div(
                     ui.output_image("logo_img_prev", height='0px'),
@@ -484,7 +471,65 @@ app_ui = ui.page_fluid(
                 style="position: fixed; bottom: 2px; right: 2px; opacity: 0.05; font-size: 8px; z-index: 1; pointer-events: none;"
             ),
         ),
+        
+        ui.nav_panel("Help",
+            ui.div(
+                ui.output_image("logo_img_methods", height='0px'),
+                style="display: block; padding: 0; margin: 0; text-align: cenrte;"
+            ),
+            ui.h2("User guide",  style="text-align: center; margin-top: 150px;"),
+            ui.div(
+                ui.download_button("download_pooled_pooling", "Download user guide"),
+                style="text-align: center; margin-top: 10px;"
+            ),
+            ui.h2("Pooling methods",  style="text-align: center; margin-top: 15px; margin-bottom: 10px;"),
+            ui.div(
+                ui.h4("Differentiate-dependent Pooling Methods:"),
+                ui.div(
+                    "These methods change their design also based on the number of expected positive samples. They often are non-adaptive strategy and are well suited for high differentiate values.",
+                    style="margin-bottom: 10px; font-size: 15px; color: #444;"
+                ),
+                ui.tags.ul(
+                    ui.tags.li(ui.tags.b("Random"), ": Semi-adaptive method where pools are formed by randomly assigning samples."),
+                    ui.tags.li(ui.tags.b("STD"), ": Non-adaptive method based on prime numbers and modulus operations."),
+                    ui.tags.li(ui.tags.b("Chinese Remainder methods"), ": Non-adaptive method based on the Chinese Remainder Theorem, with variants for backtracking (backtrack) and special cases (special)."),
+                    ui.tags.li(ui.tags.b("Hierachical"), ": Strictly adaptive method that iteratively partitions the set of possible positive samples. " \
+                    "For this method, the N pools metric lists the number of splits at each stage. " \
+                    "For example, [3,3] means first divide samples into 3 pools (as equal as possible), then test and split any positive pool into 3 again. " \
+                    "After testing of these pools, each sample from each positive pool finally needs to be individually tested." \
+                    ),
+                ),
 
+                ui.h4("Differentiate-independent Pooling Methods:"),
+                ui.div(
+                    "These methods do not change their output design based on the number of expected positive samples. They are to be used with caution if more than 1 positive sample is expected.",
+                    style="margin-bottom: 10px; font-size: 15px; color: #444;"
+                ),
+                ui.tags.ul(
+                    ui.tags.li(ui.tags.b("Matrix"), ": Semi-adaptive method where each sample is included in a unique row and column pool."),
+                    ui.tags.li(ui.tags.b("Multidimensional (3D, 4D)"), ": Semi-adaptive method where samples are arranged in higher-dimensional matrices, each coordinate in each dimension representing a pool."),
+                    ui.tags.li(ui.tags.b("Binary"), ": Semi-adaptive method where samples are assigned to pools according to a binary code, maximizing information per test."),
+                ),
+                ui.h4("Metrics in the Summary Table:"),
+                ui.tags.ul(
+                    ui.tags.li(ui.tags.b("Method"), ": Name of the pooling method used."),
+                    ui.tags.li(ui.tags.b("Mean experiments"), ": Average number of tests required to identify the positive samples."),
+                    ui.tags.li(ui.tags.b("Max. samples per pool"), ": Maximum number of samples combined in any single pool."),
+                    ui.tags.li(ui.tags.b("N pools"), ": Total number of pools used in the first step of the strategy. For Hierachical this is a list of splits, explained above."),
+                    ui.tags.li(ui.tags.b("Percentage check"), ": Fraction of cases requiring additional verification or retesting beyond the first step."),
+                    ui.tags.li(ui.tags.b("Mean extra experiments"), ": Average number of extra tests needed beyond the first step.")
+                ),
+                ui.h4("Notation:"),
+                ui.tags.ul(
+                    ui.tags.li(ui.tags.b("D"), ": Differentiate, maximum number of positive samples."),
+                    ui.tags.li(ui.tags.b("S"), ": Number of samples to test."),
+                    ui.tags.li(ui.tags.b("ρ"), ": Prevalence of positives in the population."),
+                    ui.tags.li(ui.tags.b("W"), ": Total number of pools needed for a method."),
+                ),
+                style="max-width: 700px; margin: 0 auto; font-size: 16px; color: #333;"
+            )
+        ),
+        
     )
 )
 
@@ -492,8 +537,29 @@ app_ui = ui.page_fluid(
 
 WA_SUB_DIRECTORY='precomputed'
 #SCRAMBLER_DIRECTORY='.\output'
-MAX_DIFFERENTIATE=4
+MAX_DIFFERENTIATE=10
 MAX_N=1000
+MAX_PREVALENCE=0.1
+
+
+def process_metrics_data(metrics_data):
+    """Process metrics dataframe: drop first column, rename, reorder, and sort."""
+    try:
+        # Only drop first column if it's unnamed (from CSV index)
+        if metrics_data.columns[0].startswith('Unnamed'):
+            metrics_data.drop(metrics_data.columns[0], axis=1, inplace=True)
+        
+        dict_ren={'N wells':'N pools (W)', 'Max compunds per well': 'Max compounds in a pool'}
+        metrics_data.rename(columns=dict_ren, inplace=True)
+        if 'Max experiments per sample' in metrics_data.columns:
+            metrics_data = metrics_data[['Pooling strategy', 'Mean experiments', 'Mean steps', 'N pools', 'Max samples per pool', 'Percentage check', 'Mean extra experiments', 'Max experiments per sample']]
+        else:
+            metrics_data = metrics_data[['Pooling strategy', 'Mean experiments', 'Mean steps', 'N pools', 'Max samples per pool', 'Percentage check', 'Mean extra experiments']]
+        metrics_data = metrics_data.sort_values(by='Mean experiments', ascending=True)
+        return metrics_data
+    except Exception as e:
+        print(f"Error processing metrics data: {e}")
+        return metrics_data
 
 
 def from_id_to_well(id, offset=0):
@@ -543,7 +609,6 @@ def clean_WA(b):
     b1=b.astype(int)
     tmp1=pd.DataFrame(b1, columns=['Pool '+ str(i) for i in range(b1.shape[1])], index=['Sample '+ str(i) for i in range(b1.shape[0])])
     return tmp1
-
 
 def int_to_base(n, N):
     """ Return base N representation for int n. """
@@ -675,6 +740,14 @@ def assign_wells_multidim(n_compounds:int, n_dims:int, **kwargs)->np.array:
         well_assigner[j,cp_id]=True
     return(well_assigner)
 
+def get_params_multidims(n_compounds:int, n_dims:int, **kwargs):
+    L1=np.ceil(np.power(n_compounds, 1/n_dims))
+    i=0
+    while np.power(L1, n_dims-i-1)*np.power(L1-1, i+1)>=n_compounds:
+        i=i+1
+    ls_dim=[L1]*(n_dims-i)+[L1-1]*i
+    return(ls_dim)
+
 def assign_wells_STD(n_compounds:int, differentiate=1, False_results=0, force_q=False, **kwargs):
     N=n_compounds
     t=differentiate
@@ -690,6 +763,72 @@ def assign_wells_STD(n_compounds:int, differentiate=1, False_results=0, force_q=
     k=t*Gamma+2*E+1
     WA=STD(N,q,k)
     return(WA)
+
+def get_STD_params(n_compounds:int, differentiate=1, False_results=0, force_q=False, **kwargs):
+    N=n_compounds
+    t=differentiate
+    E=False_results
+    poss_q=[x for x in range(n_compounds) if isprime(x)]
+    for q in poss_q:
+        if t*get_Gamma(q,N)+2*E<q:
+            break
+    if isprime(force_q):
+        if t*get_Gamma(force_q,N)+2*E<force_q:
+            q=force_q 
+    Gamma=get_Gamma(q,N)
+    k=t*Gamma+2*E+1
+    return(q,k)
+
+def get_chinese_prameters(n_compounds:int,  differentiate:int, backtrack=False, special_diff=False, **kwargs)->np.array:
+    prod=1
+    n=1
+    primes=[]
+    c_id=np.arange(n_compounds) 
+    while prod<n_compounds**differentiate:
+        n=n+1
+        if isprime(n):
+            prod=prod*n
+            primes.append(n)
+
+    if backtrack:
+        T=np.inf
+        nprimes=np.array(primes)
+        ND=n_compounds**differentiate
+        ls_of_ls=[]
+        LMP=np.log(primes[-1])
+        for pi in primes:
+            LE=np.floor(LMP/np.log(pi)).astype(int)
+            ls_of_ls.append(list(range(LE+1)))
+        ls_iter=list(itertools.product(*ls_of_ls))
+        for id_combo, combo in enumerate(ls_iter):
+            carr=np.array(combo)
+            flt=carr>0
+            this_primes=nprimes[flt]
+            this_exp=carr[flt]
+            npc=this_primes**this_exp
+            if np.prod(npc)>=ND and np.sum(npc)<T:
+                T=np.sum(npc)
+                best_id=id_combo
+        combo=ls_iter[best_id]
+        carr=np.array(combo)
+        flt=carr>0
+        this_primes=nprimes[flt]
+        this_exp=carr[flt]
+        npc=this_primes**this_exp
+
+        return npc
+    
+    if special_diff and differentiate==2:
+        q=np.ceil(np.log(n_compounds)/np.log(3)).astype(int)
+        t=int((q+5)*q/2)
+        return q,t
+    
+    if special_diff and differentiate==3:
+        q=np.ceil(np.log(n_compounds)/np.log(2)).astype(int)
+        t=int((q-1)*q*2)
+        return q,t
+
+    return primes
 
 def assign_wells_chinese_old(n_compounds:int,  differentiate:int,**kwargs)->np.array:
     prod=1
@@ -778,7 +917,7 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
                 for j in range(n_compounds):
                     WA[k,j]=True if int(ls_nc3[j][i])==int(ls_nc3[j][ii]) else False
                 k+=1
-        return(WA.T)
+        return q,t
     
     if special_diff and differentiate==3:
         q=np.ceil(np.log(n_compounds)/np.log(2)).astype(int)
@@ -793,7 +932,7 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
                         for j in range(n_compounds):
                             WA[k,j]=True if int(ls_nc3[j][i])==nu and int(ls_nc3[j][ii])==nuu else False
                         k+=1
-        return(WA.T)
+        return q,t
 
 
     WA=np.zeros((np.sum(primes), n_compounds))==1
@@ -807,6 +946,314 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
         past_primes=past_primes+prime
 
     return(WA.T)
+
+def generalized_factorial(N,pw):
+    FT=1
+    for i in range(N):
+        FT*=(N-i)**(pw-1)
+    return FT
+
+def fly_summary(n_compounds:int,  differentiate:int, **kwargs):
+    """
+    Calculate summary metrics for all pooling methods on the fly.
+    Returns a DataFrame with one row per method.
+    """
+    methods = []
+
+    
+    # Multidimensional methods (2D, 3D, 4D)
+    for n_dims in np.arange(2,int(np.ceil(np.log(n_compounds)/np.log(2)))):
+        ls_dims=get_params_multidims(n_compounds, n_dims)
+        arr_dims=np.array(ls_dims)
+        method_name = f'multidim-{n_dims}'
+        PCF=np.ones_like(arr_dims).astype(float)
+        if differentiate>=np.max(arr_dims):
+            PCT=100
+        elif differentiate==1:
+            PCT=0
+        else:
+            for i in range(differentiate):
+                NG=(arr_dims-i-1)
+                NT=(n_compounds-i-1)
+                PC=NG/NT
+                PCF*=PC
+            PCT=100*(1-np.sum(PCF))
+
+
+        MEE=np.min([differentiate**n_dims, generalized_factorial(differentiate,  n_dims), n_compounds ])-1
+        method_dict = {
+            'Pooling strategy': method_name,
+            'Mean experiments': np.sum(arr_dims)+MEE,
+            'Max samples per pool': np.prod(arr_dims)/np.min(arr_dims),
+            'N pools': np.sum(arr_dims),
+            'Percentage check': PCT,  
+            'Mean extra experiments': MEE,
+            'Mean steps': 1+PCT/100
+        }
+        
+        
+        # Matrix method - copy of 2D
+        if n_dims == 2:
+            matrix_dict = method_dict.copy()
+            matrix_dict['Pooling strategy'] = 'Matrix'
+            methods.append(matrix_dict)
+        else:
+            methods.append(method_dict)
+    
+    # Binary method
+    method_name = 'Binary'
+    PLS=int(np.ceil(np.log2(n_compounds)))
+    if differentiate>=2:
+        PC=100
+        MEE=n_compounds
+    else:
+        PC=0
+        MEE=0
+    methods.append({
+        'Pooling strategy': method_name,
+        'Mean experiments': PLS+MEE,  
+        'Max samples per pool': int(np.ceil(n_compounds/2)),
+        'N pools': PLS,
+        'Percentage check': PC,  
+        'Mean extra experiments': MEE,
+        'Mean steps': 1+PC/100
+    })
+    
+    # STD method
+    method_name = 'STD'
+    q,k = get_STD_params(n_compounds, differentiate)
+    methods.append({
+        'Pooling strategy': method_name,
+        'Mean experiments': int(q*k),  
+        'Max samples per pool': int(np.ceil(n_compounds/q)),
+        'N pools':int(q*k),
+        'Percentage check': 0,  
+        'Mean extra experiments': 0,
+        'Mean steps': 1
+    })
+    
+    # Chinese Remainder method
+    method_name = 'Chinese remainder'
+    primez = get_chinese_prameters(n_compounds, differentiate)
+    methods.append({
+        'Pooling strategy': method_name,
+        'Mean experiments': np.sum(primez),  
+        'Max samples per pool': n_compounds/np.min(primez),
+        'N pools': np.sum(primez),
+        'Percentage check': 0,  
+        'Mean extra experiments': 0,
+        'Mean steps': 1
+    })
+    
+    # Chinese Remainder backtrack method
+    method_name = 'Ch. rm. bktrk'
+    primez = get_chinese_prameters(n_compounds, differentiate, backtrack=True)
+    methods.append({
+        'Pooling strategy': method_name,
+        'Mean experiments': np.sum(primez),  
+        'Max samples per pool': n_compounds/np.min(primez),
+        'N pools': np.sum(primez),
+        'Percentage check': 0,  
+        'Mean extra experiments': 0,
+        'Mean steps': 1
+    })
+    
+    # Chinese Remainder special method (only for differentiate 2 or 3)
+    if differentiate in [2, 3]:
+        method_name = 'Chinese special'
+        q,t = get_chinese_prameters(n_compounds, differentiate, special_diff=True)
+        if differentiate==2:
+            MS=3**q
+        elif differentiate==3:
+            MS=2**(q-2)
+        methods.append({
+            'Pooling strategy': method_name,
+            'Mean experiments': t,  
+            'Max samples per pool':MS,
+            'N pools': t,
+            'Percentage check': 0,  
+            'Mean extra experiments': 0 ,
+            'Mean steps':1 
+        })
+        methods.append({
+            'Pooling strategy': method_name,
+            'Mean experiments': t,  
+            'Max samples per pool':MS,
+            'N pools': t,
+            'Percentage check': 0,  
+            'Mean extra experiments': 0,
+            'Mean steps':1 
+        })
+        
+
+    method_name = 'Hierarchical'
+    metricas=calculate_metrics_hierarchical_fast(n_compounds, differentiate, 50)
+    methods.append({
+            'Pooling strategy': method_name,
+            'Mean experiments': metricas[0],  
+            'Max samples per pool':metricas[1],
+            'N pools': metricas[2],
+            'Percentage check': metricas[3],  
+            'Mean extra experiments': np.round(metricas[4],2),
+            'Mean steps': metricas[5]
+        })
+    
+    
+    df = pd.DataFrame(methods)
+    # Round all numeric columns to 2 decimal places
+    numeric_cols = df.select_dtypes(include=[np.number]).columns
+    df[numeric_cols] = df[numeric_cols].round(2)
+    # Round Percentage check to 0 decimal places
+    if 'Percentage check' in df.columns:
+        df['Percentage check'] = df['Percentage check'].round(0)
+    return df
+
+def split(a, n):
+    k, m = divmod(len(a), n)
+    return (a[i*k+min(i, m):(i+1)*k+min(i+1, m)] for i in range(n))
+
+def pick_rand_pos(n_compounds,differentiate,max_checks=1e3):
+    
+    MC=0
+    MP=1
+    mp=0
+    scaler=1
+    ls_combs=[]
+    ls_diffs=[]
+    difo=differentiate
+    while (MC<max_checks or MP>mp) and difo>0:
+        MCI=math.comb(n_compounds,differentiate)
+        MC+=MCI
+        mp=MCI/MC
+        ls_combs.append(MCI)
+        ls_diffs.append(difo)
+        difo-=1
+    ls_posi=[]
+    probi=np.array(ls_combs, dtype=float)
+    probi/=np.sum(probi)
+    differis=np.random.choice(ls_diffs, int(max_checks*scaler), p=probi)
+    for differo in differis:
+            rnd_pos=np.random.choice(np.arange(n_compounds), differo, replace=False)
+            ls_posi.append(rnd_pos)
+
+    return ls_posi
+
+
+def iterative_splitter(id_samps, id_positives, ratio):
+    
+    if len(id_samps)<=ratio:
+        return(len(id_samps))
+    
+    pools=list(split(id_samps, ratio))
+    partials=0
+    for pool in pools:
+        if len(set(pool).intersection(id_positives))>0:
+            partials+=iterative_splitter(pool,id_positives,ratio)
+    return(ratio+partials)
+
+def uneven_wrapper(n_samps, differentiate=-1):
+    if differentiate==-1:
+        differentiate=np.floor(n_samps/2)
+
+    list_of_lists=[]
+    def uneven_splits_maker(n_samps, previous_l):
+        if n_samps<2:
+            pass
+        if len(previous_l)==0:
+            C1=n_samps
+        else:
+            C1=previous_l[-1]
+        MS=np.min([differentiate*5, C1 , n_samps])
+        rationi=np.arange(2,MS+1)
+        invariationi=n_samps/rationi
+        linvariationi=np.array(list(set(invariationi.astype(int))))
+        variationi=n_samps/linvariationi
+        ratios=[rationi[np.argmin(np.abs(rationi-i))] for i in variationi ]
+        for ratio in ratios:
+            this_l=previous_l.copy()
+            this_l.append(int(ratio))
+            list_of_lists.append(this_l)
+            uneven_splits_maker(np.ceil(n_samps/ratio), this_l)
+
+    uneven_splits_maker(n_samps,[])
+    
+    
+    return(list_of_lists)
+        
+
+def iterative_uneven_splitter(id_samps, id_positives, ratios):
+    if len(ratios)==1:
+        ratio=ratios[0]
+        ratios=[np.inf]
+    else:
+        ratio=ratios[0]
+        ratios=ratios[1:]
+
+    if len(id_samps)<=ratio:
+        return(len(id_samps))
+
+    pools=list(split(id_samps, ratio))
+    partials=0
+    for pool in pools:
+        if len(set(pool).intersection(id_positives))>0:
+            partials+=iterative_uneven_splitter(pool,id_positives,ratios)
+    return(ratio+partials)
+
+
+
+def calculate_metrics_hierarchical_fast(n_compounds,  differentiate:int, checks=1e4, keep_ratios_constant=False,  **kwargs):
+    id_samps=np.arange(n_compounds)
+    details={}
+    posiz=pick_rand_pos(n_compounds, differentiate, checks)
+    if keep_ratios_constant:
+        BM=[0,np.inf]
+        for ratiof in np.arange(2,np.ceil(np.sqrt(n_compounds))):
+            ratio=int(ratiof)
+            NP=0
+            FM=0
+            for id_pos in posiz:
+                posx=np.array(id_pos).reshape(-1,1)
+                measures=iterative_splitter(id_samps,posx,ratio)
+                FM+=measures
+                NP+=1
+                    
+            layers=int(np.ceil(np.log(n_compounds)/np.log(ratio)))
+            MC=int(np.ceil(n_compounds/ratio))
+
+            details.update({ratio:[BM[1], MC, BM[0], int(np.round((NP-1)/(NP),2)*100), BM[1]-BM[0],layers]})
+            if FM/NP<BM[1]:
+                BM=[ratio,FM/NP]
+        layers=int(np.ceil(np.log(n_compounds)/np.log(BM[0])))
+        MC=int(np.ceil(n_compounds/BM[0]))
+        return([BM[1], MC, BM[0], int(np.round((NP-1)/(NP),2)*100), BM[1]-BM[0],layers, details ]) 
+
+    else:
+        BM=[[0],np.inf]
+        
+        if 'ls_splits' in kwargs.keys():
+            list_splits=[kwargs['ls_splits']]
+        else:
+            list_splits=uneven_wrapper(n_compounds, differentiate)
+        ls_id=0
+        for splito in list_splits:
+            NP=0
+            FM=0
+            for id_pos in posiz:
+                posx=np.array(id_pos)
+                measures=iterative_uneven_splitter(id_samps,posx,splito)
+                FM+=measures
+                NP+=1
+                    
+            layers=len(splito)+1
+            MC=int(np.ceil(n_compounds/splito[0]))
+            #details.update({ls_id:[FM/NP, MC, splito, int(np.round((NP-1)/(NP),2)*100), FM/NP-splito[0],layers]})
+            ls_id+=1
+            if FM/NP<BM[1]:
+                BM=[splito,FM/NP]
+        layers=len(BM[0])+1
+        MC=int(np.ceil(n_compounds/BM[0][0]))
+        return([BM[1], MC, BM[0], int(np.round((NP-1)/(NP),2)*100), BM[1]-BM[0][0],layers])
+
  
 def decode_precomp(well_assigner:np.array, differentiate:int, 
                    scrambler:dict, readout:np.ndarray, **kwargs) -> list:
@@ -850,6 +1297,37 @@ def find_closest_diff_folder(n_folder_path, differentiate):
         differentiate=differentiate-1
     return DF
 
+
+def series_to_readout_list(ser: pd.Series, n_pools_local: int):
+    vals = [str(v).strip() for v in ser.tolist() if pd.notna(v) and str(v).strip() != ""]
+    if len(vals) == 0:
+        return None, "Empty row"
+    # Case: single cell input
+    if len(vals) == 1:
+        cell = vals[0]
+        # comma-separated
+        if "," in cell:
+            parts = [p.strip() for p in cell.split(",") if p.strip() != ""]
+            if any(not p.isdigit() for p in parts):
+                return None, f"Invalid token(s) in list: {parts}"
+            return [int(p) for p in parts], None
+        # plain 0/1 string
+        if set(cell).issubset({"0","1"}) and len(cell) == n_pools_local:
+            return [int(ch) for ch in cell], None
+        # space-separated integers
+        parts = [p for p in re.split(r"[\s;]+", cell) if p]
+        if parts and all(p.isdigit() for p in parts):
+            return [int(p) for p in parts], None
+        return None, f"Unrecognized single-cell format: '{cell}'"
+    # Case: multi-column row
+    try:
+        ints = [int(float(v)) for v in vals]
+    except Exception:
+        return None, f"Non-integer values across columns: {vals}"
+    uniq = set(ints)
+    if uniq.issubset({0,1}) and len(ints) == n_pools_local:
+        return ints, None
+    return ints, None
 
 
 
@@ -1040,6 +1518,18 @@ def load_wa_matrices(folder_path):
 
 
 
+def parse_decoder_output(obj):
+    """Parse a decoder_output value which may be a stringified Python list.
+    Returns the original object or a parsed Python list if possible.
+    """
+    try:
+        if isinstance(obj, str):
+            import ast
+            return ast.literal_eval(obj)
+        return obj
+    except Exception:
+        return obj
+
 
 # Define the server logic
 def server(input, output, session):
@@ -1080,6 +1570,9 @@ def server(input, output, session):
     output.database_reply_decoder=reactive.Value("Waiting for pooling strategy file and readout")
     output.decoder_text=reactive.Value(0)
     output.decoder_diff=reactive.Value(-1)
+    output.decoder_csv = reactive.Value(pd.DataFrame())
+    output.decoder_rows = reactive.Value([])
+    output.decoder_mode = reactive.Value("")
 
 
 
@@ -1090,6 +1583,9 @@ def server(input, output, session):
 
     ls_met=['Pooling strategy', 'mean_experiments', 'max_compounds_per_well', 'n_wells', 'percentage_check', 'mean_extra_exp']
     output.summary_table = reactive.Value(pd.DataFrame(columns=ls_met))
+    output.fly_summary_table = reactive.Value(pd.DataFrame())
+    output.fly_summary_loading = reactive.Value(False)
+    output.fly_summary_message = reactive.Value("")
 
 
 
@@ -1102,6 +1598,8 @@ def server(input, output, session):
         # Store last submitted values for use in outputs
         output.last_submitted_n_samp.set(n_samp)
         output.last_submitted_differentiate.set(differentiate)
+        # Display computing message
+        output.database_reply.set("Computing summary table...")
         #print(n_samp)
         n_samp=output.last_submitted_n_samp.get()
         differentiate=output.last_submitted_differentiate.get()
@@ -1118,27 +1616,78 @@ def server(input, output, session):
             output.allow_downloads.set(False)
             output.allow_fly.set(False)
             output.reply_green.set(False)
+            output.fly_summary_table.set(pd.DataFrame())
+            output.fly_summary_loading.set(False)
 
         elif differentiate > MAX_DIFFERENTIATE:
-            output_text_1=f'Maximum number of positives ({differentiate}) too high. The precomputed maximum is {MAX_DIFFERENTIATE}.\n'
-            output_text_2 = '<span style="color: #228B22;">To download designs calculated on the fly for your specific values (or locally run the code), follow the section below.</span>'
+            output_text_1=f'Maximum number of positives ({differentiate}) exceeds the maximum precomputed differentiate. The precomputed maximum is {MAX_DIFFERENTIATE}.\n'
+            output_text_2 = '<span style="color: #228B22;">Some designs have been evaluated on the fly for your specific values. To download them (or locally run the code), follow the section below.</span>'
             output_text=output_text_1+output_text_2
             output_text = output_text.replace('\n', '<br>')
             output.database_reply.set(output_text)
             output.extra_computation.set(1)
-            output.summary_table.set(pd.DataFrame(columns=ls_met))
+            if n_samp * differentiate > 2000:
+                output.fly_summary_message.set(f"Skipped: n_samp × differentiate ({n_samp} × {differentiate} = {n_samp * differentiate}) exceeds 2000")
+                output.fly_summary_loading.set(False)
+                output.summary_table.set(pd.DataFrame(columns=ls_met))
+                output.fly_summary_table.set(pd.DataFrame())
+            else:
+                output.fly_summary_loading.set(True)
+                output.fly_summary_message.set(f"Calculating summary metrics for {n_samp} samples with up to {differentiate} positives...")
+                fly_table = fly_summary(n_samp, differentiate)
+                fly_table = process_metrics_data(fly_table)
+                output.summary_table.set(fly_table)
+                output.fly_summary_table.set(fly_table)
+                output.fly_summary_loading.set(False)
             output.allow_downloads.set(False)
             output.allow_fly.set(True)
             output.reply_green.set(False)
 
         elif n_samp > MAX_N:
-            output_text_1=f'Maximum number of samples ({n_samp}) too high. The precomputed maximum is {MAX_N}.\n'
-            output_text_2 = '<span style="color: #228B22;">To download designs calculated on the fly for your specific values (or locally run the code), follow the section below.</span>'
+            output_text_1=f'Maximum number of samples ({n_samp})  exceeds the maximum precomputed values. The precomputed maximum is {MAX_N}.\n'
+            output_text_2 = '<span style="color: #228B22;">Some designs have been approximately evaluated on the fly for your specific values.\n To download them (or locally run the code), follow the section below.</span>'
             output_text=output_text_1+output_text_2
             output_text = output_text.replace('\n', '<br>')
             output.database_reply.set(output_text)
             output.extra_computation.set(1)
-            output.summary_table.set(pd.DataFrame(columns=ls_met))
+            if n_samp * differentiate > 2000:
+                output.fly_summary_message.set(f"Skipped: n_samp × differentiate ({n_samp} × {differentiate} = {n_samp * differentiate}) exceeds 2000")
+                output.fly_summary_loading.set(False)
+                output.summary_table.set(pd.DataFrame(columns=ls_met))
+                output.fly_summary_table.set(pd.DataFrame())
+            else:
+                output.fly_summary_loading.set(True)
+                output.fly_summary_message.set(f"Calculating summary metrics for {n_samp} samples with up to {differentiate} positives...")
+                fly_table = fly_summary(n_samp, differentiate)
+                fly_table = process_metrics_data(fly_table)
+                output.summary_table.set(fly_table)
+                output.fly_summary_table.set(fly_table)
+                output.fly_summary_loading.set(False)
+            output.allow_downloads.set(False)
+            output.allow_fly.set(True)
+            output.reply_green.set(False)
+
+        elif n_samp > 0 and differentiate / n_samp > MAX_PREVALENCE:
+            prevalence = differentiate / n_samp
+            output_text_1=f'The prevalence of positives ({prevalence:.1%}) exceeds the maximum precomputed prevalence ({MAX_PREVALENCE:.1%}).\n'
+            output_text_2 = '<span style="color: #228B22;">Some designs have been approximately evaluated on the fly for your specific values.\n To download them (or locally run the code), follow the section below.</span>'
+            output_text=output_text_1+output_text_2
+            output_text = output_text.replace('\n', '<br>')
+            output.database_reply.set(output_text)
+            output.extra_computation.set(1)
+            if n_samp * differentiate > 2000:
+                output.fly_summary_message.set(f"Skipped: n_samp × differentiate ({n_samp} × {differentiate} = {n_samp * differentiate}) exceeds 2000")
+                output.fly_summary_loading.set(False)
+                output.summary_table.set(pd.DataFrame(columns=ls_met))
+                output.fly_summary_table.set(pd.DataFrame())
+            else:
+                output.fly_summary_loading.set(True)
+                output.fly_summary_message.set(f"Calculating summary metrics for {n_samp} samples with up to {differentiate} positives...")
+                fly_table = fly_summary(n_samp, differentiate)
+                fly_table = process_metrics_data(fly_table)
+                output.summary_table.set(fly_table)
+                output.fly_summary_table.set(fly_table)
+                output.fly_summary_loading.set(False)
             output.allow_downloads.set(False)
             output.allow_fly.set(True)
             output.reply_green.set(False)
@@ -1226,11 +1775,7 @@ def server(input, output, session):
 
                 #DFT=CR[0]
                 #DFT.insert(loc=0, column='Pooling strategy', value=DFT.index)
-                metrics_data.drop(metrics_data.columns[0], axis=1, inplace=True)
-                #ls_met_nice=['Pooling design', 'Mean total experiments', 'Max samples per pool', 'N pools', '\% multiple rounds', 'Mean extra experiments']
-                dict_ren={'N wells':'N pools (W)', 'Max compunds per well': 'Max compounds in a pool'}#{i:j for i,j in zip(metrics_data.columns,ls_met_nice)}
-                metrics_data.rename(columns=dict_ren, inplace=True)
-                
+                metrics_data = process_metrics_data(metrics_data)
                 #metrics_data.rename(index={'Chinese trick':'Chinese reminder'}, inplace=True)
                 output.summary_table.set(metrics_data)
 
@@ -1259,18 +1804,36 @@ def server(input, output, session):
 
                 output.summary_text.set(expensive_exps+long_exps+low_pools)#+long_exps_html)
 
-                #TBLS=CR[1]
-                DFFS={}
-                table_path=os.path.join(folder_path,'WAs')
-                TBLS=load_wa_matrices(table_path)
-                #print(table_path)
-                for idx in TBLS.keys():
-                    b1=TBLS[idx]
-                    tmp1=pd.DataFrame(b1, columns=['Pool '+ str(i) for i in range(b1.shape[1])], index=['Sample '+ str(i) for i in range(b1.shape[0])])
-                    DFFS.update({idx:tmp1})
+                # Compute fly summary for exact user values
+                if False:
+                    try:
+                        output.fly_summary_loading.set(True)
+                        output.fly_summary_message.set(f"Calculating summary metrics for {n_samp} samples with up to {differentiate} positives...")
+                        fly_table = fly_summary(n_samp, differentiate)
+                        print(f"Fly summary computed, shape: {fly_table.shape}, columns: {fly_table.columns.tolist()}")
+                        print(f"Fly summary data:\n{fly_table.head()}")
+                        output.fly_summary_table.set(fly_table)
+                        output.fly_summary_loading.set(False)
+                    except Exception as fly_err:
+                        output.fly_summary_loading.set(False)
+                        output.fly_summary_message.set(f"Error calculating fly summary: {str(fly_err)}")
+                        print(f"Fly summary error: {fly_err}")
+                        import traceback
+                        traceback.print_exc()
 
-                output.dataframes.set(DFFS)
-                #print(DFFS.keys())
+                #TBLS=CR[1]
+                if False:
+                    DFFS={}
+                    table_path=os.path.join(folder_path,'WAs')
+                    TBLS=load_wa_matrices(table_path)
+                    #print(table_path)
+                    for idx in TBLS.keys():
+                        b1=TBLS[idx]
+                        tmp1=pd.DataFrame(b1, columns=['Pool '+ str(i) for i in range(b1.shape[1])], index=['Sample '+ str(i) for i in range(b1.shape[0])])
+                        DFFS.update({idx:tmp1})
+
+                    output.dataframes.set(DFFS)
+                    #print(DFFS.keys())
 
             except Exception as e:
                 
@@ -1402,9 +1965,42 @@ def server(input, output, session):
         if file is None:
             return pd.DataFrame()
         return pd.read_csv(file[0]["datapath"], index_col=0)
+    
+    @reactive.calc
+    def parsed_file_readout():
+        file = input.uploaded_csv_readout()
+        if file is None:
+            return pd.DataFrame()
+        
+        # Read CSV file with robust csv.reader to handle variable row lengths
+        data = []
+        try:
+            with open(file[0]["datapath"], "r") as f:
+                reader = csv.reader(f)
+                for line in reader:
+                    data.append(line)
+        except Exception as e:
+            return pd.DataFrame()
+        
+        if not data:
+            return pd.DataFrame()
+        
+        # Find maximum row length
+        max_cols = max(len(row) for row in data) if data else 0
+        
+        # Pad shorter rows with empty strings to match max length
+        padded_data = []
+        for row in data:
+            padded_row = row + [""] * (max_cols - len(row))
+            padded_data.append(padded_row)
+        
+        # Create DataFrame
+        df = pd.DataFrame(padded_data)
+        return df
 
+    # Handle CSV readout submission
     @reactive.Effect
-    @reactive.event(input.readout_submit)
+    @reactive.event(input.submit_csv_readout)
     def _():
         fileinfo = input.uploaded_csv_decoder()
         output.database_reply_decoder.set("Please upload a pooling strategy file.")
@@ -1424,26 +2020,318 @@ def server(input, output, session):
                     output.allow_decoder.set(False)
                     return
                 file_name = fileinfo[0]["name"] if fileinfo and "name" in fileinfo[0] else "No file uploaded"
-                #output.database_reply_decoder.set("File and readout are ok, decoding.")
                 output.allow_decoder.set(True)
+
+                # CSV readout only
+                readout_csv_info = input.uploaded_csv_readout()
+                
+                if readout_csv_info is None:
+                    output.database_reply_decoder.set("<b>Error:</b> Please upload a readout CSV file.<br>")
+                    return
+                file_name_readout = readout_csv_info[0]["name"]
+                if readout_csv_info[0]["size"] > 10 * 1024 * 1024:
+                    output.database_reply_decoder.set("File too large. Please upload a readout csv smaller than 10Mb.")
+                    output.allow_decoder.set(False)
+                elif not file_name_readout.lower().endswith('.csv'):
+                    output.database_reply_auto.set(f"Please upload a readout csv file: {file_name_readout} is not in csv format.")
+                    output.allow_robot.set(False)
+                else:
+                # CSV readout path: process each row like a single input, aggregate results
+                    try:
+                        readout_df = parsed_file_readout()
+                        if readout_df is None or readout_df.empty:
+                            output.database_reply_decoder.set("<b>Error:</b> Readout CSV appears to be empty.")
+                            return
+
+                        WA_df = parsed_file_decoder()
+                        WA = WA_df.values
+                        n_pools = WA.shape[1]
+                        n_compounds = WA.shape[0]
+
+                        # Track diagnostics for user feedback
+                        original_rows = readout_df.shape[0]
+                        original_cols = readout_df.shape[1]
+                        dropped_first_row = False
+                        dropped_first_col = False
+
+                        # Header handling: decide whether to include first row/first column as data
+                        def _cell_is_valid_token(val):
+                            try:
+                                # Skip NaN/None/empty
+                                if pd.isna(val):
+                                    return None  # Use None to indicate "skip this cell"
+                                s = str(val).strip()
+                                if s == "" or s.lower() == "nan":
+                                    return None
+                                # integer scalar
+                                try:
+                                    iv = int(float(s))
+                                    return 0 <= iv <= n_pools
+                                except Exception:
+                                    pass
+                                # binary string of length n_pools
+                                if set(s).issubset({"0","1"}) and len(s) == n_pools:
+                                    return True
+                                # delimited list of ints
+                                parts = [p for p in re.split(r"[\s,;]+", s) if p]
+                                if parts and all(p.isdigit() and 0 <= int(p) <= n_pools for p in parts):
+                                    return True
+                                return False
+                            except Exception:
+                                return False
+
+                        # Check top row: include only if ALL non-empty cells are valid
+                        if readout_df.shape[0] > 0:
+                            try:
+                                top = readout_df.iloc[0, :].tolist()
+                                validations = [_cell_is_valid_token(x) for x in top]
+                                # Filter out None (empty cells) and check if all remaining are True
+                                non_empty_validations = [v for v in validations if v is not None]
+                                # DEBUG: count valid/invalid
+                                n_valid = sum(1 for v in non_empty_validations if v is True)
+                                n_invalid = sum(1 for v in non_empty_validations if v is False)
+                                if len(non_empty_validations) > 0 and not all(non_empty_validations):
+                                    # At least one non-empty cell is invalid -> drop top row
+                                    readout_df = readout_df.iloc[1:, :].reset_index(drop=True)
+                                    dropped_first_row = True
+                            except Exception as e:
+                                pass
+
+                        # Check first column: include only if ALL non-empty cells are valid
+                        if readout_df.shape[1] > 0:
+                            try:
+                                first = readout_df.iloc[:, 0].tolist()
+                                validations = [_cell_is_valid_token(x) for x in first]
+                                # Filter out None (empty cells) and check if all remaining are True
+                                non_empty_validations = [v for v in validations if v is not None]
+                                n_valid_col = sum(1 for v in non_empty_validations if v is True)
+                                n_invalid_col = sum(1 for v in non_empty_validations if v is False)
+                                if len(non_empty_validations) > 0 and not all(non_empty_validations):
+                                    # At least one non-empty cell is invalid -> drop first column
+                                    readout_df = readout_df.iloc[:, 1:].reset_index(drop=True)
+                                    dropped_first_col = True
+                            except Exception as e:
+                                pass
+
+                        diff_deco_val = input.decoder_diff()
+
+                        try:
+                            diff_deco_val = int(diff_deco_val)
+                        except:
+                            diff_deco_val = -1
+                        if diff_deco_val == -1:
+                            diff_deco_val = n_compounds
+
+                        results_rows = []
+
+                        for idx, row in readout_df.iterrows():
+                            row_str_original = ";".join([str(v) for v in row.tolist()])
+                            rl, err = series_to_readout_list(row, n_pools)
+                            if rl is None:
+                                results_rows.append({
+                                    "decoded_type": "error",
+                                    "decoder_output": f"Error: {err}",
+                                })
+                                continue
+
+                            # Now process like the single-input path
+                            try:
+                                rl_sorted = sorted([int(x) for x in rl])
+                            except Exception:
+                                results_rows.append({
+                                    "decoded_type": "error",
+                                    "decoder_output": "Error: could not coerce values to integers",
+                                })
+                                continue
+
+                            readout_arr = np.array(rl_sorted, dtype=int)
+                            if len(readout_arr) == 0:
+                                results_rows.append({
+                                    "decoded_type": "error",
+                                    "decoder_output": "Error: empty readout after parsing",
+                                })
+                                continue
+
+                            # Bound check for index-based format
+                            try:
+                                if readout_arr.max() > n_pools:
+                                    invalid_entries = [int(val) for val in rl_sorted if int(val) > n_pools]
+                                    msg = (
+                                        f"Entries exceed number of pools ({n_pools}): {invalid_entries}. "
+                                        f"Please correct your readout."
+                                    )
+                                    results_rows.append({
+                                        "decoded_type": "error",
+                                        "decoder_output": msg,
+                                    })
+                                    continue
+                            except Exception:
+                                pass
+
+                            if np.max(readout_arr) > 1 or len(readout_arr) != n_pools:
+                                readout_bin_ls = [1 if i in readout_arr else 0 for i in range(n_pools)]
+                                readout_use = np.array(readout_bin_ls)
+                            else:
+                                readout_use = readout_arr
+
+                            readout_bl = np.array(readout_use.astype(bool).astype(int))
+                            mask = ~np.any((WA == 1) & (readout_bl == 0), axis=1)
+                            original_indices = np.where(mask)[0]
+                            filtered_WA = WA[mask]
+                            n_compounds_f = filtered_WA.shape[0]
+                            dval = min(diff_deco_val, n_compounds_f)
+
+                            msg_parts = []
+                            msg_parts.append(f"Readout: {rl_sorted}")
+                            msg_parts.append(f"Samples: {n_compounds}, Pools: {n_pools}")
+
+                            if n_compounds_f < 2:
+                                if n_compounds_f == 1:
+                                    decoded = [int(original_indices[0])]
+                                    results_rows.append({
+                                        "decoded_type": "unique",
+                                        "decoder_output": decoded,
+                                    })
+                                else:
+                                    results_rows.append({
+                                        "decoded_type": "error",
+                                        "decoder_output": "No matches found. Check input or increase the differentiate value.",
+                                    })
+                                continue
+
+                            ls_combs = [math.comb(n_compounds_f, i) for i in range(dval)]
+                            max_combs = np.sum(ls_combs)
+                            if max_combs > 1e4:
+                                decoded = [int(original_indices[j]) for j in range(len(original_indices))]
+                                decoded = sorted(decoded)
+                                results_rows.append({
+                                    "decoded_type": "putative",
+                                    "decoder_output": decoded,
+                                })
+                                continue
+
+                            scrambler = {1: np.arange(n_compounds_f)}
+                            for j in range(2, dval + 1):
+                                scrambler[j] = np.array(list(itertools.combinations(np.arange(n_compounds_f), j)))
+
+                            decoded_pre = decode_precomp(
+                                well_assigner=filtered_WA,
+                                differentiate=dval,
+                                scrambler=scrambler,
+                                readout=readout_bl,
+                            )
+                            decoders = [c if isinstance(c, list) else [c] for c in decoded_pre]
+                            decoded = [[int(original_indices[k]) for k in comb] for comb in decoders]
+
+                            if len(decoded) == 0:
+                                results_rows.append({
+                                    "decoded_type": "error",
+                                    "decoder_output": "No matches found. Check input or increase the differentiate value.",
+                                })
+                            elif len(decoded) == 1:
+                                # Single combination (unique solution)
+                                results_rows.append({
+                                    "decoded_type": "unique",
+                                    "decoder_output": decoded[0],
+                                })
+                            elif len(decoded) > n_compounds_f:
+                                # Too many combinations - report putative list
+                                decoded_set = sorted(list(set([x for combo in decoded for x in combo])))
+                                results_rows.append({
+                                    "decoded_type": "putative",
+                                    "decoder_output": decoded_set,
+                                })
+                            else:
+                                # Multiple distinct combinations
+                                results_rows.append({
+                                    "decoded_type": "multiple",
+                                    "decoder_output": decoded,
+                                })
+
+                        df_out = pd.DataFrame(results_rows)
+                        output.decoder_csv.set(df_out)
+                        output.decoder_rows.set(results_rows)
+                        output.decoder_mode.set('csv')
+                        
+                        # Build diagnostic message
+                        msg = f"<b>CSV Upload Summary:</b><br>"
+                        msg += f"Original CSV: {original_rows} rows × {original_cols} columns<br>"
+                        if dropped_first_row:
+                            msg += "<span style='color: #ff8800;'>First row excluded (contains non-integer values or values out of range)</span><br>"
+                        else:
+                            msg += "<span style='color: #2ecc40;'>First row included as data</span><br>"
+                        if dropped_first_col:
+                            msg += "<span style='color: #ff8800;'>First column excluded (contains non-integer values or values out of range)</span><br>"
+                        else:
+                            msg += "<span style='color: #2ecc40;'>First column included as data</span><br>"
+                        msg += f"<b>Processing {readout_df.shape[0]} readout rows</b><br>"
+                        msg += f"Download results below."
+                        
+                        output.database_reply_decoder.set(msg)
+                        return
+                    except Exception as e:
+                        msg = f"<b>Error:</b> Could not parse/read readout CSV: {str(e)}<br>"
+                        output.database_reply_decoder.set(msg)
+                        return
+
+    # Handle text readout submission
+    @reactive.Effect
+    @reactive.event(input.submit_text_readout)
+    def _():
+        fileinfo = input.uploaded_csv_decoder()
+        output.database_reply_decoder.set("Please upload a pooling strategy file.")
+        if fileinfo is not None:
+            file_name = fileinfo[0]["name"]
+            if fileinfo[0]["size"] > 10 * 1024 * 1024:
+                output.database_reply_decoder.set("File too large. Please upload a csv smaller than 10Mb.")
+                output.allow_decoder.set(False)
+            elif not file_name.lower().endswith('.csv'):
+                output.database_reply_auto.set(f"Please upload a csv file: {file_name} is not in csv format.")
+                output.allow_robot.set(False)
+            else:
+                WA_df = parsed_file_decoder()
+                valid, validation_msg = validate_WA_df(WA_df)
+                if not valid:
+                    output.database_reply_decoder.set(validation_msg)
+                    output.allow_decoder.set(False)
+                    return
+                file_name = fileinfo[0]["name"] if fileinfo and "name" in fileinfo[0] else "No file uploaded"
+                output.allow_decoder.set(True)
+
+                # Text readout only
                 readout_str = input.readout_string()
-                # Now readout_str contains the string entered by the user, e.g. "0,1,1,0,0,0,1" or "3,7,4"
-                # You can process it as needed:
+                readout_list = []
+
+                if not readout_str or not readout_str.strip():
+                    output.database_reply_decoder.set("<b>Error:</b> Please enter a readout as comma-separated text.<br>")
+                    return
+
+                # Text readout path (existing behavior)
                 try:
-                    readout_list = []
                     for x in readout_str.split(','):
                         x_clean = x.strip()
                         if x_clean == '':
                             continue
                         if not x_clean.isdigit():
-                            msg = f"<b>Error:</b> Invalid entry '{x_clean}' in readout. Please enter only integers separated by commas.<br>"
+                            msg = (
+                                f"<b>Error:</b> Invalid entry '{x_clean}' in readout. "
+                                "Please enter only integers separated by commas.<br>"
+                            )
                             output.database_reply_decoder.set(msg)
                             return
                         readout_list.append(int(x_clean))
-                except Exception as e:
-                    msg = f"<b>Error:</b> Could not parse readout. Please enter only integers separated by commas.<br>"
+                except Exception:
+                    msg = (
+                        "<b>Error:</b> Could not parse readout. "
+                        "Please enter only integers separated by commas.<br>"
+                    )
                     output.database_reply_decoder.set(msg)
                     return
+                
+                if len(readout_list) == 0:
+                    output.database_reply_decoder.set("<b>Error:</b> Readout appears to be empty.<br>")
+                    return
+                
                 diff_deco = input.decoder_diff()
                 try:
                     diff_deco = int(diff_deco)
@@ -1453,119 +2341,109 @@ def server(input, output, session):
                 output.decoder_diff.set(diff_deco)
                 diff_deco=output.decoder_diff.get()
 
-                msg=f'Processing file <b>{fileinfo[0]["name"]}</b> <br>'
+                WA_df = parsed_file_decoder()
+                WA=WA_df.values
+                n_pools=WA.shape[1]
+                n_compounds=WA.shape[0]
+                if diff_deco==-1:
+                    diff_deco=n_compounds
 
-                if len(readout_list)>0:
-                    WA_df = parsed_file_decoder()
-                    WA=WA_df.values
-                    n_pools=WA.shape[1]
-                    n_compounds=WA.shape[0]
-                    if diff_deco==-1:
-                        diff_deco=n_compounds
-
-                    readout_list.sort()
-                    msg=f'Processing file <b>{fileinfo[0]["name"]}</b> with max. <b>{diff_deco}</b> positive samples and readout: <br>'
-                    msg+=f"{readout_list}<br>"
+                readout_list.sort()
+                msg=f'Processing file <b>{fileinfo[0]["name"]}</b> with max. <b>{diff_deco}</b> positive samples and readout: <br>'
+                msg+=f"{readout_list}<br>"
                     #msg+=f'{WA}'
-                    readout=np.array(readout_list, dtype=int)
-                    if max(readout)>n_pools:
-                        invalid_entries = [val for val in readout_list if val > n_pools]
-                        msg += f"<br>The following entries in your readout are bigger than the number of pools ({n_pools}):<br> <b>{invalid_entries}</b>"
-                        msg+="<br>Please <b>correct your readout</b>.<br>"
+                readout=np.array(readout_list, dtype=int)
+                if max(readout)>n_pools:
+                    invalid_entries = [val for val in readout_list if val > n_pools]
+                    msg += f"<br>The following entries in your readout are bigger than the number of pools ({n_pools}):<br> <b>{invalid_entries}</b>"
+                    msg+="<br>Please <b>correct your readout</b>.<br>"
+                    output.database_reply_decoder.set(msg)
+                    return
+                if np.max(readout)>1 or len(readout)!=n_pools:
+                    readout_bin_ls = [1 if i in readout else 0 for i in range(n_pools)]
+                    readout=np.array(readout_bin_ls)
+                msg+=f'<br>The uploaded pooling strategy comprizes {n_compounds} samples in {n_pools} pools.<br><br>'
+                readout_bl=np.array(readout.astype(bool).astype(int))
+                mask = ~np.any((WA == 1) & (readout_bl == 0), axis=1)
+                #msg+=f'boolean readout {readout_bl}<br>'
+                original_indices = np.where(mask)[0]  # Get original row indices
+                filtered_WA = WA[mask]
+                n_compounds=filtered_WA.shape[0]
+                if diff_deco> n_compounds:
+                    diff_deco=n_compounds
+                #msg+=f'<br>we have {filtered_WA.shape} shape of the filtered WA<br>'
+
+                if n_compounds<2:
+                    if n_compounds==1:
+                        decoded=[original_indices[0]]
+                        msg += '<span style="color: #2ecc40;"><b>A single positive sample was found:</b></span><br>'
+                        for deco in decoded:
+                            msg += f'<span style="color: #2ecc40;"><b>Sample: {deco}</b></span><br>'
+                    else:
+                        msg += '<span style="color: #c00;"><b>We found no matches for the given parameters, check your input or try increasing the differentiate value.</b></span>'                    
+                else:
+                    ls_combs=[math.comb(n_compounds,i) for i in range(diff_deco)]
+                    max_combs=np.sum(ls_combs)
+                    if max_combs>1e4:
+                        decoded = [int(original_indices[idx]) for idx in range(len(original_indices))]
+                        msg += (
+                            '<b>Putative positive samples were identified</b>, but the app does not have the computational power to attempt to decode the exact combination.<br>'
+                            'Either test all putative positive samples individually or change pooling strategy. A lower differentiate (only if it makes sense) might narrow it down.<br>'
+                            f'There are up to {min([diff_deco,len(decoded)])} positive samples among the following samples: <b>{decoded}</b>.'
+                        )   
                         output.database_reply_decoder.set(msg)
                         return
-                    if np.max(readout)>1 or len(readout)!=n_pools:
-                        readout_bin_ls = [1 if i in readout else 0 for i in range(n_pools)]
-                        readout=np.array(readout_bin_ls)
-                    msg+=f'<br>The uploaded pooling strategy comprizes {n_compounds} samples in {n_pools} pools.<br><br>'
-                    readout_bl=np.array(readout.astype(bool).astype(int))
-                    mask = ~np.any((WA == 1) & (readout_bl == 0), axis=1)
-                    #msg+=f'boolean readout {readout_bl}<br>'
-                    original_indices = np.where(mask)[0]  # Get original row indices
-                    filtered_WA = WA[mask]
-                    n_compounds=filtered_WA.shape[0]
-                    if diff_deco> n_compounds:
-                        diff_deco=n_compounds
-                    #msg+=f'<br>we have {filtered_WA.shape} shape of the filtered WA<br>'
+                    
 
-                    if n_compounds<2:
-                        if n_compounds==1:
-                            decoded=[original_indices[0]]
-                            msg += '<span style="color: #2ecc40;"><b>A single positive sample was found:</b></span><br>'
-                            for deco in decoded:
-                                msg += f'<span style="color: #2ecc40;"><b>Sample: {deco}</b></span><br>'
+                    scrambler={1:np.arange(n_compounds)}
+                    for j in range(2,diff_deco+1):
+                        scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
+
+                    decoded_pre=decode_precomp(well_assigner=filtered_WA, differentiate= diff_deco, scrambler=scrambler, 
+                            readout=readout_bl)
+                    # Map filtered indices back to original indices
+                    decoders = [combination if isinstance(combination, list) else [combination] for combination in decoded_pre]
+                    decoded = [[int(original_indices[idx]) for idx in combination] for combination in decoders]
+                    #msg+=f'{decoded_multi} <br><br>'
+                    #decoded=set_compund_list(decoded_multi)
+                    #msg+=f'{decoded} <br><br>'
+                    # Remove duplicate combinations (convert to tuples for uniqueness, then back to lists)
+
+                    if len(decoded)==0:
+                        msg+= '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value.'
+
+                    elif len(decoded)==1:
+
+                        if len(decoded[0])==1:
+                            msg += '<span style="color: #2ecc40;"><b>A single positive sample was found:</span></b><br>'
+                            for deco in decoded[0]:
+                                msg += f'<span style="color: #2ecc40;"><b>Sample: {deco}</b></span><br>' 
                         else:
-                            msg += '<span style="color: #c00;"><b>We found no matches for the given parameters, check your input or try increasing the differentiate value.</b></span>'                    
+                            msg+=f'<span style="color: #2ecc40;"><b>A single possible combination of positive samples was found. The positive samples are:</span></b><br>'
+                            msg += f'<span style="color: #2ecc40;"><b>Samples: {", ".join(map(str, decoded[0]))}</b></span><br>'
+
+                    elif len(decoded)>n_compounds:
+                        decoded_set = list(set([x for combo in decoded for x in combo]))
+                        decoded_set.sort()
+                        msg += (
+                            '<b>Putative positive samples were identified</b>, but the exact combination could not be pinpointed.<br>'
+                            'Either test all putative positive samples individually or change pooling strategy. A lower differentiate (only if it makes sense) might narrow it down.<br>'
+                            f'There are up to {min([diff_deco,len(decoded_set)])} positive samples among the following samples: <b>{decoded_set}</b>.'
+                        )
                     else:
-                        ls_combs=[math.comb(n_compounds,i) for i in range(diff_deco)]
-                        max_combs=np.sum(ls_combs)
-                        if max_combs>1e4:
-                            decoded = [int(original_indices[idx]) for idx in range(len(original_indices))]
-                            msg += (
-                                '<b>Putative positive samples were identified</b>, but the app does not have the computational power to attempt to decode the exact combination.<br>'
-                                'Either test all putative positive samples individually or change pooling strategy. A lower differentiate (only if it makes sense) might narrow it down.<br>'
-                                f'There are up to {min([diff_deco,len(decoded)])} positive samples among the following samples: <b>{decoded}</b>.'
-                            )   
-                            output.database_reply_decoder.set(msg)
-                            return
-                        
+                        msg += f'{len(decoded)} possible combinations of positive samples were found. The possible combinations are:<br>'
+                        for i,deco in enumerate(decoded):
+                            if i!=0:
+                                msg+='or<br>'
+                            msg += f'<b>Samples: {", ".join(map(str, deco))}</b><br>'
 
-                        scrambler={1:np.arange(n_compounds)}
-                        for j in range(2,diff_deco+1):
-                            scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
+                output.database_reply_decoder.set(msg)
 
-                        decoded_pre=decode_precomp(well_assigner=filtered_WA, differentiate= diff_deco, scrambler=scrambler, 
-                                readout=readout_bl)
-                        # Map filtered indices back to original indices
-                        decoders = [combination if isinstance(combination, list) else [combination] for combination in decoded_pre]
-                        decoded = [[int(original_indices[idx]) for idx in combination] for combination in decoders]
-                        #msg+=f'{decoded_multi} <br><br>'
-                        #decoded=set_compund_list(decoded_multi)
-                        #msg+=f'{decoded} <br><br>'
-                        # Remove duplicate combinations (convert to tuples for uniqueness, then back to lists)
-
-                        if len(decoded)==0:
-                            msg+= '<b>We found no matches for the given parameters, check your input or try increasing the differentiate value.'
-
-                        elif len(decoded)==1:
-
-                            if len(decoded[0])==1:
-                                msg += '<span style="color: #2ecc40;"><b>A single positive sample was found:</span></b><br>'
-                                for deco in decoded[0]:
-                                    msg += f'<span style="color: #2ecc40;"><b>Sample: {deco}</b></span><br>' 
-                            else:
-                                msg+=f'<span style="color: #2ecc40;"><b>A single possible combination of positive samples was found. The positive samples are:</span></b><br>'
-                                msg += f'<span style="color: #2ecc40;"><b>Samples: {", ".join(map(str, decoded[0]))}</b></span><br>'
-
-                        elif len(decoded)>n_compounds:
-                            decoded_set = list(set([x for combo in decoded for x in combo]))
-                            decoded_set.sort()
-                            msg += (
-                                '<b>Putative positive samples were identified</b>, but the exact combination could not be pinpointed.<br>'
-                                'Either test all putative positive samples individually or change pooling strategy. A lower differentiate (only if it makes sense) might narrow it down.<br>'
-                                f'There are up to {min([diff_deco,len(decoded_set)])} positive samples among the following samples: <b>{decoded_set}</b>.'
-                            )
-                        else:
-                            msg += f'{len(decoded)} possible combinations of positive samples were found. The possible combinations are:<br>'
-                            for i,deco in enumerate(decoded):
-                                if i!=0:
-                                    msg+='or<br>'
-                                msg += f'<b>Samples: {", ".join(map(str, deco))}</b><br>'
-
-                    output.database_reply_decoder.set(msg)
-
-                    mess = output.database_reply_decoder.get()
-                    message = re.sub(r'</?b>', '', mess)
-                    txt = f"Uploaded file: {file_name}\nReadout: {readout_str}\n\n{message.replace('<br>', '\n')}"
-                    output.decoder_text.set(txt)
-
-                else:
-                    msg+='Please provide a readout in the correct format.'
-                    output.database_reply_decoder.set(msg)
-
-
-            #elif False:
-           
+                mess = output.database_reply_decoder.get()
+                message = re.sub(r'</?b>', '', mess)
+                txt = f"Uploaded file: {file_name}\nReadout: {readout_str}\n\n{message.replace('<br>', '\n')}"
+                output.decoder_text.set(txt)
+                output.decoder_mode.set('text')
 
 
     @output
@@ -1596,6 +2474,34 @@ def server(input, output, session):
     @render.text
     def allow_decoder():
         return str(output.allow_decoder.get()).lower() 
+
+    @output
+    @render.text
+    def decoder_mode():
+        # returns 'csv', 'text', or ''
+        try:
+            val = output.decoder_mode.get()
+            return val if isinstance(val, str) else ""
+        except Exception:
+            return ""
+
+    @output
+    @render.text
+    def decoder_is_csv():
+        try:
+            val = output.decoder_mode.get()
+            return "true" if val == "csv" else "false"
+        except Exception:
+            return "false"
+
+    @output
+    @render.text
+    def decoder_is_text():
+        try:
+            val = output.decoder_mode.get()
+            return "true" if val == "text" else "false"
+        except Exception:
+            return "false"
 
     @output
     @render.ui
@@ -1664,6 +2570,16 @@ def server(input, output, session):
     async def download_summary():
         # Yield the content of the CSV file
         yield output.summary_table.get().to_csv(index=False)
+
+    @output
+    @render.download(filename=lambda: "Pooled_pooling.pdf")
+    async def download_pooled_pooling():
+        file_path = Path(__file__).resolve().parent / "static" / "Pooled_pooling.pdf"
+        if file_path.exists():
+            with open(file_path, "rb") as f:
+                yield f.read()
+        else:
+            yield "Pooled_pooling.pdf not found."
 
     @output
     @render.download(filename=lambda: "matrix_pooling.csv")
@@ -1970,6 +2886,100 @@ def server(input, output, session):
 
     @output
     @render.ui
+    def fly_summary_status():
+        loading = output.fly_summary_loading.get()
+        message = output.fly_summary_message.get()
+        if loading:
+            return ui.HTML(f'<div style="color: #228B22; font-size: 18px; font-weight: bold;">{message}</div>')
+        elif message and "Error" in message:
+            return ui.HTML(f'<div style="color: #c00; font-size: 18px; font-weight: bold;">{message}</div>')
+        elif not output.fly_summary_table.get().empty:
+            n = output.last_submitted_n_samp.get()
+            d = output.last_submitted_differentiate.get()
+            return ui.HTML(f'<div style="margin-bottom: 20px; font-size: 20px; font-weight: bold;">Summary metrics calculated on the fly for {n} samples with up to {d} positives</div>')
+        return ui.HTML("")
+
+    @output
+    @render.ui
+    def fly_summary_colored_table():
+        df = output.fly_summary_table.get()
+        if df is None or df.empty:
+            return ui.HTML("")
+        
+        # Sort by 'Mean experiments' column
+        if 'Mean experiments' in df.columns:
+            df = df.sort_values(by='Mean experiments').reset_index(drop=True)
+        
+        html = '<table style="border-collapse: collapse; font-size: 16px;">'
+        html += '<tr>'
+        for col in df.columns:
+            th_style = 'border: 1px solid #aaa; padding: 8px 12px; text-align: center;'
+            if col == 'N pools':
+                th_style += ' min-width: 120px;'
+            html += f'<th style="{th_style}">{col}</th>'
+        html += '</tr>'
+        
+        n_samp = int(output.last_submitted_n_samp.get())
+        
+        # Mark only the 3 smallest values in 'Mean experiments' column as green
+        green_indices = []
+        if 'Mean experiments' in df.columns:
+            col_vals = df['Mean experiments']
+            idxs = pd.Series(col_vals).nsmallest(3).index.tolist()
+            idxs = [i for i in idxs if col_vals[i] < n_samp]
+            green_indices = idxs
+        
+        # Count how many methods have Mean steps == 1
+        mean_steps_eq_1_count = 0
+        if 'Mean steps' in df.columns:
+            mean_steps_eq_1_count = (df['Mean steps'] == 1.0).sum()
+        
+        for i, row in df.iterrows():
+            # Check if Mean experiments > n_samp for this row
+            row_red = False
+            if 'Mean experiments' in df.columns:
+                try:
+                    mean_exp = float(row['Mean experiments'])
+                    if mean_exp > n_samp:
+                        row_red = True
+                except Exception:
+                    pass
+            
+            html += '<tr>'
+            for col in df.columns:
+                val = row[col]
+                td_style = 'border: 1px solid #aaa; padding: 8px 12px; text-align: center;'
+                if col == 'N pools':
+                    td_style += ' min-width: 120px;'
+                
+                # Red coloring for entire row if Mean experiments > n_samp
+                if row_red:
+                    td_style += ' background-color: #ffcccc; color: #111;'
+                # Green only for 'Mean experiments' column in green_indices rows (unless row is red)
+                elif col == 'Mean experiments' and i in green_indices:
+                    td_style += ' background-color: #b6fcb6; color: #111;'
+                # Handle 'Mean steps' column coloring
+                elif col == 'Mean steps':
+                    try:
+                        mean_steps_val = float(val)
+                        # If less than 5 methods have == 1, color those green
+                        if mean_steps_eq_1_count <= 5:
+                            if mean_steps_val == 1.0:
+                                td_style += ' background-color: #b6fcb6; color: #111;'
+                        # If 5 or more have == 1, color those with > 1 red
+                        else:
+                            if mean_steps_val > 1.0:
+                                td_style += ' background-color: #ffcccc; color: #111;'
+                    except Exception:
+                        pass
+                
+                html += f'<td style="{td_style}">{val}</td>'
+            html += '</tr>'
+        html += '</table>'
+        return ui.HTML(html)
+
+    @output
+    @render.ui
     def summary_colored_table():
         df = output.summary_table.get()
         if df is None or df.empty:
@@ -2161,8 +3171,131 @@ def server(input, output, session):
     @render.download(filename=lambda: "decoder_output.txt")
     async def download_decoder_output():
         text=output.decoder_text.get()
+        # Remove HTML tags
+        text_clean = re.sub(r'<[^>]+>', '', text)
+        yield text_clean
 
-        yield text
+    @output
+    @render.download(filename=lambda: "decoded_readouts.csv")
+    async def download_decoder_csv():
+        df = output.decoder_csv.get()
+        try:
+            if isinstance(df, pd.DataFrame) and not df.empty:
+                # Add Readout index (Readout 0, Readout 1, ...)
+                df_with_index = df.copy()
+                df_with_index.index = [f"Readout {i}" for i in range(len(df_with_index))]
+                
+                # Convert list-like decoder_output values to comma-separated strings (remove brackets)
+                if "decoder_output" in df_with_index.columns:
+                    def format_output(val):
+                        if isinstance(val, list):
+                            return ", ".join(map(str, val))
+                        elif isinstance(val, str):
+                            # If it's a stringified list like "[0, 1, 2]", remove brackets
+                            if val.startswith("[") and val.endswith("]"):
+                                return val[1:-1]
+                            return val
+                        else:
+                            return str(val)
+                    df_with_index["decoder_output"] = df_with_index["decoder_output"].apply(format_output)
+                
+                # Format column names: remove underscores and capitalize
+                df_with_index.columns = [col.replace("_", " ").title() for col in df_with_index.columns]
+                
+                yield df_with_index.to_csv()
+            else:
+                yield pd.DataFrame().to_csv(index=False)
+        except Exception:
+            yield pd.DataFrame().to_csv(index=False)
+
+    @output
+    @render.download(filename=lambda: "sample_probabilities.csv")
+    async def download_sample_probabilities():
+        
+
+        # Use stored raw results_rows to avoid any re-decoding
+        rows = output.decoder_rows.get()
+        WA_df = parsed_file_decoder()
+
+        try:
+            if not isinstance(rows, list) or len(rows) == 0:
+                yield pd.DataFrame().to_csv(index=False)
+                return
+
+            if WA_df is None or not isinstance(WA_df, pd.DataFrame) or WA_df.empty:
+                yield pd.DataFrame().to_csv(index=False)
+                return
+
+            n_compounds = WA_df.shape[0]
+            columns = [f"Sample {i}" for i in range(n_compounds)]
+            R = len(rows)
+            index_labels = [f"Readout {i}" for i in range(R)]
+            prob_df = pd.DataFrame(index=index_labels, columns=columns, dtype=float)
+
+            for r_idx, row in enumerate(rows):
+                dtype = row.get("decoded_type")
+                dout = parse_decoder_output(row.get("decoder_output"))
+                row_label = f"Readout {r_idx}"
+
+                if dtype == "error" or dout is None:
+                    prob_df.loc[row_label] = np.nan
+                    continue
+
+                arr = np.zeros(n_compounds, dtype=float)
+
+                if dtype == "unique":
+                    try:
+                        for s in (dout if isinstance(dout, (list, tuple)) else [dout]):
+                            si = int(s)
+                            if 0 <= si < n_compounds:
+                                arr[si] = 1.0
+                    except Exception:
+                        arr[:] = np.nan
+
+                elif dtype == "putative":
+                    try:
+                        for s in (dout if isinstance(dout, (list, tuple)) else [dout]):
+                            si = int(s)
+                            if 0 <= si < n_compounds:
+                                arr[si] = 0.5
+                    except Exception:
+                        arr[:] = np.nan
+
+                elif dtype == "multiple":
+                    try:
+                        combos = dout if isinstance(dout, list) else []
+                        total = len(combos)
+                        if total == 0:
+                            arr[:] = np.nan
+                        else:
+                            counts = np.zeros(n_compounds, dtype=float)
+                            appeared = set()
+                            for comb in combos:
+                                try:
+                                    for s in comb:
+                                        si = int(s)
+                                        if 0 <= si < n_compounds:
+                                            counts[si] += 1
+                                            appeared.add(si)
+                                except Exception:
+                                    counts = None
+                                    break
+                            if counts is None:
+                                arr[:] = np.nan
+                            else:
+                                for si in appeared:
+                                    arr[si] = counts[si] / total
+                    except Exception:
+                        arr[:] = np.nan
+
+                else:
+                    arr[:] = np.nan
+
+                prob_df.loc[row_label] = arr
+
+            yield prob_df.to_csv(index=True)
+        except Exception:
+            yield pd.DataFrame().to_csv(index=False)
 
 app = App(app_ui, server)
 

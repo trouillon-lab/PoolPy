@@ -7,6 +7,7 @@ import os
 import time
 import string
 import shutil
+import scipy
 
 def int_to_base(n, N):
     """Return base N representation for int n."""
@@ -1436,6 +1437,74 @@ def make_all_deterministic_WAs(start=50, stop=150, step=10, **kwargs):
             print('\n')
 
         current += step
+
+
+# Function to generate expected error table for prevalence tab
+def expected_error_table(N, prevalence, max_diff=4, min_N=5, correct=False, max_error=0.05, extra_steps=2):
+ # or set to N or another reasonable value
+    diff_values = np.arange(1, int(max_diff)+extra_steps+1)
+    extreme_diff= int(np.ceil(scipy.stats.binom.isf(max_error, N, prevalence)))
+
+    if extreme_diff>max_diff+extra_steps:
+        rooty=np.power(extreme_diff/max_diff,1/(extra_steps))
+        for i in range(extra_steps):
+            new_diff=int(np.ceil(max_diff*np.power(rooty, i+1)))
+            diff_values[max_diff+i]=new_diff
+    #elif max_diff<extreme_diff<max_diff+extra_steps:
+    #    diff_values = np.arange(1, int(extreme_diff)+1)
+    else:
+        diff_values = np.arange(1, int(np.max([max_diff, extreme_diff]))+1)
+
+    pop_sizes = []
+    N_current = int(np.ceil(N))
+    factor=[]
+    N_factor=[]
+    NF=1
+    # Build the population sizes as described, always take the ceiling to be on the safe side
+    while N_current >= min_N:
+        pop_sizes.append(N_current)
+        factor.append(NF)
+        N_factor.append(str(NF)+' X '+str(N_current))
+        N_current = int(np.ceil(N_current / 2))
+        NF=int(NF*2)
+        if N_current < min_N:
+            break
+        N_factor.append(str(NF)+' X '+str(N_current))
+        pop_sizes.append(N_current)
+        factor.append(NF)
+        NF=int(NF*2.5)
+        N_current = int(np.ceil(N_current / 2.5))
+        if N_current < min_N:
+            break
+        N_factor.append(str(NF)+' X '+str(N_current))
+        pop_sizes.append(N_current)
+        factor.append(NF)
+        NF=int(NF*2)
+        N_current = int(np.ceil(N_current / 2))
+    # Remove duplicates and sort descending
+    #pop_sizes = sorted(set([x for x in pop_sizes if x >= min_N]), reverse=True)
+    
+    # Build the table
+    
+    data = []
+    CF=pop_sizes
+    for N_val,NF in zip(pop_sizes,factor):
+        row = []
+        for diff in diff_values:
+            p_error = scipy.stats.binom.sf(diff, N_val, prevalence)
+            if correct:
+                p_error=1-(1-p_error)**int(NF)
+                CF=N_factor
+            if p_error<1e-15:
+                p_error=0
+            row.append(p_error)
+        data.append(row)
+    df = pd.DataFrame(data, index=CF, columns=diff_values)
+    # No minimum error logic needed
+    df.index.name = "N"
+    df.columns.name = "Differentiate"
+    return df
+
 
 
 

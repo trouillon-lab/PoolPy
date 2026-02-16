@@ -11,8 +11,7 @@ import copy
 import json
 
 
-from Functions import *
-from Fast_functions import *
+from Functions_wrapped import *
 
 
 

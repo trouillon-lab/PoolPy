@@ -140,7 +140,8 @@ app_ui = ui.page_fluid(
                     ui.div(
                         ui.download_button("download_summary", "Download summary"),
                         style="text-align: center; margin-top: 20px;"
-                    )
+                    ),
+                    ui.div("", style="margin-top: -32px;")
                 )
             ),
             ui.div(
@@ -156,6 +157,13 @@ app_ui = ui.page_fluid(
             ui.div(
                 ui.h4("Downloads & code"),
                 style="text-align: center;"
+            ),
+            ui.div(
+                "All precomputed pooling designs are available on Zenodo.",
+                ui.br(),
+                "Access the repository at: ",
+                ui.a("DOI: 10.5281/zenodo.18660062", href="https://doi.org/10.5281/zenodo.18660062", style="text-decoration: underline;", target="_blank", rel="noopener noreferrer"),
+                style="color: #555; font-size: 20px; text-align: center;"
             ),
             ui.div("", style="height: 32px;"),
             ui.panel_conditional(
@@ -541,6 +549,7 @@ WA_SUB_DIRECTORY='precomputed'
 #SCRAMBLER_DIRECTORY='.\output'
 MAX_DIFFERENTIATE=10
 MAX_N=1000
+MAX_PROD=2500
 MAX_PREVALENCE=0.1
 
 
@@ -553,6 +562,14 @@ def process_metrics_data(metrics_data):
         
         dict_ren={'N wells':'N pools (W)', 'Max compunds per well': 'Max compounds in a pool'}
         metrics_data.rename(columns=dict_ren, inplace=True)
+        
+        # Rename pooling strategies for consistency
+        if 'Pooling strategy' in metrics_data.columns:
+            metrics_data['Pooling strategy'] = metrics_data['Pooling strategy'].replace({
+                'Chinese special': 'Ch. Rm. special',
+                'Ch. rm. bktrk': 'Ch. Rm. backtrack'
+            })
+        
         if 'Max experiments per sample' in metrics_data.columns:
             metrics_data = metrics_data[['Pooling strategy', 'Mean experiments', 'Mean steps', 'N pools', 'Max samples per pool', 'Percentage check', 'Mean extra experiments', 'Max experiments per sample']]
         else:
@@ -1601,7 +1618,6 @@ def server(input, output, session):
         output.last_submitted_n_samp.set(n_samp)
         output.last_submitted_differentiate.set(differentiate)
         # Display computing message
-        output.database_reply.set("Computing summary table...")
         #print(n_samp)
         n_samp=output.last_submitted_n_samp.get()
         differentiate=output.last_submitted_differentiate.get()
@@ -1623,76 +1639,70 @@ def server(input, output, session):
 
         elif differentiate > MAX_DIFFERENTIATE:
             output_text_1=f'Maximum number of positives ({differentiate}) exceeds the maximum precomputed differentiate. The precomputed maximum is {MAX_DIFFERENTIATE}.\n'
-            output_text_2 = '<span style="color: #228B22;">Some designs have been evaluated on the fly for your specific values. To download them (or locally run the code), follow the section below.</span>'
-            output_text=output_text_1+output_text_2
-            output_text = output_text.replace('\n', '<br>')
-            output.database_reply.set(output_text)
-            output.extra_computation.set(1)
-            if n_samp * differentiate > 2000:
-                output.fly_summary_message.set(f"Skipped: n_samp × differentiate ({n_samp} × {differentiate} = {n_samp * differentiate}) exceeds 2000")
+            if n_samp * differentiate > MAX_PROD:
+                output_text_2=f"Skipped: Number of Samples × Max. number of positives ({n_samp} × {differentiate} = {n_samp * differentiate}) exceeds {MAX_PROD} and is too heavy to be computed on the fly."
                 output.fly_summary_loading.set(False)
                 output.summary_table.set(pd.DataFrame(columns=ls_met))
                 output.fly_summary_table.set(pd.DataFrame())
             else:
-                output.fly_summary_loading.set(True)
-                output.fly_summary_message.set(f"Calculating summary metrics for {n_samp} samples with up to {differentiate} positives...")
+                output_text_2 = '<span style="color: #228B22;">Some designs have been evaluated on the fly for your specific values. To download them (or locally run the code), follow the section below.</span>'
                 fly_table = fly_summary(n_samp, differentiate)
                 fly_table = process_metrics_data(fly_table)
                 output.summary_table.set(fly_table)
                 output.fly_summary_table.set(fly_table)
-                output.fly_summary_loading.set(False)
+                output.allow_fly.set(True)
+
             output.allow_downloads.set(False)
-            output.allow_fly.set(True)
             output.reply_green.set(False)
+            output_text=output_text_1+output_text_2
+            output_text = output_text.replace('\n', '<br>')
+            output.database_reply.set(output_text)
+            output.extra_computation.set(1)
 
         elif n_samp > MAX_N:
             output_text_1=f'Maximum number of samples ({n_samp})  exceeds the maximum precomputed values. The precomputed maximum is {MAX_N}.\n'
-            output_text_2 = '<span style="color: #228B22;">Some designs have been approximately evaluated on the fly for your specific values.\n To download them (or locally run the code), follow the section below.</span>'
-            output_text=output_text_1+output_text_2
-            output_text = output_text.replace('\n', '<br>')
-            output.database_reply.set(output_text)
-            output.extra_computation.set(1)
-            if n_samp * differentiate > 2000:
-                output.fly_summary_message.set(f"Skipped: n_samp × differentiate ({n_samp} × {differentiate} = {n_samp * differentiate}) exceeds 2000")
-                output.fly_summary_loading.set(False)
+            if n_samp * differentiate > MAX_PROD:
+                output_text_2=f"Skipped: Number of Samples × Max. number of positives ({n_samp} × {differentiate} = {n_samp * differentiate}) exceeds {MAX_PROD} and is too heavy to be computed on the fly."
                 output.summary_table.set(pd.DataFrame(columns=ls_met))
                 output.fly_summary_table.set(pd.DataFrame())
             else:
-                output.fly_summary_loading.set(True)
-                output.fly_summary_message.set(f"Calculating summary metrics for {n_samp} samples with up to {differentiate} positives...")
+                output_text_2 = '<span style="color: #228B22;">Some designs have been approximately evaluated on the fly for your specific values.\n To download them (or locally run the code), follow the section below.</span>'
                 fly_table = fly_summary(n_samp, differentiate)
                 fly_table = process_metrics_data(fly_table)
                 output.summary_table.set(fly_table)
                 output.fly_summary_table.set(fly_table)
-                output.fly_summary_loading.set(False)
+                output.allow_fly.set(True)
+            
+            output_text=output_text_1+output_text_2
+            output_text = output_text.replace('\n', '<br>')
+            output.database_reply.set(output_text)
+            output.extra_computation.set(1)
             output.allow_downloads.set(False)
-            output.allow_fly.set(True)
+           
             output.reply_green.set(False)
 
         elif n_samp > 0 and differentiate / n_samp > MAX_PREVALENCE:
             prevalence = differentiate / n_samp
             output_text_1=f'The prevalence of positives ({prevalence:.1%}) exceeds the maximum precomputed prevalence ({MAX_PREVALENCE:.1%}).\n'
-            output_text_2 = '<span style="color: #228B22;">Some designs have been approximately evaluated on the fly for your specific values.\n To download them (or locally run the code), follow the section below.</span>'
-            output_text=output_text_1+output_text_2
-            output_text = output_text.replace('\n', '<br>')
-            output.database_reply.set(output_text)
-            output.extra_computation.set(1)
-            if n_samp * differentiate > 2000:
-                output.fly_summary_message.set(f"Skipped: n_samp × differentiate ({n_samp} × {differentiate} = {n_samp * differentiate}) exceeds 2000")
+            if n_samp * differentiate > MAX_PROD:
+                output.fly_summary_message.set(f"Skipped: Number of Samples × Max. number of positives ({n_samp} × {differentiate} = {n_samp * differentiate}) exceeds {MAX_PROD} and is too heavy to be computed on the fly.")
                 output.fly_summary_loading.set(False)
                 output.summary_table.set(pd.DataFrame(columns=ls_met))
                 output.fly_summary_table.set(pd.DataFrame())
             else:
-                output.fly_summary_loading.set(True)
-                output.fly_summary_message.set(f"Calculating summary metrics for {n_samp} samples with up to {differentiate} positives...")
+                output_text_2 = '<span style="color: #228B22;">Some designs have been approximately evaluated on the fly for your specific values.\n To download them (or locally run the code), follow the section below.</span>'
                 fly_table = fly_summary(n_samp, differentiate)
                 fly_table = process_metrics_data(fly_table)
                 output.summary_table.set(fly_table)
                 output.fly_summary_table.set(fly_table)
-                output.fly_summary_loading.set(False)
             output.allow_downloads.set(False)
             output.allow_fly.set(True)
             output.reply_green.set(False)
+            output_text=output_text_1+output_text_2
+            output_text = output_text.replace('\n', '<br>')
+            output.database_reply.set(output_text)
+            output.extra_computation.set(1)
+         
 
         else:
             try:

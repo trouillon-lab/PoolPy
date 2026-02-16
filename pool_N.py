@@ -3,7 +3,7 @@ import argparse
 import time
 import os
 
-from Functions_wrapped import *
+from Fast_functions import *
 
 
 parser = argparse.ArgumentParser()

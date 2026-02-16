@@ -4,15 +4,9 @@ import re
 import itertools
 import pandas as pd
 import argparse
-import pickle
-import time
 import os
-import copy
-import json
 
-
-from Functions_wrapped import *
-
+from Fast_functions import *
 
 
 parser = argparse.ArgumentParser(description='Parse some arguments')
@@ -22,132 +16,150 @@ parser.add_argument('--readout', type=str, help="A string either containing the 
 parser.add_argument('--extensive_search', type=str, default='False', help="weather to search all possibilities (True) or use a faster exclusion based implementation (False, default)")
 
 args = parser.parse_args()
-
 args_dict = vars(args)
 
+path_to_wa = args_dict['path_to_WA']
+diff = args_dict['differentiate']
+readout_in = args_dict['readout']
 
+if not path_to_wa or not readout_in:
+    raise SystemExit('Please provide both --path_to_WA and --readout.')
 
-dira=args_dict['path_to_WA']
-diff=args_dict['differentiate']
-readout_in=args_dict['readout']
-search_all=args_dict['extensive_search'].lower()=='true'
-WA_df=pd.read_csv(dira, index_col=0)
+WA_df = pd.read_csv(path_to_wa, index_col=0)
+WA = WA_df.values
+n_pools = WA.shape[1]
+n_compounds = WA.shape[0]
 
-if readout_in.endswith('csv'):
-    readout = pd.read_csv(readout_in,header=None).to_numpy().reshape(-1)
+if diff == -1:
+    diff = n_compounds
+
+if readout_in.lower().endswith('csv'):
+    readout_df = pd.read_csv(readout_in, header=None)
+    if readout_df is None or readout_df.empty:
+        raise SystemExit('Error: Readout CSV appears to be empty.')
+
+    # Header handling: decide whether to include first row/first column as data
+    if readout_df.shape[0] > 0:
+        try:
+            top = readout_df.iloc[0, :].tolist()
+            validations = [_cell_is_valid_token(x, n_pools) for x in top]
+            non_empty_validations = [v for v in validations if v is not None]
+            if len(non_empty_validations) > 0 and not all(non_empty_validations):
+                readout_df = readout_df.iloc[1:, :].reset_index(drop=True)
+        except Exception:
+            pass
+
+    if readout_df.shape[1] > 0:
+        try:
+            first = readout_df.iloc[:, 0].tolist()
+            validations = [_cell_is_valid_token(x, n_pools) for x in first]
+            non_empty_validations = [v for v in validations if v is not None]
+            if len(non_empty_validations) > 0 and not all(non_empty_validations):
+                readout_df = readout_df.iloc[:, 1:].reset_index(drop=True)
+        except Exception:
+            pass
+
+    results_rows = []
+    for idx, row in readout_df.iterrows():
+        rl, err = series_to_readout_list(row, n_pools)
+        if rl is None:
+            results_rows.append({
+                "decoded_type": "error",
+                "decoder_output": f"Error: {err}",
+            })
+            continue
+
+        try:
+            rl_sorted = sorted([int(x) for x in rl])
+        except Exception:
+            results_rows.append({
+                "decoded_type": "error",
+                "decoder_output": "Error: could not coerce values to integers",
+            })
+            continue
+
+        readout_arr = np.array(rl_sorted, dtype=int)
+        if len(readout_arr) == 0:
+            results_rows.append({
+                "decoded_type": "error",
+                "decoder_output": "Error: empty readout after parsing",
+            })
+            continue
+
+        try:
+            if readout_arr.max() > n_pools:
+                invalid_entries = [int(val) for val in rl_sorted if int(val) > n_pools]
+                msg = (
+                    f"Entries exceed number of pools ({n_pools}): {invalid_entries}. "
+                    "Please correct your readout."
+                )
+                results_rows.append({
+                    "decoded_type": "error",
+                    "decoder_output": msg,
+                })
+                continue
+        except Exception:
+            pass
+
+        decoded_type, decoder_output, _, _, _, _ = _decode_with_filter(readout_arr, WA, diff)
+        results_rows.append({
+            "decoded_type": decoded_type,
+            "decoder_output": decoder_output,
+        })
+
+    df_out = pd.DataFrame(results_rows)
+    if isinstance(df_out, pd.DataFrame) and not df_out.empty:
+        df_with_index = df_out.copy()
+        df_with_index.index = [f"Readout {i}" for i in range(len(df_with_index))]
+        if "decoder_output" in df_with_index.columns:
+            def format_output(val):
+                if isinstance(val, list):
+                    return ", ".join(map(str, val))
+                if isinstance(val, str):
+                    if val.startswith("[") and val.endswith("]"):
+                        return val[1:-1]
+                    return val
+                return str(val)
+            df_with_index["decoder_output"] = df_with_index["decoder_output"].apply(format_output)
+        df_with_index.columns = [col.replace("_", " ").title() for col in df_with_index.columns]
+    else:
+        df_with_index = df_out
+
+    decoded_csv = "decoded_readouts.csv"
+    if isinstance(df_out, pd.DataFrame) and not df_out.empty:
+        df_with_index.to_csv(decoded_csv, index=True)
+    else:
+        df_with_index.to_csv(decoded_csv, index=False)
+
 else:
-    readout = np.fromstring(readout_in, sep=',', dtype=int)   
+    readout_list, err = _parse_text_readout(readout_in)
+    if err:
+        raise SystemExit(err)
 
-WA=WA_df.values
-n_pools=WA.shape[1]
-n_compounds=WA.shape[0]
+    readout_list.sort()
+    readout_arr = np.array(readout_list, dtype=int)
 
-if np.max(readout)>1 or len(readout)!=n_pools:
-    readout_bin_ls = [1 if i in readout else 0 for i in range(n_pools)]
-    readout=np.array(readout_bin_ls)
- 
+    file_name = os.path.basename(path_to_wa)
 
-st_dir=str(dira)
-#inf_diff=re.sub('^.*_', '', st_dir)
-pth_wa=re.sub('\\.csv$', '', st_dir)
-#inf_diff=int(inf_diff)
+    if max(readout_arr) > n_pools:
+        invalid_entries = [val for val in readout_list if val > n_pools]
+        msg = f"Processing file <b>{file_name}</b> with max. <b>{diff}</b> positive samples and readout: <br>"
+        msg += f"{readout_list}<br>"
+        msg += f"<br>The following entries in your readout are bigger than the number of pools ({n_pools}):<br> <b>{invalid_entries}</b>"
+        msg += "<br>Please <b>correct your readout</b>.<br>"
+        text_msg = _html_to_text(msg)
+        decoded_txt = "decoder_output.txt"
+        txt = f"Uploaded file: {file_name}\nReadout: {readout_in}\n\n{text_msg}"
+        with open(decoded_txt, 'w+') as f:
+            f.write(txt)
+        print(text_msg)
+        raise SystemExit(1)
 
-#method=re.sub('.*WA_', '', dira)
-#method=re.sub('_.*$', '', method)
-readout_bl=np.array(readout.astype(bool).astype(int))
+    decoded_type, decoder_output, decoded, decoded_set, n_compounds_f, putative_reason = _decode_with_filter(readout_arr, WA, diff)
+    text_msg = _build_text_message(file_name, readout_list, diff, n_compounds, n_pools, decoded_type, decoded, decoded_set, n_compounds_f, putative_reason)
 
-if search_all:
-    if diff==-1:
-        diff=n_compounds
-
-    scrambler={1:np.arange(n_compounds)}
-    for j in range(2,diff+1):
-        scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
-        
-
-    decoded=decode_precomp(well_assigner=WA, differentiate= diff, scrambler=scrambler, 
-                readout=readout_bl)
-        
-
-    if len(decoded)==0:
-        print('We found no matches for the given parameters, check your input or try increasing the differentiate value')
-
-
-    elif len(decoded)>n_compounds:
-        print('The possible combinations of positive samples resulting in your readout is too large. Either test them individually or change pooling strategy')
-
-    else:
-        print('The possible positives for the given well assigner, outcome, and differentiate are:')
-        for deco in decoded:
-            print('Samples:', deco)
-        
-    
-
-else: 
-    mask = ~np.any((WA == 1) & (readout_bl == 0), axis=1)
-    original_indices = np.where(mask)[0]  # Get original row indices
-    filtered_WA = WA[mask]
-    n_compounds=filtered_WA.shape[0]
-    if diff==-1:
-        diff=n_compounds
-
-    if n_compounds<2:
-        if n_compounds==1:
-            decoded=[original_indices[0]]
-            print('The possible positives for the given well assigner, outcome, and differentiate are:')
-            for deco in decoded:
-                print('Samples:', deco)
-        else:
-            print('We found no matches for the given parameters, check your input or try increasing the differentiate value')
-
-
-    else:
-
-        scrambler={1:np.arange(n_compounds)}
-        for j in range(2,diff+1):
-            scrambler.update({j:np.array(list(itertools.combinations(np.arange(n_compounds),j)))})
-        decoded_pre=decode_precomp(well_assigner=filtered_WA, differentiate= diff, scrambler=scrambler, 
-                readout=readout_bl)
-        
-        # Map filtered indices back to original indices
-        decoded = [[int(original_indices[idx]) for idx in combination] for combination in decoded_pre]
-        
-        # Remove duplicate combinations (convert to tuples for uniqueness, then back to lists)
-
-        if len(decoded)==0:
-            print('We found no matches for the given parameters, check your input or try increasing the differentiate value')
-
-
-        elif len(decoded)>n_compounds:
-            decoded_set = list(set([x for combo in decoded for x in combo]))
-            decoded_set.sort()
-            print('The possible combinations of positive samples resulting in your readout is too large.\n Either test all putative positives individually or change pooling strategy')
-            print('The set of putative positives is ', decoded_set)
-
-        else:
-            print('The possible positives for the given well assigner, outcome, and differentiate are:')
-            for deco in decoded:
-                print('Samples:', deco)
-
-
-
-
-
-
-
-
-
-fdriro=pth_wa+'_decoded.txt'
-
-with open(fdriro, 'w+') as f:
-    if len(decoded)>n_compounds:
-        if search_all:
-            f.write('The possible combinations of positive samples resulting in your readout is too large.\n Either test them individually or change pooling strategy')
-        else:
-            f.write('The possible combinations of positive samples resulting in your readout is too large.\n Either test all putative positives individually or change pooling strategy\n')
-            f.write(f'The set of putative positives is {decoded_set}\n')
-        exit()
-
-    f.write(f'Decoded reaout {[i for i in range(n_pools) if readout[i]==1]} file {dira} with maximumn {diff} positives.\n Possible positive samples combinations are\n')
-    for line in decoded:
-        f.write(f"Samples: {line}\n")
+    decoded_txt = "decoder_output.txt"
+    txt = f"Uploaded file: {file_name}\nReadout: {readout_in}\n\n{text_msg}"
+    with open(decoded_txt, 'w+') as f:
+        f.write(txt)
+    print(text_msg)

@@ -144,28 +144,19 @@ app_ui = ui.page_fluid(
                     ui.div("", style="margin-top: -32px;")
                 )
             ),
-            ui.div(
-                ui.output_ui("fly_summary_status"),
-                style="text-align: center; margin: 20px 0;"
+            ui.panel_conditional(
+                            "output.allow_fly_table == 'true'",
+                ui.div(
+                    ui.output_ui("fly_summary_colored_table"),
+                    style="display: flex; justify-content: center; margin-bottom: 20px;"
+                ),
             ),
-            ui.div(
-                ui.output_ui("fly_summary_colored_table"),
-                style="display: flex; justify-content: center; margin-bottom: 20px;"
-            ),
-
-            ui.div("", style="height: 42px;"),
+            ui.div("", style="height: 52px;"),
             ui.div(
                 ui.h4("Downloads & code"),
                 style="text-align: center;"
             ),
-            ui.div(
-                "All precomputed pooling designs are available on Zenodo.",
-                ui.br(),
-                "Access the repository at: ",
-                ui.a("DOI: 10.5281/zenodo.18660062", href="https://doi.org/10.5281/zenodo.18660062", style="text-decoration: underline;", target="_blank", rel="noopener noreferrer"),
-                style="color: #555; font-size: 20px; text-align: center;"
-            ),
-            ui.div("", style="height: 32px;"),
+            ui.div("", style="height: 12px;"),
             ui.panel_conditional(
                 "output.allow_fly == 'true'",
                 ui.div(
@@ -178,7 +169,7 @@ app_ui = ui.page_fluid(
                 ),
                 ui.div("", style="height: 20px;")
             ),
-            ui.div("", style="height: 32px;"),
+            ui.div("", style="height: 12px;"),
             ui.panel_conditional(
                 "output.allow_fly == 'true'",
                 ui.div(
@@ -190,8 +181,20 @@ app_ui = ui.page_fluid(
                     ui.download_button("download_table_binary_fly", "Binary"),
                     style="text-align: center;",
                 ),
-                ui.div("", style="height: 20px;")
+                ui.div("", style="height: 32px;")
             ),
+            ui.div(
+                ui.h4("Precomputed pooling designs"),
+                style="text-align: center;"
+            ),
+            ui.div(
+                "All precomputed pooling designs are available on Zenodo.",
+                ui.br(),
+                "Access the repository at: ",
+                ui.a("DOI: 10.5281/zenodo.18660062", href="https://doi.org/10.5281/zenodo.18660062", style="text-decoration: underline;", target="_blank", rel="noopener noreferrer"),
+                style="color: #555; font-size: 18px; text-align: center;"
+            ),
+            ui.div("", style="height: 32px;"),
             ui.panel_conditional(
                 "output.allow_downloads == 'lala'", # change lala with true to make available
                 ui.div(
@@ -229,6 +232,10 @@ app_ui = ui.page_fluid(
             ),
             ui.div(
                 ui.output_text_verbatim("allow_fly"),
+                style="position: fixed; bottom: 2px; right: 2px; opacity: 0.05; font-size: 8px; z-index: 1; pointer-events: none;"
+            ),
+            ui.div(
+                ui.output_text_verbatim("allow_fly_table"),
                 style="position: fixed; bottom: 2px; right: 2px; opacity: 0.05; font-size: 8px; z-index: 1; pointer-events: none;"
             ),
             ui.div("", style="height: 80px;"),
@@ -1574,6 +1581,7 @@ def server(input, output, session):
     output.debug = reactive.Value("")
     output.allow_downloads = reactive.Value(False)
     output.allow_fly = reactive.Value(False)
+    output.allow_fly_table = reactive.Value(False)
     output.allow_robot = reactive.Value(False)
     output.allow_decoder = reactive.Value(False)
     output.reply_green = reactive.Value(False)
@@ -1625,7 +1633,7 @@ def server(input, output, session):
         
         # Set output to display last submitted values
         output.last_values.set(last_values_text)
-
+        output.allow_fly_table.set(False)
         if differentiate > n_samp:
             output_text=f'Maximum number of positives ({differentiate}) must always be smaller than the total number of samples ({n_samp})'
             output.database_reply.set(output_text)
@@ -1640,7 +1648,9 @@ def server(input, output, session):
         elif differentiate > MAX_DIFFERENTIATE:
             output_text_1=f'Maximum number of positives ({differentiate}) exceeds the maximum precomputed differentiate. The precomputed maximum is {MAX_DIFFERENTIATE}.\n'
             if n_samp * differentiate > MAX_PROD:
-                output_text_2=f"Skipped: Number of Samples × Max. number of positives ({n_samp} × {differentiate} = {n_samp * differentiate}) exceeds {MAX_PROD} and is too heavy to be computed on the fly."
+                output_text_2=f"Summary table not evaluated as it is too heavy to be computed on the fly."
+                output_text_3 ='<span style="color: #228B22;">To download designs calculated on the fly for your specific values (or locally run the code), follow the section below.</span>'
+                output_text_3= output_text_2 + output_text_3
                 output.fly_summary_loading.set(False)
                 output.summary_table.set(pd.DataFrame(columns=ls_met))
                 output.fly_summary_table.set(pd.DataFrame())
@@ -1654,7 +1664,8 @@ def server(input, output, session):
 
             output.allow_downloads.set(False)
             output.reply_green.set(False)
-            output_text=output_text_1+output_text_2
+            output_text_3 = '<span style="color: #228B22;">To download designs calculated on the fly for your specific values (or locally run the code), follow the section below.</span>'
+            output_text=output_text_1+output_text_2 #+ output_text_3
             output_text = output_text.replace('\n', '<br>')
             output.database_reply.set(output_text)
             output.extra_computation.set(1)
@@ -1662,7 +1673,9 @@ def server(input, output, session):
         elif n_samp > MAX_N:
             output_text_1=f'Maximum number of samples ({n_samp})  exceeds the maximum precomputed values. The precomputed maximum is {MAX_N}.\n'
             if n_samp * differentiate > MAX_PROD:
-                output_text_2=f"Skipped: Number of Samples × Max. number of positives ({n_samp} × {differentiate} = {n_samp * differentiate}) exceeds {MAX_PROD} and is too heavy to be computed on the fly."
+                output_text_2=f"Summary table not evaluated as it is too heavy to be computed on the fly."
+                output_text_3 ='<span style="color: #228B22;">To download designs calculated on the fly for your specific values (or locally run the code), follow the section below.</span>'
+                output_text_3= output_text_2 + output_text_3
                 output.summary_table.set(pd.DataFrame(columns=ls_met))
                 output.fly_summary_table.set(pd.DataFrame())
             else:
@@ -1672,6 +1685,7 @@ def server(input, output, session):
                 output.summary_table.set(fly_table)
                 output.fly_summary_table.set(fly_table)
                 output.allow_fly.set(True)
+                output.allow_fly_table.set(True)
             
             output_text=output_text_1+output_text_2
             output_text = output_text.replace('\n', '<br>')
@@ -1685,7 +1699,9 @@ def server(input, output, session):
             prevalence = differentiate / n_samp
             output_text_1=f'The prevalence of positives ({prevalence:.1%}) exceeds the maximum precomputed prevalence ({MAX_PREVALENCE:.1%}).\n'
             if n_samp * differentiate > MAX_PROD:
-                output.fly_summary_message.set(f"Skipped: Number of Samples × Max. number of positives ({n_samp} × {differentiate} = {n_samp * differentiate}) exceeds {MAX_PROD} and is too heavy to be computed on the fly.")
+                output_text_2=f"Summary table not evaluated as it is too heavy to be computed on the fly."
+                output_text_3 ='<span style="color: #228B22;">To download designs calculated on the fly for your specific values (or locally run the code), follow the section below.</span>'
+                output_text_3= output_text_2 + output_text_3
                 output.fly_summary_loading.set(False)
                 output.summary_table.set(pd.DataFrame(columns=ls_met))
                 output.fly_summary_table.set(pd.DataFrame())
@@ -1695,16 +1711,20 @@ def server(input, output, session):
                 fly_table = process_metrics_data(fly_table)
                 output.summary_table.set(fly_table)
                 output.fly_summary_table.set(fly_table)
+                output.allow_fly_table.set(True)
+
             output.allow_downloads.set(False)
             output.allow_fly.set(True)
             output.reply_green.set(False)
-            output_text=output_text_1+output_text_2
+            output_text_3 = '<span style="color: #228B22;">To download designs calculated on the fly for your specific values (or locally run the code), follow the section below.</span>'
+            output_text=output_text_1+output_text_2# + output_text_3
             output_text = output_text.replace('\n', '<br>')
             output.database_reply.set(output_text)
             output.extra_computation.set(1)
          
 
         else:
+            output.allow_fly_table.set(False)
             try:
                 app_root = os.listdir('.')[0]
                 #os.path.dirname(os.path.abspath(__file__))
@@ -1720,6 +1740,7 @@ def server(input, output, session):
  
                     output.allow_downloads.set(True)
                     output.allow_fly.set(True)
+                    output.allow_fly_table.set(False)
                     if new_n!=n_samp or new_diff!=differentiate:
                         output_text_1=f'There is no precomputed summary table for {n_samp} samples with up to {differentiate} positives.\n'
                         output_text_2=f'The closest precomputed summary table is for {new_n} samples with up to {new_diff} positives, as shown below.\n'
@@ -1878,7 +1899,7 @@ def server(input, output, session):
             
             
         # Prepare the correct command for pool_N.py based on its arguments
-        command_p = f"python pool_N.py --n_samp {n_samp} --differentiate {differentiate} --method all --path your/path"
+        command_p = f"python pool_N.py --n_samp {n_samp} --differentiate {differentiate} --directory your/directory"
         intro_command='You can also run the code locally to generate pooling designs. For the values selected above, run:\n'
         mid_github_command='(see GitHub for details)\n\n'
         output.personalized_command.set(intro_command+mid_github_command+command_p)
@@ -2477,6 +2498,12 @@ def server(input, output, session):
     @render.text
     def allow_fly():
         return str(output.allow_fly.get()).lower() 
+    
+    @output
+    @render.text
+    def allow_fly_table():
+        return str(output.allow_fly_table.get()).lower() 
+
     @output
     @render.text
     def allow_robot():
@@ -2584,14 +2611,14 @@ def server(input, output, session):
         yield output.summary_table.get().to_csv(index=False)
 
     @output
-    @render.download(filename=lambda: "Pooled_pooling.pdf")
+    @render.download(filename=lambda: "Poolpy_user_guide.pdf")
     async def download_pooled_pooling():
-        file_path = Path(__file__).resolve().parent / "static" / "Pooled_pooling.pdf"
+        file_path = Path(__file__).resolve().parent / "static" / "Puser_guide.pdf"
         if file_path.exists():
             with open(file_path, "rb") as f:
                 yield f.read()
         else:
-            yield "Pooled_pooling.pdf not found."
+            yield "Poolpy user guide not found."
 
     @output
     @render.download(filename=lambda: "matrix_pooling.csv")

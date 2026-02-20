@@ -147,8 +147,9 @@ app_ui = ui.page_fluid(
             ui.panel_conditional(
                             "output.allow_fly_table == 'true'",
                 ui.div(
+                    ui.output_ui("fly_summary_table_title"),
                     ui.output_ui("fly_summary_colored_table"),
-                    style="display: flex; justify-content: center; margin-bottom: 20px;"
+                    style="display: flex; justify-content: center; flex-direction: column; margin-bottom: 20px;"
                 ),
             ),
             ui.div("", style="height: 52px;"),
@@ -2613,7 +2614,7 @@ def server(input, output, session):
     @output
     @render.download(filename=lambda: "Poolpy_user_guide.pdf")
     async def download_pooled_pooling():
-        file_path = Path(__file__).resolve().parent / "static" / "Puser_guide.pdf"
+        file_path = Path(__file__).resolve().parent / "static" / "user_guide.pdf"
         if file_path.exists():
             with open(file_path, "rb") as f:
                 yield f.read()
@@ -2925,6 +2926,19 @@ def server(input, output, session):
 
     @output
     @render.ui
+    def fly_summary_table_title():
+        if output.fly_summary_table.get().empty:
+            return ui.HTML("")
+        n = output.last_submitted_n_samp.get()
+        d = output.last_submitted_differentiate.get()
+        return ui.HTML(
+            f'<div style="text-align: center; font-size: 22px; font-weight: normal; margin-bottom: 20px;">'
+            f'Summary metrics approximated on the fly for {n} samples with up to {d} positives'
+            f'</div>'
+        )
+
+    @output
+    @render.ui
     def fly_summary_status():
         loading = output.fly_summary_loading.get()
         message = output.fly_summary_message.get()
@@ -2935,7 +2949,7 @@ def server(input, output, session):
         elif not output.fly_summary_table.get().empty:
             n = output.last_submitted_n_samp.get()
             d = output.last_submitted_differentiate.get()
-            return ui.HTML(f'<div style="margin-bottom: 20px; font-size: 20px; font-weight: bold;">Summary metrics calculated on the fly for {n} samples with up to {d} positives</div>')
+            return ui.HTML(f'<div style="margin-bottom: 20px; font-size: 20px; font-weight: bold;">Summary metrics approximated on the fly for {n} samples with up to {d} positives</div>')
         return ui.HTML("")
 
     @output
@@ -3339,21 +3353,3 @@ def server(input, output, session):
 app = App(app_ui, server)
 
 
-'''
-    @output
-    @render.download(filename=lambda: "full_pooling.pk")
-    async def download_pickle():
-        with open('temp.pkl', 'wb') as f:
-            pickle.dump(output.full_pickle, f)
-            f.seek(0)  # Move back to start of file before yielding content
-        
-        # Read back and yield content for download
-        with open('temp.pkl', 'rb') as f:
-            yield f.read()
-
-
-    #@output.plot("plot_placeholder")
-    #def plot():
-        # Placeholder for future plot implementation
-    #    pass
-'''

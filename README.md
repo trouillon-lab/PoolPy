@@ -11,7 +11,7 @@
 
 PoolPy is an open-source tool to design and evaluate combinatorial group testing strategies. It implements ten distinct group testing algorithms and guides users in selecting the optimal design for their testing scenario, providing both pooling layouts and decoding schemes.  
   
-The pooling designs are applicable to any type of tests that give results that can be classified in a binary manner (e.g. positive/negative, functional/defective ...). PoolPy supports both single-readout assays with binary outcomes, such as diagnostic infection testing or ligand–target interaction drug screening, and multi-readout experiments, including mass spectrometry- or sequencing-based molecular profiling approaches.
+The pooling designs are applicable to any type of tests that give results that can be classified in a binary manner (e.g. significant/non-significant, positive/negative, functional/defective ...). PoolPy supports both single-readout assays with binary outcomes, such as diagnostic infection testing or ligand–target interaction drug screening, and multi-readout experiments, including mass spectrometry- or sequencing-based molecular profiling approaches.
 
 ### Web app
 We provide the [PoolPy web app](https://trouillon-lab.github.io/PoolPy/), which allows to design and decode group testing strategies online without the need of any computational expertise. There, we provide direct comparison of all ten methods for any use case, as well as downloadable design tables that guide the user on how to perform the pooling. Results from pooled experiments can be decoded directly on the web app. Additionally, the app has tools to help in deciding pooling parameters based on prevalence, or to generate method files for pipeting robots for automated pooling. 
@@ -19,7 +19,7 @@ We provide the [PoolPy web app](https://trouillon-lab.github.io/PoolPy/), which 
 ### Why PoolPy?
 
 - Reduces the number of assays required for large-scale screening campaigns.
-- Compares performance across methods under your prevalence and sample-size constraints.
+- Compares performance across methods under user prevalence and sample-size constraints.
 - Built-in design generation and decoding pipelines for reproducibility and automation.
 
 ### Implemented methods
@@ -28,9 +28,9 @@ This package implements several of the most commonly used group testing strategi
 - Hierarchical
 - Binary
 - Matrix
-- Multi-dimensional (2-, 3- and 4-D)
+- Multi-dimensional (2- to 7-D)
 - Shifted transversal
-- Chinese remainder (standard, backtrack and special)
+- Chinese remainder (standard, backtrack, special-2 and special-3)
 - Random
 
 More details can be found in the associated [publication](https://arxiv.org/abs/2509.03481/).

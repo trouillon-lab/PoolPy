@@ -9,157 +9,13 @@ import os
 from Fast_functions import *
 
 
-
-def _cell_is_valid_token(val, n_pools_local: int):
-    try:
-        # Skip NaN/None/empty
-        if pd.isna(val):
-            return None
-        s = str(val).strip()
-        if s == "" or s.lower() == "nan":
-            return None
-        # integer scalar
-        try:
-            iv = int(float(s))
-            return 0 <= iv <= n_pools_local
-        except Exception:
-            pass
-        # binary string of length n_pools
-        if set(s).issubset({"0", "1"}) and len(s) == n_pools_local:
-            return True
-        # delimited list of ints
-        parts = [p for p in re.split(r"[\s,;]+", s) if p]
-        if parts and all(p.isdigit() and 0 <= int(p) <= n_pools_local for p in parts):
-            return True
-        return False
-    except Exception:
-        return False
-
-
-def _parse_text_readout(readout_str: str):
-    if not readout_str or not readout_str.strip():
-        return None, "Error: Please enter a readout as comma-separated text."
-    readout_list = []
-    try:
-        for x in readout_str.split(','):
-            x_clean = x.strip()
-            if x_clean == '':
-                continue
-            if not x_clean.isdigit():
-                return None, f"Error: Invalid entry '{x_clean}' in readout. Please enter only integers separated by commas."
-            readout_list.append(int(x_clean))
-    except Exception:
-        return None, "Error: Could not parse readout. Please enter only integers separated by commas."
-    if len(readout_list) == 0:
-        return None, "Error: Readout appears to be empty."
-    return readout_list, None
-
-
-def _decode_with_filter(readout_arr: np.ndarray, WA: np.ndarray, diff_deco: int):
-    n_pools_local = WA.shape[1]
-    n_compounds_local = WA.shape[0]
-
-    if np.max(readout_arr) > 1 or len(readout_arr) != n_pools_local:
-        readout_bin_ls = [1 if i in readout_arr else 0 for i in range(n_pools_local)]
-        readout_use = np.array(readout_bin_ls)
-    else:
-        readout_use = readout_arr
-
-    readout_bl = np.array(readout_use.astype(bool).astype(int))
-    mask = ~np.any((WA == 1) & (readout_bl == 0), axis=1)
-    original_indices = np.where(mask)[0]
-    filtered_WA = WA[mask]
-    n_compounds_f = filtered_WA.shape[0]
-    dval = min(diff_deco, n_compounds_f)
-
-    if n_compounds_f < 2:
-        if n_compounds_f == 1:
-            decoded = [int(original_indices[0])]
-            return "unique", decoded, decoded, None, n_compounds_f, None
-        return "error", "No matches found. Check input or increase the differentiate value.", [], None, n_compounds_f, None
-
-    ls_combs = [math.comb(n_compounds_f, i) for i in range(dval)]
-    max_combs = np.sum(ls_combs)
-    if max_combs > 1e4:
-        decoded = [int(original_indices[j]) for j in range(len(original_indices))]
-        decoded = sorted(decoded)
-        return "putative", decoded, decoded, decoded, n_compounds_f, "max_combs"
-
-    scrambler = {1: np.arange(n_compounds_f)}
-    for j in range(2, dval + 1):
-        scrambler[j] = np.array(list(itertools.combinations(np.arange(n_compounds_f), j)))
-
-    decoded_pre = decode_precomp(
-        well_assigner=filtered_WA,
-        differentiate=dval,
-        scrambler=scrambler,
-        readout=readout_bl,
-    )
-    decoders = [list(c) if isinstance(c, (list, tuple, np.ndarray)) else [c] for c in decoded_pre]
-    decoded = [[int(original_indices[k]) for k in comb] for comb in decoders]
-
-    if len(decoded) == 0:
-        return "error", "No matches found. Check input or increase the differentiate value.", decoded, None, n_compounds_f, None
-    if len(decoded) == 1:
-        return "unique", decoded[0], decoded, None, n_compounds_f, None
-    if len(decoded) > n_compounds_f:
-        decoded_set = sorted(list(set([x for combo in decoded for x in combo])))
-        return "putative", decoded_set, decoded, decoded_set, n_compounds_f, "too_many_combos"
-    return "multiple", decoded, decoded, None, n_compounds_f, None
-
-
-def _build_text_message(file_name: str, readout_list: list, diff_deco: int, n_compounds: int, n_pools: int,
-                        decoded_type: str, decoded: list, decoded_set: list, n_compounds_f: int, putative_reason: str):
-    lines = []
-    lines.append(f"Processing file {file_name} with max. {diff_deco} positive samples and readout:")
-    lines.append(f"{readout_list}")
-    lines.append(f"The uploaded pooling strategy comprizes {n_compounds} samples in {n_pools} pools.")
-
-    if n_compounds_f < 2:
-        if n_compounds_f == 1:
-            lines.append("A single positive sample was found:")
-            lines.append(f"Sample: {decoded[0]}")
-        else:
-            lines.append("We found no matches for the given parameters, check your input or try increasing the differentiate value.")
-        return "\n".join(lines)
-
-    if decoded_type == "putative" and decoded_set is not None and len(decoded_set) > 0:
-        if putative_reason == "max_combs":
-            lines.append("Putative positive samples were identified, but the app does not have the computational power to attempt to decode the exact combination.")
-            lines.append("Either test all putative positive samples individually or change pooling strategy. A lower differentiate (only if it makes sense) might narrow it down.")
-        else:
-            lines.append("Putative positive samples were identified, but the exact combination could not be pinpointed.")
-            lines.append("Either test all putative positive samples individually or change pooling strategy. A lower differentiate (only if it makes sense) might narrow it down.")
-        lines.append(f"There are up to {min([diff_deco, len(decoded_set)])} positive samples among the following samples: {decoded_set}.")
-        return "\n".join(lines)
-
-    if decoded_type == "error":
-        lines.append("We found no matches for the given parameters, check your input or try increasing the differentiate value.")
-    elif decoded_type == "unique":
-        if isinstance(decoded, list) and len(decoded) == 1 and isinstance(decoded[0], list) and len(decoded[0]) == 1:
-            lines.append("A single positive sample was found:")
-            lines.append(f"Sample: {decoded[0][0]}")
-        else:
-            lines.append("A single possible combination of positive samples was found. The positive samples are:")
-            combo = decoded[0] if isinstance(decoded, list) and len(decoded) == 1 else decoded
-            lines.append(f"Samples: {', '.join(map(str, combo))}")
-    else:
-        lines.append(f"{len(decoded)} possible combinations of positive samples were found. The possible combinations are:")
-        for i, deco in enumerate(decoded):
-            if i != 0:
-                lines.append("or")
-            lines.append(f"Samples: {deco}")
-
-    return "\n".join(lines)
-
-
-
-
 parser = argparse.ArgumentParser(description='Parse some arguments')
 parser.add_argument('--differentiate', type=int, default=-1, help='The number of maximum number of positives in the pooling strategy.')
 parser.add_argument('--path_to_WA', type=str, help="A string argument containing the path to the pooling strategy file.")
 parser.add_argument('--readout', type=str, help="A string either containing the readout or containing a path a csv of the readout (readout in the form 0,1,0,1,0,0 or 3,6,14)")
 parser.add_argument('--extensive_search', type=str, default='False', help="weather to search all possibilities (True) or use a faster exclusion based implementation (False, default)")
+parser.add_argument('--min_signal', type=float, default=None, help='Minimum signal threshold for constrained continuous decoding.')
+parser.add_argument('--diluting', type=str, default='True', help='Whether to use dilution scaling in continuous decoding (True/False).')
 
 args = parser.parse_args()
 args_dict = vars(args)
@@ -167,6 +23,9 @@ args_dict = vars(args)
 path_to_wa = args_dict['path_to_WA']
 diff = args_dict['differentiate']
 readout_in = args_dict['readout']
+min_signal = args_dict['min_signal']
+diluting_in = str(args_dict['diluting']).strip().lower()
+diluting = diluting_in in ['1', 'true', 't', 'yes', 'y']
 
 if not path_to_wa or not readout_in:
     raise SystemExit('Please provide both --path_to_WA and --readout.')
@@ -180,90 +39,106 @@ if diff == -1:
     diff = n_compounds
 
 if readout_in.lower().endswith('csv'):
-    readout_df = pd.read_csv(readout_in, header=None)
+    # Try reading with index_col=0 first (if CSV has row IDs)
+    try:
+        readout_df_with_index = pd.read_csv(readout_in, index_col=0, dtype=str)
+        readout_ids = readout_df_with_index.index.tolist() if hasattr(readout_df_with_index, 'index') else None
+        
+        # Get data without index for processing
+        readout_df = readout_df_with_index.reset_index(drop=True)
+        readout_df = readout_df.astype(str)
+    except (pd.errors.ParserError, pd.errors.EmptyDataError):
+        # If that fails, try reading without index
+        try:
+            readout_df = pd.read_csv(readout_in, header=None, dtype=str)
+            # First column should be the readout IDs
+            if readout_df.shape[1] > 1:
+                readout_ids = readout_df.iloc[:, 0].tolist()
+                readout_df = readout_df.iloc[:, 1:].reset_index(drop=True)
+            else:
+                readout_ids = None
+        except (pd.errors.ParserError, pd.errors.EmptyDataError):
+            # Last resort: manually parse for inconsistent column counts or special delimiters
+            readout_data = []
+            readout_ids = []
+            
+            with open(readout_in, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    
+                    # First, check if line uses pipe delimiter (ID|data)
+                    if '|' in line:
+                        parts = line.split('|')
+                        if len(parts) >= 2:
+                            readout_ids.append(parts[0])
+                            # Treat rest as comma-separated data
+                            data_str = '|'.join(parts[1:])
+                            remaining = [x.strip() for x in data_str.split(',') if x.strip()]
+                            readout_data.append(remaining)
+                            continue
+                    
+                    # Otherwise parse with quote handling for comma-separated
+                    parts = []
+                    current = ""
+                    in_quotes = False
+                    for char in line:
+                        if char == '"':
+                            in_quotes = not in_quotes
+                        elif char == ',' and not in_quotes:
+                            parts.append(current.strip(' "'))
+                            current = ""
+                        else:
+                            current += char
+                    if current:
+                        parts.append(current.strip(' "'))
+                    
+                    if len(parts) > 0:
+                        readout_ids.append(parts[0])
+                        # For remaining parts, collect all commas into a single comma-separated string
+                        remaining = parts[1:]
+                        # If we have multiple remaining parts, they were split on commas - rejoin them
+                        if len(remaining) > 1:
+                            # Multiple parts mean they were comma-separated (e.g., 1,2,3)
+                            remaining = [','.join(remaining)]
+                        # Now split the comma-separated string into list of values
+                        if remaining and remaining[0]:
+                            values = remaining[0].split(',')
+                            remaining = [x.strip() for x in values]
+                        readout_data.append(remaining)
+            
+            # Create DataFrame from parsed data
+            # Pad rows to same length if needed
+            max_cols = max(len(row) for row in readout_data) if readout_data else 0
+            for row in readout_data:
+                while len(row) < max_cols:
+                    row.append('')
+            
+            readout_df = pd.DataFrame(readout_data, dtype=str)
+    
     if readout_df is None or readout_df.empty:
         raise SystemExit('Error: Readout CSV appears to be empty.')
 
-    # Header handling: decide whether to include first row/first column as data
-    if readout_df.shape[0] > 0:
-        try:
-            top = readout_df.iloc[0, :].tolist()
-            validations = [_cell_is_valid_token(x, n_pools) for x in top]
-            non_empty_validations = [v for v in validations if v is not None]
-            if len(non_empty_validations) > 0 and not all(non_empty_validations):
-                readout_df = readout_df.iloc[1:, :].reset_index(drop=True)
-        except Exception:
-            pass
-
-    if readout_df.shape[1] > 0:
-        try:
-            first = readout_df.iloc[:, 0].tolist()
-            validations = [_cell_is_valid_token(x, n_pools) for x in first]
-            non_empty_validations = [v for v in validations if v is not None]
-            if len(non_empty_validations) > 0 and not all(non_empty_validations):
-                readout_df = readout_df.iloc[:, 1:].reset_index(drop=True)
-        except Exception:
-            pass
-
-    results_rows = []
-    for idx, row in readout_df.iterrows():
-        rl, err = series_to_readout_list(row, n_pools)
-        if rl is None:
-            results_rows.append({
-                "decoded_type": "error",
-                "decoder_output": f"Error: {err}",
-            })
-            continue
-
-        try:
-            rl_sorted = sorted([int(x) for x in rl])
-        except Exception:
-            results_rows.append({
-                "decoded_type": "error",
-                "decoder_output": "Error: could not coerce values to integers",
-            })
-            continue
-
-        readout_arr = np.array(rl_sorted, dtype=int)
-        if len(readout_arr) == 0:
-            results_rows.append({
-                "decoded_type": "error",
-                "decoder_output": "Error: empty readout after parsing",
-            })
-            continue
-
-        try:
-            if readout_arr.max() > n_pools:
-                invalid_entries = [int(val) for val in rl_sorted if int(val) > n_pools]
-                msg = (
-                    f"Entries exceed number of pools ({n_pools}): {invalid_entries}. "
-                    "Please correct your readout."
-                )
-                results_rows.append({
-                    "decoded_type": "error",
-                    "decoder_output": msg,
-                })
-                continue
-        except Exception:
-            pass
-
-        decoded_type, decoder_output, _, _, _, _ = _decode_with_filter(readout_arr, WA, diff)
-        results_rows.append({
-            "decoded_type": decoded_type,
-            "decoder_output": decoder_output,
-        })
-
-    df_out = pd.DataFrame(results_rows)
+    df_out = decode_multi_readout_df(readout_df, WA, diff, min_signal=min_signal, diluting=diluting, readout_ids=readout_ids)
     if isinstance(df_out, pd.DataFrame) and not df_out.empty:
         df_with_index = df_out.copy()
-        df_with_index.index = [f"Readout {i}" for i in range(len(df_with_index))]
+        if "readout_id" in df_with_index.columns:
+            df_with_index = df_with_index.set_index("readout_id")
+        else:
+            df_with_index.index = [f"Readout {i + 1}" for i in range(len(df_with_index))]
         if "decoder_output" in df_with_index.columns:
             def format_output(val):
+                if isinstance(val, np.ndarray):
+                    # Format numpy array to single line with space-separated values
+                    return " ".join([str(x) for x in val])
                 if isinstance(val, list):
-                    return ", ".join(map(str, val))
+                    return " ".join([str(x) for x in val])
                 if isinstance(val, str):
+                    # Remove newlines and brackets
+                    val = val.replace('\n', ' ').replace('  ', ' ').strip()
                     if val.startswith("[") and val.endswith("]"):
-                        return val[1:-1]
+                        val = val[1:-1].strip()
                     return val
                 return str(val)
             df_with_index["decoder_output"] = df_with_index["decoder_output"].apply(format_output)
@@ -278,31 +153,18 @@ if readout_in.lower().endswith('csv'):
         df_with_index.to_csv(decoded_csv, index=False)
 
 else:
-    readout_list, err = _parse_text_readout(readout_in)
-    if err:
-        raise SystemExit(err)
-
-    readout_list.sort()
-    readout_arr = np.array(readout_list, dtype=int)
-
     file_name = os.path.basename(path_to_wa)
+    single_result = decode_single_readout_payload(readout_in, n_pools, WA, diff, min_signal=min_signal, diluting=diluting)
 
-    if max(readout_arr) > n_pools:
-        invalid_entries = [val for val in readout_list if val > n_pools]
-        msg = f"Processing file <b>{file_name}</b> with max. <b>{diff}</b> positive samples and readout: <br>"
-        msg += f"{readout_list}<br>"
-        msg += f"<br>The following entries in your readout are bigger than the number of pools ({n_pools}):<br> <b>{invalid_entries}</b>"
-        msg += "<br>Please <b>correct your readout</b>.<br>"
-        text_msg = _html_to_text(msg)
-        decoded_txt = "decoder_output.txt"
-        txt = f"Uploaded file: {file_name}\nReadout: {readout_in}\n\n{text_msg}"
-        with open(decoded_txt, 'w+') as f:
-            f.write(txt)
-        print(text_msg)
-        raise SystemExit(1)
-
-    decoded_type, decoder_output, decoded, decoded_set, n_compounds_f, putative_reason = _decode_with_filter(readout_arr, WA, diff)
-    text_msg = _build_text_message(file_name, readout_list, diff, n_compounds, n_pools, decoded_type, decoded, decoded_set, n_compounds_f, putative_reason)
+    if single_result.get("decoded_type") == "error":
+        text_msg = str(single_result.get("decoder_output"))
+    else:
+        text_msg = (
+            f"Processing file {file_name} with max. {diff} positive samples.\n"
+            f"Readout: {readout_in}\n"
+            f"Decoded type: {single_result.get('decoded_type')}\n"
+            f"Decoder output: {single_result.get('decoder_output')}"
+        )
 
     decoded_txt = "decoder_output.txt"
     txt = f"Uploaded file: {file_name}\nReadout: {readout_in}\n\n{text_msg}"

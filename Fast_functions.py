@@ -8,6 +8,10 @@ import time
 import string
 import shutil
 import scipy
+from sklearn.linear_model import ElasticNet
+from scipy.optimize import minimize
+from scipy.optimize import nnls
+from sklearn.linear_model import Lasso
 
 def int_to_base(n, N):
     """Return base N representation for int n."""
@@ -49,6 +53,21 @@ def str_to_tuple(string, delimiter='-'):
 
 def tuple_to_str(tuple_type, delimiter='-'):
     return delimiter.join(map(str,tuple_type))
+
+# Utility: Generate a sparse random array of length L with p nonzero elements (values in [0, 3))
+def sparse_uniform_array(L, p, low=0.0, high=3.0, random_state=None):
+    """
+    Generate an array of length L with exactly p nonzero elements, each drawn uniformly from [low, high).
+    The positions of the nonzero elements are chosen at random.
+    """
+    if p > L:
+        raise ValueError("p cannot be greater than L")
+    rng = np.random.default_rng(random_state)
+    arr = np.zeros(L)
+    if p > 0:
+        idx = rng.choice(L, size=p, replace=False)
+        arr[idx] = rng.uniform(low, high, size=p)
+    return arr
 
 def sweep_fly_summary(start, stop, step, start_diff, stop_diff, step_diff, directory, folder_N=False, folder_diff=False, checks_hierarchical=1000, max_prev=0.1, **kwargs):
     """
@@ -1597,3 +1616,724 @@ def series_to_readout_list(ser: pd.Series, n_pools_local: int):
     if uniq.issubset({0, 1}) and len(ints) == n_pools_local:
         return ints, None
     return ints, None
+
+
+def normalize_readout_df(readout_df: pd.DataFrame) -> pd.DataFrame:
+    if readout_df is None:
+        return pd.DataFrame()
+    out = readout_df.copy()
+    out = out.map(lambda x: x.strip() if isinstance(x, str) else x)
+    out = out.replace(r"^\s*$", np.nan, regex=True)
+    out = out.dropna(axis=0, how='all').dropna(axis=1, how='all')
+    return out
+
+
+def is_int_like_value(val) -> bool:
+    try:
+        if pd.isna(val):
+            return False
+        fv = float(str(val).strip())
+        if not np.isfinite(fv):
+            return False
+        return abs(fv - round(fv)) < 1e-9
+    except Exception:
+        return False
+
+
+def _tokens_from_payload(payload):
+    if isinstance(payload, pd.Series):
+        raw_vals = payload.tolist()
+    elif isinstance(payload, (list, tuple, np.ndarray)):
+        raw_vals = list(payload)
+    else:
+        raw_vals = [payload]
+
+    vals = []
+    for v in raw_vals:
+        if pd.isna(v):
+            continue
+        sv = str(v).strip()
+        if sv == "":
+            continue
+        vals.append(sv)
+
+    if len(vals) == 1:
+        cell = vals[0]
+        if re.search(r"[\s,;]", cell):
+            parts = [p.strip() for p in re.split(r"[\s,;]+", cell) if p.strip() != ""]
+            return parts
+    return vals
+
+
+def classify_single_readout_payload(payload, n_pools_local: int):
+    tokens = _tokens_from_payload(payload)
+    if len(tokens) == 0:
+        return None, None, "Error: empty readout."
+
+    try:
+        nums = [float(t) for t in tokens]
+    except Exception:
+        # Try to parse as a single comma-separated string of numerics
+        if len(tokens) == 1:
+            csv_str = str(tokens[0]).strip()
+            try:
+                nums = [float(x.strip()) for x in csv_str.split(',') if x.strip()]
+                tokens = [str(x) for x in nums]
+                if len(nums) == 0:
+                    return None, None, "Error: empty readout."
+            except Exception:
+                return None, None, "Error: readout must be numeric for continuous mode, or integers for binary mode."
+        else:
+            return None, None, "Error: readout must be numeric for continuous mode, or integers for binary mode."
+
+    arr_float = np.array(nums, dtype=float)
+    int_like = [is_int_like_value(v) for v in nums]
+
+    # Condition 1: length == n_pools -> continuous decode (unless it's a strict binary vector)
+    if len(nums) == n_pools_local:
+        if all(int_like):
+            ints = [int(round(v)) for v in nums]
+            # Only treat as binary if it's a 0/1 binary vector
+            if set(ints).issubset({0, 1}):
+                return "binary", np.array(ints, dtype=int), None
+        # Otherwise it's continuous (even if values are integers)
+        return "continuous", arr_float, None
+
+    # Condition 2 (alternative): integer list with fewer values and max <= n_pools -> binary decode.
+    # This catches pool indices like [0, 2, 4] or [1, 3]
+    if all(int_like) and len(nums) < n_pools_local:
+        ints = [int(round(v)) for v in nums]
+        if min(ints) >= 0 and max(ints) <= n_pools_local:
+            return "binary", np.array(sorted(ints), dtype=int), None
+
+    return None, None, (
+        f"Error: input does not satisfy either condition. "
+        f"Expected either {n_pools_local} numeric values (continuous/non-binary or binary), "
+        "or an integer list with max <= number of pools."
+    )
+
+
+def decode_single_readout_payload(payload, n_pools_local: int, WA: np.ndarray, diff: int, readout_id: str = None, min_signal=None, diluting=True):
+    mode, arr, err = classify_single_readout_payload(payload, n_pools_local)
+    if err:
+        out = {
+            "decoded_type": "error",
+            "decoder_output": err,
+        }
+        if readout_id is not None:
+            out["readout_id"] = readout_id
+        return out
+
+    if mode == "continuous":
+        decoded_type, decoder_output= decode_continuous_lasso(
+            arr,
+            WA,
+            diff=diff,
+            min_signal=min_signal,
+            diluting=diluting,
+        )
+        out = {
+            "decoded_type": decoded_type,
+            "decoder_output": decoder_output,
+        }
+        if readout_id is not None:
+            out["readout_id"] = readout_id
+        return out
+
+    decoded_type, decoder_output, _, _, _, _ = decode_with_filter(arr, WA, diff)
+    out = {
+        "decoded_type": decoded_type,
+        "decoder_output": decoder_output,
+    }
+    if readout_id is not None:
+        out["readout_id"] = readout_id
+    return out
+
+
+def _row_decode_binary_like(values, n_pools_local: int, WA: np.ndarray, diff: int):
+    ints = []
+    for v in values:
+        if pd.isna(v):
+            continue
+        sv = str(v).strip()
+        if sv == "":
+            continue
+        if not is_int_like_value(sv):
+            return {
+                "decoded_type": "error",
+                "decoder_output": f"Non-integer value found in binary/integer readout: '{sv}'",
+            }
+        iv = int(round(float(sv)))
+        if iv < 0 or iv > n_pools_local:
+            return {
+                "decoded_type": "error",
+                "decoder_output": f"Entries exceed number of pools ({n_pools_local}): {[iv]}",
+            }
+        ints.append(iv)
+
+    if len(ints) == 0:
+        return {
+            "decoded_type": "error",
+            "decoder_output": "Error: empty readout row.",
+        }
+
+    # If row is exactly a binary vector, keep as vector; otherwise treat as pool-index list.
+    if len(ints) == n_pools_local and set(ints).issubset({0, 1}):
+        readout_arr = np.array(ints, dtype=int)
+    else:
+        readout_arr = np.array(sorted(ints), dtype=int)
+
+    decoded_type, decoder_output, _, _, _, _ = decode_with_filter(readout_arr, WA, diff)
+    return {
+        "decoded_type": decoded_type,
+        "decoder_output": decoder_output,
+    }
+
+
+def _is_condition1_matrix(readout_df: pd.DataFrame, n_pools_local: int) -> bool:
+    if readout_df is None or readout_df.empty:
+        return False
+    for _, row in readout_df.iterrows():
+        tokens = _tokens_from_payload(row)
+        if len(tokens) != n_pools_local:
+            return False
+        try:
+            nums = [float(t) for t in tokens]
+        except Exception:
+            return False
+        if all(is_int_like_value(v) for v in nums):
+            ints = [int(round(v)) for v in nums]
+            if set(ints).issubset({0, 1}):
+                return False
+    return True
+
+
+def _is_condition2_binary_vector_matrix(readout_df: pd.DataFrame, n_pools_local: int) -> bool:
+    if readout_df is None or readout_df.empty:
+        return False
+    for _, row in readout_df.iterrows():
+        tokens = _tokens_from_payload(row)
+        if len(tokens) != n_pools_local:
+            return False
+        try:
+            nums = [float(t) for t in tokens]
+        except Exception:
+            return False
+        if not all(is_int_like_value(v) for v in nums):
+            return False
+        ints = [int(round(v)) for v in nums]
+        if not set(ints).issubset({0, 1}):
+            return False
+    return True
+
+
+def is_binary_or_integer_matrix(readout_df: pd.DataFrame, n_pools_local: int) -> bool:
+    if readout_df is None or readout_df.empty:
+        return False
+    found_any = False
+    for v in readout_df.to_numpy().flatten():
+        if pd.isna(v):
+            continue
+        sv = str(v).strip()
+        if sv == "":
+            continue
+        if not is_int_like_value(sv):
+            return False
+        iv = int(round(float(sv)))
+        if iv < 0 or iv > n_pools_local:
+            return False
+        found_any = True
+    return found_any
+
+
+def is_continuous_with_id_matrix(readout_df: pd.DataFrame, n_pools_local: int) -> bool:
+    if readout_df is None or readout_df.empty:
+        return False
+    if readout_df.shape[1] != n_pools_local + 1:
+        return False
+
+    for _, row in readout_df.iterrows():
+        row_id = row.iloc[0]
+        if pd.isna(row_id) or str(row_id).strip() == "":
+            return False
+        vals = pd.to_numeric(row.iloc[1:], errors='coerce')
+        if vals.isna().any():
+            return False
+    return True
+
+
+def _decode_fallback_row(row: pd.Series, row_idx: int, n_pools_local: int, WA: np.ndarray, diff: int, min_signal=None, diluting=True):
+    tokens = [v for v in row.tolist() if not pd.isna(v) and str(v).strip() != ""]
+    if len(tokens) == 0:
+        return {
+            "readout_id": f"Readout {row_idx + 1}",
+            "decoded_type": "error",
+            "decoder_output": "Error: empty row.",
+        }
+
+    # If first token is non-numeric and there is payload after it, treat as row id.
+    first = str(tokens[0]).strip()
+    has_id = False
+    try:
+        float(first)
+    except Exception:
+        has_id = len(tokens) > 1
+
+    if has_id:
+        row_id = first
+        payload = tokens[1:]
+    else:
+        row_id = f"Readout {row_idx + 1}"
+        payload = tokens
+
+    return decode_single_readout_payload(
+        payload,
+        n_pools_local,
+        WA,
+        diff,
+        readout_id=row_id,
+        min_signal=min_signal,
+        diluting=diluting,
+    )
+
+
+def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int, min_signal=None, diluting=True, readout_ids=None) -> pd.DataFrame:
+    n_pools_local = WA.shape[1]
+    base_df = normalize_readout_df(readout_df)
+    if base_df is None or base_df.empty:
+        return pd.DataFrame([{
+            "readout_id": "Readout 1",
+            "decoded_type": "error",
+            "decoder_output": "Error: Readout CSV appears to be empty.",
+        }])
+
+    # Try full-matrix checks on a small set of candidates to handle optional header/index rows.
+    candidates = [("raw", base_df)]
+    if base_df.shape[0] > 1:
+        candidates.append(("drop_first_row", base_df.iloc[1:, :].reset_index(drop=True)))
+    if base_df.shape[1] > 1:
+        candidates.append(("drop_first_col", base_df.iloc[:, 1:].reset_index(drop=True)))
+    if base_df.shape[0] > 1 and base_df.shape[1] > 1:
+        candidates.append(("drop_first_row_col", base_df.iloc[1:, 1:].reset_index(drop=True)))
+
+    mode = None
+    chosen_df = None
+
+    for _, cand in candidates:
+        cand_norm = normalize_readout_df(cand)
+        if cand_norm.empty:
+            continue
+        # Requested precedence:
+        # 1) all rows length == n_pools and not binary -> continuous
+        if _is_condition1_matrix(cand_norm, n_pools_local):
+            mode = "continuous"
+            chosen_df = cand_norm
+            break
+        # 2) all rows length == n_pools and binary OR integer matrix with max <= n_pools -> binary
+        if _is_condition2_binary_vector_matrix(cand_norm, n_pools_local) or is_binary_or_integer_matrix(cand_norm, n_pools_local):
+            mode = "binary"
+            chosen_df = cand_norm
+            break
+
+    rows = []
+    if mode == "continuous" and chosen_df is not None:
+        for i, (_, row) in enumerate(chosen_df.iterrows()):
+            out = decode_single_readout_payload(
+                row.tolist(),
+                n_pools_local,
+                WA,
+                diff,
+                min_signal=min_signal,
+                diluting=diluting,
+            )
+            # Use provided readout_ids if available, otherwise use default naming
+            if readout_ids and i < len(readout_ids):
+                out["readout_id"] = readout_ids[i]
+            else:
+                out["readout_id"] = f"Readout {i + 1}"
+            rows.append(out)
+        return pd.DataFrame(rows)
+
+    if mode == "binary" and chosen_df is not None:
+        for i, (_, row) in enumerate(chosen_df.iterrows()):
+            out = decode_single_readout_payload(
+                row.tolist(),
+                n_pools_local,
+                WA,
+                diff,
+                min_signal=min_signal,
+                diluting=diluting,
+            )
+            # Use provided readout_ids if available, otherwise use default naming
+            if readout_ids and i < len(readout_ids):
+                out["readout_id"] = readout_ids[i]
+            else:
+                out["readout_id"] = f"Readout {i + 1}"
+            rows.append(out)
+        return pd.DataFrame(rows)
+
+    # Fallback: parse row-by-row as user-provided string with id.
+    fallback_df = base_df
+    for i, (_, row) in enumerate(fallback_df.iterrows()):
+        result = _decode_fallback_row(row, i, n_pools_local, WA, diff, min_signal=min_signal, diluting=diluting)
+        # Use provided readout_ids if available
+        if readout_ids and i < len(readout_ids):
+            result["readout_id"] = readout_ids[i]
+        rows.append(result)
+
+    return pd.DataFrame(rows)
+
+
+def decode_continuous(readout_arr, WA, diff=None, min_signal=None, diluting=True, alpha=1.0, l1_ratio=0.5):
+    try:
+        n_compounds, n_pools = WA.shape
+        readout_arr = np.array(readout_arr, dtype=float).flatten()
+        
+        if len(readout_arr) != n_pools:
+            return "error", f"Readout length {len(readout_arr)} doesn't match pool count {n_pools}", None, None, n_compounds, None
+        
+        # Feature matrix: X = WA.T (n_pools, n_compounds)
+        X = WA.T.astype(float)
+        y = readout_arr
+        
+        # Objective function: elastic net loss with MSE
+        def objective(coef):
+            # Predictions
+            y_pred = X @ coef
+            # MSE loss
+            mse_loss = np.sum((y - y_pred) ** 2) / len(y)
+            # L1 penalty (lasso part)
+            l1_penalty = np.sum(np.abs(coef))
+            # L2 penalty (ridge part)
+            l2_penalty = np.sum(coef ** 2)
+            # Elastic net: alpha * (l1_ratio * L1 + (1 - l1_ratio) * L2)
+            elastic_penalty = alpha * (l1_ratio * l1_penalty + (1 - l1_ratio) * l2_penalty)
+            
+            return mse_loss + elastic_penalty
+        
+        # Bounds: all coefficients >= 0
+        bounds = [(0, None) for _ in range(n_compounds)]
+        
+        # Initial guess using NNLS (non-negative least squares)
+        coefficients_init, _ = nnls(X, y)
+        
+        # Optimize with non-negativity constraints
+        result = minimize(
+            objective,
+            coefficients_init,
+            method='L-BFGS-B',
+            bounds=bounds,
+            options={'maxiter': 10000, 'ftol': 1e-6}
+        )
+        
+        # Get the optimized coefficients
+        if result.success:
+            coefficients = result.x
+        else:
+            # Fallback to NNLS if optimization fails
+            coefficients, _ = nnls(X, y)
+        
+        # Final enforcement: ensure all are non-negative (handle numerical errors)
+        coefficients = np.maximum(coefficients, 0.0)
+        
+        # Double-check: ensure all coefficients are truly non-negative
+        assert np.all(coefficients >= -1e-12), f"Non-negativity constraint violated! Min value: {np.min(coefficients)}"
+        
+        # Calculate fit quality metrics
+        y_pred = X @ coefficients
+        residuals = y - y_pred
+        ss_res = np.sum(residuals ** 2)
+        ss_tot = np.sum((y - np.mean(y)) ** 2)
+        r2_score = 1.0 - (ss_res / ss_tot) if ss_tot > 0 else 0.0
+        
+        # Return the compound concentration estimates
+        decoder_output = coefficients.tolist()
+        
+        fit_info = {
+            'r2_score': float(r2_score),
+            'coefficients': decoder_output,
+            'predictions': y_pred.tolist(),
+            'residuals': residuals.tolist(),
+            'alpha': alpha,
+            'l1_ratio': l1_ratio,
+            'n_nonzero': int(np.sum(coefficients > 1e-6)),
+            'all_nonnegative': bool(np.all(coefficients >= -1e-10))
+        }
+        
+        return "continuous", decoder_output, coefficients, r2_score, n_compounds, fit_info
+    
+    except Exception as e:
+        return "error", f"Error in decode_continuous: {str(e)}", None, None, None, None
+
+
+
+
+
+def process_readout_row(row, n_pools, WA, diff, min_signal=None, diluting=True):
+    # Check if row is continuous (array of numeric values, not binary/discrete)
+    if len(row) == n_pools and set(row) != {0, 1} and set(row) != {True, False}:
+        try:
+            readout_arr = np.array(row, dtype=float)
+            decoded_type, decoder_output = decode_continuous_lasso(
+                readout_arr,
+                WA,
+                diff=diff,
+                min_signal=min_signal,
+                diluting=diluting,
+            )
+            return {
+                "decoded_type": decoded_type,
+                "decoder_output": decoder_output,
+            }
+        except Exception as e:
+            return {
+                "decoded_type": "error",
+                "decoder_output": f"Error processing continuous readout: {str(e)}",
+            }
+    
+    # Otherwise, process as discrete readout
+    rl, err = series_to_readout_list(row, n_pools)
+    if rl is None:
+        return {
+            "decoded_type": "error",
+            "decoder_output": f"Error: {err}",
+        }
+    
+    try:
+        rl_sorted = sorted([int(x) for x in rl])
+    except Exception:
+        return {
+            "decoded_type": "error",
+            "decoder_output": "Error: could not coerce values to integers",
+        }
+    
+    readout_arr = np.array(rl_sorted, dtype=int)
+    if len(readout_arr) == 0:
+        return {
+            "decoded_type": "error",
+            "decoder_output": "Error: empty readout after parsing",
+        }
+    
+    if readout_arr.max() > n_pools:
+        invalid_entries = [int(val) for val in rl_sorted if int(val) > n_pools]
+        msg = (
+            f"Entries exceed number of pools ({n_pools}): {invalid_entries}. "
+            "Please correct your readout."
+        )
+        return {
+            "decoded_type": "error",
+            "decoder_output": msg,
+        }
+    
+    decoded_type, decoder_output, _, _, _, _ = decode_with_filter(readout_arr, WA, diff)
+    return {
+        "decoded_type": decoded_type,
+        "decoder_output": decoder_output,
+    }
+
+
+############## Decoder specific function
+
+
+def html_to_text(html_str: str) -> str:
+    """Convert HTML to plain text by removing HTML tags."""
+    text = re.sub(r'<[^>]+>', '', html_str)
+    text = text.replace('<br>', '\n').replace('<br/>', '\n').replace('<br />', '\n')
+    return text
+
+
+def cell_is_valid_token(val, n_pools_local: int):
+    try:
+        # Skip NaN/None/empty
+        if pd.isna(val):
+            return None
+        s = str(val).strip()
+        if s == "" or s.lower() == "nan":
+            return None
+        # integer scalar
+        try:
+            iv = int(float(s))
+            return 0 <= iv <= n_pools_local
+        except Exception:
+            pass
+        # binary string of length n_pools
+        if set(s).issubset({"0", "1"}) and len(s) == n_pools_local:
+            return True
+        # delimited list of ints
+        parts = [p for p in re.split(r"[\s,;]+", s) if p]
+        if parts and all(p.isdigit() and 0 <= int(p) <= n_pools_local for p in parts):
+            return True
+        return False
+    except Exception:
+        return False
+
+
+def parse_text_readout(readout_str: str):
+    if not readout_str or not readout_str.strip():
+        return None, "Error: Please enter a readout as comma-separated text."
+    readout_list = []
+    try:
+        for x in readout_str.split(','):
+            x_clean = x.strip()
+            if x_clean == '':
+                continue
+            if not x_clean.isdigit():
+                return None, f"Error: Invalid entry '{x_clean}' in readout. Please enter only integers separated by commas."
+            readout_list.append(int(x_clean))
+    except Exception:
+        return None, "Error: Could not parse readout. Please enter only integers separated by commas."
+    if len(readout_list) == 0:
+        return None, "Error: Readout appears to be empty."
+    return readout_list, None
+
+
+def decode_with_filter(readout_arr: np.ndarray, WA: np.ndarray, diff_deco: int):
+    n_pools_local = WA.shape[1]
+    n_compounds_local = WA.shape[0]
+
+    if np.max(readout_arr) > 1 or len(readout_arr) != n_pools_local:
+        readout_bin_ls = [1 if i in readout_arr else 0 for i in range(n_pools_local)]
+        readout_use = np.array(readout_bin_ls)
+    else:
+        readout_use = readout_arr
+
+    readout_bl = np.array(readout_use.astype(bool).astype(int))
+    mask = ~np.any((WA == 1) & (readout_bl == 0), axis=1)
+    original_indices = np.where(mask)[0]
+    filtered_WA = WA[mask]
+    n_compounds_f = filtered_WA.shape[0]
+    dval = min(diff_deco, n_compounds_f)
+
+    if n_compounds_f < 2:
+        if n_compounds_f == 1:
+            decoded = [int(original_indices[0])]
+            return "unique", decoded, decoded, None, n_compounds_f, None
+        return "error", "No matches found. Check input or increase the differentiate value.", [], None, n_compounds_f, None
+
+    ls_combs = [math.comb(n_compounds_f, i) for i in range(dval)]
+    max_combs = np.sum(ls_combs)
+    if max_combs > 1e4:
+        decoded = [int(original_indices[j]) for j in range(len(original_indices))]
+        decoded = sorted(decoded)
+        return "putative", decoded, decoded, decoded, n_compounds_f, "max_combs"
+
+    scrambler = {1: np.arange(n_compounds_f)}
+    for j in range(2, dval + 1):
+        scrambler[j] = np.array(list(itertools.combinations(np.arange(n_compounds_f), j)))
+
+    decoded_pre = decode_precomp(
+        well_assigner=filtered_WA,
+        differentiate=dval,
+        scrambler=scrambler,
+        readout=readout_bl,
+    )
+    decoders = [list(c) if isinstance(c, (list, tuple, np.ndarray)) else [c] for c in decoded_pre]
+    decoded = [[int(original_indices[k]) for k in comb] for comb in decoders]
+
+    if len(decoded) == 0:
+        return "error", "No matches found. Check input or increase the differentiate value.", decoded, None, n_compounds_f, None
+    if len(decoded) == 1:
+        return "unique", decoded[0], decoded, None, n_compounds_f, None
+    if len(decoded) > n_compounds_f:
+        decoded_set = sorted(list(set([x for combo in decoded for x in combo])))
+        return "putative", decoded_set, decoded, decoded_set, n_compounds_f, "too_many_combos"
+    return "multiple", decoded, decoded, None, n_compounds_f, None
+
+
+def build_text_message(file_name: str, readout_list: list, diff_deco: int, n_compounds: int, n_pools: int,
+                        decoded_type: str, decoded: list, decoded_set: list, n_compounds_f: int, putative_reason: str):
+    lines = []
+    lines.append(f"Processing file {file_name} with max. {diff_deco} positive samples and readout:")
+    lines.append(f"{readout_list}")
+    lines.append(f"The uploaded pooling strategy comprizes {n_compounds} samples in {n_pools} pools.")
+
+    if n_compounds_f < 2:
+        if n_compounds_f == 1:
+            lines.append("A single positive sample was found:")
+            lines.append(f"Sample: {decoded[0]}")
+        else:
+            lines.append("We found no matches for the given parameters, check your input or try increasing the differentiate value.")
+        return "\n".join(lines)
+
+    if decoded_type == "putative" and decoded_set is not None and len(decoded_set) > 0:
+        if putative_reason == "max_combs":
+            lines.append("Putative positive samples were identified, but the app does not have the computational power to attempt to decode the exact combination.")
+            lines.append("Either test all putative positive samples individually or change pooling strategy. A lower differentiate (only if it makes sense) might narrow it down.")
+        else:
+            lines.append("Putative positive samples were identified, but the exact combination could not be pinpointed.")
+            lines.append("Either test all putative positive samples individually or change pooling strategy. A lower differentiate (only if it makes sense) might narrow it down.")
+        lines.append(f"There are up to {min([diff_deco, len(decoded_set)])} positive samples among the following samples: {decoded_set}.")
+        return "\n".join(lines)
+
+    if decoded_type == "error":
+        lines.append("We found no matches for the given parameters, check your input or try increasing the differentiate value.")
+    elif decoded_type == "unique":
+        if isinstance(decoded, list) and len(decoded) == 1 and isinstance(decoded[0], list) and len(decoded[0]) == 1:
+            lines.append("A single positive sample was found:")
+            lines.append(f"Sample: {decoded[0][0]}")
+        else:
+            lines.append("A single possible combination of positive samples was found. The positive samples are:")
+            combo = decoded[0] if isinstance(decoded, list) and len(decoded) == 1 else decoded
+            lines.append(f"Samples: {', '.join(map(str, combo))}")
+    else:
+        lines.append(f"{len(decoded)} possible combinations of positive samples were found. The possible combinations are:")
+        for i, deco in enumerate(decoded):
+            if i != 0:
+                lines.append("or")
+            lines.append(f"Samples: {deco}")
+
+    return "\n".join(lines)
+
+
+
+def decode_continuous_lasso(readout_arr, WA, diff=None, min_signal=None, diluting=True, alpha=0.05, l1_ratio=0.5):
+    try:
+        n_compounds, n_pools = WA.shape
+        readout_arr = np.array(readout_arr, dtype=float).flatten()
+        
+        if len(readout_arr) != n_pools:
+            return "error", f"Readout length {len(readout_arr)} doesn't match pool count {n_pools}", None, None, n_compounds, None
+        
+        # Feature matrix: X = WA.T (n_pools, n_compounds)
+        X = WA.T.astype(float)
+        y = readout_arr
+        
+        # Use differentiate (diff) to control sparsity: lower alpha for more sparsity
+        # diff represents max number of active compounds, so use it to scale alpha
+        if diff is not None and diff > 0:
+            # Scale alpha based on sparsity constraint
+            # More compounds active -> higher alpha (less sparsity)
+            alpha_scaled = alpha * (diff / n_compounds)
+        else:
+            alpha_scaled = alpha
+        
+        model = Lasso(alpha=alpha_scaled, positive=True, max_iter=10000)
+        model.fit(X, y)
+        # Get the optimized coefficients
+        
+        return "continuous",  model.coef_
+    
+    except Exception as e:
+        return "error", f"Error in decode_continuous: {str(e)}"
+
+
+def decode_continuous_elastic(readout_arr, WA, diff=None, min_signal=None, diluting=True, alpha=1.0, l1_ratio=0.5):
+    try:
+        n_compounds, n_pools = WA.shape
+        readout_arr = np.array(readout_arr, dtype=float).flatten()
+        
+        if len(readout_arr) != n_pools:
+            return "error", f"Readout length {len(readout_arr)} doesn't match pool count {n_pools}", None, None, n_compounds, None
+        
+        # Feature matrix: X = WA.T (n_pools, n_compounds)
+        X = WA.T.astype(float)
+        y = readout_arr
+        model = ElasticNet(alpha=alpha,l1_ratio=l1_ratio, positive=True, max_iter=10000)
+        model.fit(X, y)
+        # Get the optimized coefficients
+        
+        return "continuous",  model.coef_
+    
+    except Exception as e:
+        return "error", f"Error in decode_continuous: {str(e)}"
+

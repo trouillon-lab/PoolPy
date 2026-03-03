@@ -190,7 +190,7 @@ app_ui = ui.page_fluid(
                 "All precomputed pooling designs are available on Zenodo.",
                 ui.br(),
                 "Access the repository at: ",
-                ui.a("DOI: 10.5281/zenodo.18660062", href="https://doi.org/10.5281/zenodo.18660062", style="text-decoration: underline;", target="_blank", rel="noopener noreferrer"),
+                ui.a("DOI: 10.5281/zenodo.18660061", href="https://doi.org/10.5281/zenodo.18660061", style="text-decoration: underline;", target="_blank", rel="noopener noreferrer"),
                 style="color: #555; font-size: 18px; text-align: center;"
             ),
             ui.div("", style="height: 32px;"),
@@ -214,14 +214,14 @@ app_ui = ui.page_fluid(
             ),
             ui.div(
                 ui.h4("Command to generate designs locally"),
-                ui.output_text_verbatim("commands"),
+                ui.output_ui("commands"),
                 style="text-align: center;"
             ),
             ui.panel_conditional(
                 "output.allow_fly == 'true'",
                 ui.div(
                     ui.h4("Command to decode results locally"),
-                    ui.output_text_verbatim("decode"),
+                    ui.output_ui("decode"),
                     style="text-align: center;"
                 ),
             ),
@@ -531,8 +531,8 @@ app_ui = ui.page_fluid(
                     ui.tags.li(ui.tags.b("Max. samples per pool"), ": Maximum number of samples combined in any single pool."),
                     ui.tags.li(ui.tags.b("N pools"), ": Total number of pools used in the first step of the strategy. For Hierachical this is a list of splits, explained above."),
                     ui.tags.li(ui.tags.b("Percentage check"), ": Fraction of cases requiring additional verification or retesting beyond the first step."),
-                    ui.tags.li(ui.tags.b("Mean extra experiments"), ": Average number of extra tests needed beyond the first step.")
-                    ui.tags.li(ui.tags.b("Max experiments per sample"), ": Maximum number of times an individual sample is tested.")
+                    ui.tags.li(ui.tags.b("Mean extra experiments"), ": Average number of extra tests needed beyond the first step."),
+                    ui.tags.li(ui.tags.b("Max experiments per sample"), ": Maximum number of times an individual sample is tested."),
                 ),
                 ui.h4("Notation:"),
                 ui.tags.ul(
@@ -556,6 +556,7 @@ MAX_DIFFERENTIATE=10
 MAX_N=1000
 MAX_PROD=2500
 MAX_PREVALENCE=0.1
+COLUMN_WIDTH=210
 
 
 def process_metrics_data(metrics_data):
@@ -1897,17 +1898,19 @@ def server(input, output, session):
             
             
         # Prepare the correct command for pool_N.py based on its arguments
-        command_p = f"python pool_N.py --n_samp {n_samp} --differentiate {differentiate} --directory your/directory"
-        intro_command='You can also run the code locally to generate pooling designs. For the values selected above, run:\n'
-        mid_github_command='(see GitHub for details)\n\n'
-        output.personalized_command.set(intro_command+mid_github_command+command_p)
+        command_p = f"python pool_N.py --n_samp {n_samp} --differentiate {differentiate} --method all --path your/path"
+        intro_command = '<p>You can also run the code locally to generate pooling designs. Run the <code style="background-color: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-weight: bold;">pool_interface.ipynb</code> notebook with correct parameters or on the terminal:</p>'
+        mid_github_command = '<p>(see GitHub or the <a href="#help" style="color: #0066cc; text-decoration: underline;">Help section</a> for details)</p>'
+        command_html = f'<pre style="background-color: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; word-wrap: break-word;">{command_p}</pre>'
+        command_content = f'<div style="margin: 15px 0;">{intro_command}{command_html}{mid_github_command}</div>'
+        output.personalized_command.set(command_content)
 
-
-        intro_command='To decode the results of your tests done with a designs from PoolPy, run:\n'
-        mid_github_command='(see GitHub for details)\n\n'
-        decode_p = f"python decode_N.py --differentiate {differentiate} path_to_WA your/path/to/pooling_strategy.csv --readout path/to/readout.csv (or your readout)\n\n"
-        readout_exp='Your readout should either be in binary form (e.g . 1,0,0,1,0) or as a list of positive pools (e.g. 0,3).'
-        output.decoder.set(intro_command+decode_p+mid_github_command+readout_exp)
+        intro_command = '<p>To decode the results of your tests done with designs from PoolPy, run the <code style="background-color: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-weight: bold;">decode_interface.ipynb</code> notebook with correct parameters or on the terminal:</p>'
+        mid_github_command = '<p>(see GitHub or the <a href="#help" style="color: #0066cc; text-decoration: underline;">Help section</a> for details)</p>'
+        decode_p = f"python decode_N.py --differentiate {differentiate} path_to_WA your/path/to/pooling_strategy.csv --readout path/to/readout.csv (or your readout)"
+        decode_html = f'<pre style="background-color: #f5f5f5; padding: 10px; border-radius: 5px; overflow-x: auto; word-wrap: break-word;">{decode_p}</pre>'
+        decoder_content = f'<div style="margin: 15px 0;">{intro_command}{decode_html}{mid_github_command}</div>'
+        output.decoder.set(decoder_content)
 
             #md=np.max(np.array(list(f2)))
 
@@ -2476,6 +2479,32 @@ def server(input, output, session):
                 output.decoder_text.set(txt)
                 output.decoder_mode.set('text')
 
+    def fixed_width_cell_style(col_width_px=COLUMN_WIDTH, padding="8px 12px"):
+        return (
+            f"border: 1px solid #aaa; padding: {padding}; text-align: center; "
+            f"width: {col_width_px}px; max-width: {col_width_px}px; white-space: nowrap; "
+            f"overflow: hidden; text-overflow: ellipsis;"
+        )
+
+    def fixed_width_header_style(col_width_px=COLUMN_WIDTH, padding="8px 12px"):
+        return (
+            f"border: 1px solid #aaa; padding: {padding}; text-align: center; "
+            f"width: {col_width_px}px; max-width: {col_width_px}px; white-space: normal; "
+            f"word-break: break-word; overflow: hidden; text-overflow: ellipsis;"
+        )
+
+    def build_fixed_width_table(df, rows_html, col_width_px=COLUMN_WIDTH, font_size_px=16, padding="8px 12px"):
+        table_style = (
+            f"border-collapse: collapse; font-size: {font_size_px}px; table-layout: fixed; "
+            f"width: auto; max-width: 75vw; display: inline-table; margin: 0 auto;"
+        )
+        header_style = fixed_width_header_style(col_width_px=col_width_px, padding=padding)
+        colgroup = "<colgroup>" + "".join(
+            [f'<col style="width: {col_width_px}px; max-width: {col_width_px}px;">' for _ in df.columns]
+        ) + "</colgroup>"
+        header = "<tr>" + "".join([f'<th style="{header_style}">{col}</th>' for col in df.columns]) + "</tr>"
+        return f'<table style="{table_style}">{colgroup}{header}{"".join(rows_html)}</table>'
+
 
     @output
     @render.ui
@@ -2587,14 +2616,20 @@ def server(input, output, session):
         return ui.HTML(output.summary_text.get())
     
     @output
-    @render.text
+    @render.ui
     def commands():
-        return  output.personalized_command.get()
+        content = output.personalized_command.get()
+        if content:
+            return ui.HTML(content)
+        return ui.HTML("")
     
     @output
-    @render.text
+    @render.ui
     def decode():
-        return  output.decoder.get()
+        content = output.decoder.get()
+        if content:
+            return ui.HTML(content)
+        return ui.HTML("")
     
     @output
     @render.data_frame
@@ -2960,14 +2995,8 @@ def server(input, output, session):
         if 'Mean experiments' in df.columns:
             df = df.sort_values(by='Mean experiments').reset_index(drop=True)
         
-        html = '<table style="border-collapse: collapse; font-size: 16px;">'
-        html += '<tr>'
-        for col in df.columns:
-            th_style = 'border: 1px solid #aaa; padding: 8px 12px; text-align: center;'
-            if col == 'N pools':
-                th_style += ' min-width: 120px;'
-            html += f'<th style="{th_style}">{col}</th>'
-        html += '</tr>'
+        base_cell_style = fixed_width_cell_style()
+        rows_html = []
         
         n_samp = int(output.last_submitted_n_samp.get())
         
@@ -2995,12 +3024,10 @@ def server(input, output, session):
                 except Exception:
                     pass
             
-            html += '<tr>'
+            row_html = '<tr>'
             for col in df.columns:
                 val = row[col]
-                td_style = 'border: 1px solid #aaa; padding: 8px 12px; text-align: center;'
-                if col == 'N pools':
-                    td_style += ' min-width: 120px;'
+                td_style = base_cell_style
                 
                 # Red coloring for entire row if Mean experiments > n_samp
                 if row_red:
@@ -3023,9 +3050,10 @@ def server(input, output, session):
                     except Exception:
                         pass
                 
-                html += f'<td style="{td_style}">{val}</td>'
-            html += '</tr>'
-        html += '</table>'
+                row_html += f'<td style="{td_style}">{val}</td>'
+            row_html += '</tr>'
+            rows_html.append(row_html)
+        html = build_fixed_width_table(df, rows_html)
         return ui.HTML(html)
 
     @output
@@ -3036,16 +3064,8 @@ def server(input, output, session):
             return ui.HTML("<div>No data available.</div>")
         # Only color numeric columns
         df_numeric = df.select_dtypes(include=[float, int])
-        # Build HTML table
-        html = '<table style="border-collapse: collapse; font-size: 16px;">'
-        # Header
-        html += '<tr>'
-        for col in df.columns:
-            th_style = 'border: 1px solid #aaa; padding: 8px 12px; text-align: center;'
-            if col == 'N pools':
-                th_style += ' min-width: 120px;'
-            html += f'<th style="{th_style}">{col}</th>'
-        html += '</tr>'
+        base_cell_style = fixed_width_cell_style()
+        rows_html = []
         n_samp = int(output.last_submitted_n_samp.get())
         # Color logic
         green_indices = {}
@@ -3088,12 +3108,10 @@ def server(input, output, session):
                         row_red = True
                 except Exception:
                     pass
-            html += '<tr>'
+            row_html = '<tr>'
             for col in df.columns:
                 val = row[col]
-                td_style = 'border: 1px solid #aaa; padding: 8px 12px; text-align: center;'
-                if col == 'N pools':
-                    td_style += ' min-width: 120px;'
+                td_style = base_cell_style
                 # Red for full row if Mean experiments > n_samp
                 if row_red:
                     td_style += ' background-color: #ffcccc; color: #111;'
@@ -3106,11 +3124,12 @@ def server(input, output, session):
                     td_style += ' background-color: #ffcccc; color: #111;'
                 # Debug: show mean_exp value in a tooltip for the method column
                 if col.strip().lower().replace(' ', '') == 'poolingstrategy':
-                    html += f'<td style="{td_style}" title="mean_exp={mean_exp}">{val}</td>'
+                    row_html += f'<td style="{td_style}" title="mean_exp={mean_exp}">{val}</td>'
                 else:
-                    html += f'<td style="{td_style}">{val}</td>'
-            html += '</tr>'
-        html += '</table>'
+                    row_html += f'<td style="{td_style}">{val}</td>'
+            row_html += '</tr>'
+            rows_html.append(row_html)
+        html = build_fixed_width_table(df, rows_html)
         return ui.HTML(html)
   
 

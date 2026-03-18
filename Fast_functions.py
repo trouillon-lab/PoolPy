@@ -1187,7 +1187,11 @@ def rand_sweep_diff(n_compounds, max_diff, Npath, max_prev, **kwargs):
                 os.makedirs(WApath)
             thisfile=os.path.join(WApath,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+
                                     '_ME_'+str(np.round(min_tests,2))+'.csv')
-            np.savetxt(thisfile, WA_rand.astype(int), delimiter=",", fmt='%d')
+            pd.DataFrame(
+                WA_rand.astype(int),
+                index=[f"Sample_{i}" for i in range(WA_rand.shape[0])],
+                columns=[f"Pool_{j}" for j in range(WA_rand.shape[1])],
+            ).to_csv(thisfile)
 
             # Append to summary CSV if it exists
             append_random_metrics_to_metrics(
@@ -1238,7 +1242,11 @@ def rand_sweep_diff(n_compounds, max_diff, Npath, max_prev, **kwargs):
                 os.makedirs(WApath)
             thisfile=os.path.join(WApath,'WA_Random_N_'+str(n_compounds)+'_diff_'+str(diff)+
                                     '_ME_'+str(np.round(min_tests,2))+'.csv')
-            np.savetxt(thisfile, WA_rand.astype(int), delimiter=",", fmt='%d')
+            pd.DataFrame(
+                WA_rand.astype(int),
+                index=[f"Sample_{i}" for i in range(WA_rand.shape[0])],
+                columns=[f"Pool_{j}" for j in range(WA_rand.shape[1])],
+            ).to_csv(thisfile)
 
             # Append to summary CSV if it exists
             append_random_metrics_to_metrics(
@@ -1385,7 +1393,11 @@ def process_n_compounds(**kwargs):
                 if diff == 1 and computed_diff_independent:
                     # Find method index and save
                     idx = methods.index(method)
-                    np.savetxt(dst_file, WA_list[idx].astype(int), delimiter=",", fmt='%d')
+                    pd.DataFrame(
+                        WA_list[idx].astype(int),
+                        index=[f"Sample_{i}" for i in range(WA_list[idx].shape[0])],
+                        columns=[f"Pool_{j}" for j in range(WA_list[idx].shape[1])],
+                    ).to_csv(dst_file)
                     if timeit:
                         print(f"Saved {method} for diff={diff}")
                 else:
@@ -1411,7 +1423,11 @@ def process_n_compounds(**kwargs):
                 else:  # Ch. rm. bktrk
                     WA = assign_wells_chinese(backtrack=True, **current_kwargs)
                 
-                np.savetxt(dst_file, WA.astype(int), delimiter=",", fmt='%d')
+                    pd.DataFrame(
+                        WA.astype(int),
+                        index=[f"Sample_{i}" for i in range(WA.shape[0])],
+                        columns=[f"Pool_{j}" for j in range(WA.shape[1])],
+                    ).to_csv(dst_file)
                 if timeit:
                     print(f"Computed {method} for diff={diff}")
             elif timeit:
@@ -1424,7 +1440,11 @@ def process_n_compounds(**kwargs):
             
             if not os.path.exists(dst_file):
                 WA = assign_wells_chinese(special_diff=True, **current_kwargs)
-                np.savetxt(dst_file, WA.astype(int), delimiter=",", fmt='%d')
+                pd.DataFrame(
+                    WA.astype(int),
+                    index=[f"Sample_{i}" for i in range(WA.shape[0])],
+                    columns=[f"Pool_{j}" for j in range(WA.shape[1])],
+                ).to_csv(dst_file)
                 if timeit:
                     print(f"Computed {method} for diff={diff}")
             elif timeit:

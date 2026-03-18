@@ -105,16 +105,16 @@ Edit the variables below to configure your well assignment (WA) matrix generatio
 - **Range Mode** (default): Generate WA matrices for multiple pool counts. Set `n_samp=0` and use `start`, `stop`, `step`
 - **Single Sample Mode**: Generate a WA matrix for a specific number of pools. Set `n_samp` to your desired pool count
 
-**Key Parameters:**
-- `start`: Starting number of pools (range mode) - default: 50
-- `stop`: Ending number of pools (range mode) - default: 110
-- `step`: Step size between pool counts (range mode) - default: 10
+**Variables:**
+- `start`: Starting number of samples (range mode) - default: 50
+- `stop`: Ending number of samples (range mode) - default: 110
+- `step`: Step size between sample counts (range mode) - default: 10
 - `n_samp`: For single sample mode, set to desired pool count. 0 = use range mode
 - `directory`: Output directory for generated WA matrices - default: './pooling_designs'
-- `max_diff`: Maximum differentiate value to consider - default: 10
+- `max_diff`: Maximum number of positive samples value to consider - default: 10 (the code will also generate designs for all number of posistives from 1 to max_diff)
 - `max_redundancy`: Maximum redundancy for random designs - default: 2.0
 - `min_redundancy`: Minimum redundancy for random designs - default: 0.5
-- `max_prev`: Maximum prevalence threshold - default: 0.1
+- `max_prev`: Other bound to the maximum nuber of positives, this time described as a fraction of the number of samples - default: 0.1
 - `max_dims`: Maximum dimensions to consider - default: infinity
 - `rand_guesses`: Number of random guesses to try - default: 10
 - `one_liner`: Output in single line format (True/False) - default: True

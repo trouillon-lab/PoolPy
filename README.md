@@ -150,6 +150,17 @@ Required:
 
 &nbsp;
 
+### Decoder types
+
+The decoder auto infers the type of readout returns a type alongside the positive samples. This characteristic has four possible distinct values:
+
+- **Continuous**: Used if the readout is inferred to be continuous and the single well value is inferred via penalized regression.
+- **Unique**: Used if the readout is binary and there exists only one set of positive samples (of maximum *differentiate* samples) that can provide the measured readout.
+- **Multiple**: Used if the readout is binary and there exists multiple sets of positive samples (of maximum *differentiate* samples) that can provide the measured readout.
+- **Putative**: Used if the readout is binary and there exists more sets of positive samples (of maximum *differentiate* samples) that can provide the measured readout than the number of unique samples across all sets.
+
+&nbsp;
+
 ## 🧪 Example: From Design to Decoding
 
 This example demonstrates how to generate a pooling plan for 100 samples, run your tests, and decode the results using the decode_interface.ipynb interface notebook or running code locally from the terminal (all of which is also possible on the web app).

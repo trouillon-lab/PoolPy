@@ -14,7 +14,9 @@ PoolPy is an open-source tool to design and evaluate combinatorial group testing
 The pooling designs are applicable to any type of tests that give results that can be classified in a binary manner (e.g. significant/non-significant, positive/negative, functional/defective ...). PoolPy supports both single-readout assays with binary outcomes, such as diagnostic infection testing or ligand–target interaction drug screening, and multi-readout experiments, including mass spectrometry- or sequencing-based molecular profiling approaches.
 
 ### Web app
-We provide the [PoolPy web app](https://trouillon-lab.github.io/PoolPy/), which allows to design and decode group testing strategies online without the need of any computational expertise. There, we provide direct comparison of all ten methods for any use case, as well as downloadable design tables that guide the user on how to perform the pooling. Results from pooled experiments can be decoded directly on the web app. Additionally, the app has tools to help in deciding pooling parameters based on prevalence, or to generate method files for pipeting robots for automated pooling. 
+We provide the [PoolPy web app](https://trouillon-lab.github.io/PoolPy/), which allows to design and decode group testing strategies online without the need of any computational expertise. There, we provide direct comparison of all ten methods for any use case, as well as downloadable design tables that guide the user on how to perform the pooling. Results from pooled experiments can be decoded directly on the web app. Additionally, the app has tools to help in deciding pooling parameters based on prevalence, to generate method files for pipeting robots for automated pooling, and to decode the results of pooled experiments.
+
+**We encourage users to use the web app as it covers all steps needed for the vast majority of use cases.** Users can run the code locally in cases that are computationally intensive, such as to generate a full performance summary table for very large number of samples that were not precomputed.
 
 ### Why PoolPy?
 

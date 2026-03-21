@@ -11,7 +11,7 @@
 
 PoolPy is an open-source tool to design and evaluate combinatorial group testing strategies. It implements ten distinct group testing algorithms and guides users in selecting the optimal design for their testing scenario, providing both pooling layouts and decoding schemes.  
   
-The pooling designs are applicable to any type of tests that give results that can be classified in a binary manner (e.g. significant/non-significant, positive/negative, functional/defective ...). PoolPy supports both single-readout assays with binary outcomes, such as diagnostic infection testing or ligand–target interaction drug screening, and multi-readout experiments, including mass spectrometry- or sequencing-based molecular profiling approaches.
+While mostly used for tests that give results that can be classified in a binary manner (e.g. significant/non-significant, positive/negative, functional/defective ...),PoolPy has both a standard binary decoder and a LASSO-based continuous decoder for compressed sensing, enabling combinatorial testing for genome-scale molecular profiling assays with complex quantitative readouts. PoolPy supports both single-readout assays with binary outcomes, such as diagnostic infection testing or ligand–target interaction drug screening, and multi-readout experiments, including mass spectrometry- or sequencing-based molecular profiling approaches.
 
 ### Web app
 We provide the [PoolPy web app](https://trouillon-lab.github.io/PoolPy/), which allows to design and decode group testing strategies online without the need of any computational expertise. There, we provide direct comparison of all ten methods for any use case, as well as downloadable design tables that guide the user on how to perform the pooling. Results from pooled experiments can be decoded directly on the web app. Additionally, the app has tools to help in deciding pooling parameters based on prevalence, to generate method files for pipeting robots for automated pooling, and to decode the results of pooled experiments.
@@ -42,7 +42,7 @@ More details can be found in the associated [publication](https://arxiv.org/abs/
 
 ## 🚀 Quick Start
 
-Below is a guide on how to use the PoolPy code locally.
+Below is a guide on how to use the PoolPy code locally. We provide two notebooks, `pool_interface.ipynb` and `pool_interface.ipynb`, which contain step-by-step instructions and code to design a pooling experiment and decode its results, respectivelly. Alternatively, users can use the code directly as explained below.
 
 ### 1. **Install uv**
 
@@ -152,12 +152,15 @@ Required:
 
 ### Decoder types
 
-The decoder auto infers the type of readout returns a type alongside the positive samples. This characteristic has four possible distinct values:
+The decoder automatically infers the type of readout given by the user (binary or continuous) and returns up to four different types of decoded results:
 
-- **Continuous**: Used if the readout is inferred to be continuous and the single well value is inferred via penalized regression.
-- **Unique**: Used if the readout is binary and there exists only one set of positive samples (of maximum *differentiate* samples) that can provide the measured readout.
-- **Multiple**: Used if the readout is binary and there exists multiple sets of positive samples (of maximum *differentiate* samples) that can provide the measured readout.
-- **Putative**: Used if the readout is binary and there exists more sets of positive samples (of maximum *differentiate* samples) that can provide the measured readout than the number of unique samples across all sets.
+For binary readout (e.g. positive/negative):
+- **Unique**: Used if the readout is binary and there exists only one set of positive samples (of maximum *differentiate* samples) that can explain the measured readout.
+- **Multiple**: Used if the readout is binary and there exists multiple sets of positive samples (of maximum *differentiate* samples) that can explain the measured readout.
+- **Putative**: Used if the readout is binary and there exists more sets of positive samples (of maximum *differentiate* samples) than the number of unique samples across all sets that can explain the measured readout.
+- 
+For continuous readout:
+- **Continuous**: Used if the readout is inferred to be continuous and the single sample value is inferred via penalized regression.
 
 &nbsp;
 

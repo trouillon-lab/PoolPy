@@ -724,6 +724,31 @@ def iterative_uneven_splitter(id_samps, id_positives, ratios):
             partials+=iterative_uneven_splitter(pool,id_positives,ratios)
     return(ratio+partials)
 
+def full_iterative_uneven_splitter(id_samps, id_positives, ratios):
+    if len(ratios)==1:
+        ratio=ratios[0]
+        ratios=[np.inf]
+    else:
+        ratio=ratios[0]
+        ratios=ratios[1:]
+
+    if len(id_samps)<=ratio:
+        return len(id_samps),len(id_positives), len(id_samps)-len(id_positives)
+
+    pools=list(split(id_samps, ratio))
+    partials=0
+    n_pos=0
+    n_neg=0
+    for pool in pools:
+        if len(set(pool).intersection(id_positives))>0:
+            new_partials, new_n_pos, new_n_neg=full_iterative_uneven_splitter(pool,id_positives,ratios)
+            partials+=new_partials
+            n_pos+=new_n_pos+1
+            n_neg+=new_n_neg
+        else:
+            n_neg+=1
+    return ratio+partials, n_pos, n_neg
+
 
 
 def calculate_metrics_hierarchical_fast(n_compounds,  differentiate:int, checks=1e4, keep_ratios_constant=False,  **kwargs):
@@ -778,6 +803,45 @@ def calculate_metrics_hierarchical_fast(n_compounds,  differentiate:int, checks=
         layers=len(BM[0])+1
         MC=int(np.ceil(n_compounds/BM[0][0]))
         return([BM[1], MC, BM[0], int(np.round((NP-1)/(NP),2)*100), BM[1]-BM[0][0],layers])
+    
+def calculate_full_metrics_hierarchical_fast(n_compounds,  differentiate:int, checks=1e4, keep_ratios_constant=False,  **kwargs):
+    id_samps=np.arange(n_compounds)
+    details={}
+    posiz=pick_rand_pos(n_compounds, differentiate, checks)
+    BM=[[0],np.inf]
+    FNN=0
+    FNP=0
+    
+    if 'ls_splits' in kwargs.keys():
+        list_splits=[kwargs['ls_splits']]
+    else:
+        list_splits=uneven_wrapper(n_compounds, differentiate)
+    ls_id=0
+    for splito in list_splits:
+        NP=0
+        FM=0
+        NPos=0
+        NNeg=0
+        for id_pos in posiz:
+            posx=np.array(id_pos)
+            measures=full_iterative_uneven_splitter(id_samps,posx,splito)
+            FM+=measures[0]
+            NPos+=measures[1]
+            NNeg+=measures[2]
+            NP+=1
+                
+        layers=len(splito)+1
+        MC=int(np.ceil(n_compounds/splito[0]))
+        #details.update({ls_id:[FM/NP, MC, splito, int(np.round((NP-1)/(NP),2)*100), FM/NP-splito[0],layers]})
+        ls_id+=1
+        if FM/NP<BM[1]:
+            BM=[splito,FM/NP]
+            FNP=NPos/NP
+            FNN=NNeg/NP
+
+    layers=len(BM[0])+1
+    MC=int(np.ceil(n_compounds/BM[0][0]))
+    return([BM[1], MC, BM[0], int(np.round((NP-1)/(NP),2)*100), BM[1]-BM[0][0],layers,FNP, FNN])
 
 
 # Utility functions from rand_WA_fast.py
@@ -812,6 +876,7 @@ def mean_metrics_fast(well_assigner, differentiate, max_checks=1e0, scaler=1e3, 
         
 
     counts=[]
+    positive_wells=[]
     probi=np.array(ls_combs, dtype=float)
     probi/=np.sum(probi)
     differis=np.random.choice(ls_diffs, int(max_checks*scaler), p=probi)
@@ -840,6 +905,53 @@ def mean_metrics_fast(well_assigner, differentiate, max_checks=1e0, scaler=1e3, 
     return BT+ET, ET,  rounds, p_check
     
  
+def full_mean_metrics_fast(well_assigner, differentiate, max_checks=1e0, scaler=1e3, mp=1e-5, **kwargs):
+    BT=well_assigner.shape[1]
+    n_compounds=well_assigner.shape[0]
+    MC=0
+    MP=1
+    ls_combs=[]
+    ls_diffs=[]
+    difo=differentiate
+    while (MC<max_checks*scaler or MP>mp) and difo>0:
+        MCI=math.comb(n_compounds,differentiate)
+        MC+=MCI
+        mp=MCI/MC
+        ls_combs.append(MCI)
+        ls_diffs.append(difo)
+        difo-=1
+        
+
+    counts=[]
+    positive_wells=[]
+    probi=np.array(ls_combs, dtype=float)
+    probi/=np.sum(probi)
+    differis=np.random.choice(ls_diffs, int(max_checks*scaler), p=probi)
+    #differo=differentiate
+    #for _ in range(int(max_checks*scaler)):
+    MC=np.max([int(max_checks*scaler/10+5), n_compounds+1])
+    for differo in differis:
+        rnd_pos=np.random.choice(np.arange(n_compounds), differo, replace=False)
+        readout=np.any(well_assigner[rnd_pos], axis=0)
+        decoded=fast_decode(well_assigner=well_assigner, differentiate=differentiate, 
+                            readout=readout, max_checks=MC)
+        try:
+            decoded_set=set([x for xx in decoded for x in xx])
+            NC0=len(decoded_set)
+            NC=np.min([NC0,len(decoded)])
+        except:
+            NC=len(decoded)
+        counts.append(NC)
+        positive_wells.append(np.sum(readout))
+    counts=np.array(counts)
+    #ET=np.max(counts-1)#/len(counts)
+    ET=np.sum(counts)/len(counts)
+    ET =ET if ET>1 else 0#if ET<well_assigner.shape[0] else well_assigner.shape[0]
+    ER=np.sum(counts>1)/np.sum(counts>0)
+    rounds=ER+1
+    p_check=np.round(ER*100)
+    return BT+ET, ET,  rounds, p_check, np.mean(positive_wells), BT-np.mean(positive_wells)
+
 
 def decode_precomp(well_assigner:np.array, differentiate:int, 
                    scrambler:dict, readout:np.ndarray, max_differentiate=-1, sweep=False, **kwargs) -> list:
@@ -1506,6 +1618,136 @@ def expected_error_table(N, prevalence, max_diff=4, min_N=5, correct=False, max_
     return df
 
 
+def expected_error_jumps(N, prevalence, max_diff=4, min_N=5, correct=False,
+                         max_error=0.05, extra_steps=2):
+    """
+    Compute threshold jump points for each differentiate value.
+
+    For each differentiate in the same pre-determined set used by
+    expected_error_table, this returns TWO smallest population sizes n
+    (within [min_N, ceil(N)]):
+    1) smallest n such that error(n, diff) <= max_error
+    2) smallest n such that error(n, diff) <= FWER(max_error; n)
+
+    Parameters
+    ----------
+    N : int or float
+        Upper bound for the searched population size.
+    prevalence : float
+        Prevalence (binomial success probability).
+    max_diff : int, default=4
+        Base maximum differentiate.
+    min_N : int, default=5
+        Minimum searched population size.
+    correct : bool, default=False
+        Kept for backward compatibility. This function now always reports both
+        uncorrected and FWER-based jump points regardless of this flag.
+    max_error : float, default=0.05
+        Error threshold.
+    extra_steps : int, default=2
+        Additional differentiate values when extreme_diff exceeds max_diff.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Columns:
+        - Differentiate
+        - Jump N @ max_error
+        - Error @ Jump N(max_error)
+        - Jump N @ FWER(max_error)
+        - Error @ Jump N(FWER)
+        - FWER threshold @ Jump N(FWER)
+        - FWER tests @ Jump N(FWER)
+    """
+    n_max = int(np.ceil(N))
+    if n_max < min_N:
+        cols = [
+            'Differentiate',
+            'Jump N @ max_error',
+            'Error @ Jump N(max_error)',
+            'Jump N @ FWER(max_error)',
+            'Error @ Jump N(FWER)',
+            'FWER threshold @ Jump N(FWER)',
+            'FWER tests @ Jump N(FWER)'
+        ]
+        return pd.DataFrame(columns=cols)
+
+    # Keep diff selection behavior aligned with expected_error_table.
+    diff_values = np.arange(1, int(max_diff) + extra_steps + 1)
+    extreme_diff = int(np.ceil(scipy.stats.binom.isf(max_error, n_max, prevalence)))
+
+    if extreme_diff > max_diff + extra_steps:
+        rooty = np.power(extreme_diff / max_diff, 1 / extra_steps)
+        for i in range(extra_steps):
+            diff_values[max_diff + i] = int(np.ceil(max_diff * np.power(rooty, i + 1)))
+    else:
+        diff_values = np.arange(1, int(np.max([max_diff, extreme_diff])) + 1)
+
+    n_values = np.arange(int(min_N), n_max + 1)
+
+    # Vectorized error matrix: rows=diff, cols=n.
+    errors = scipy.stats.binom.sf(diff_values[:, None], n_values[None, :], prevalence)
+
+    # Uncorrected threshold condition.
+    valid_raw = errors <= float(max_error)
+    has_raw = valid_raw.any(axis=1)
+    idx_raw = valid_raw.argmax(axis=1)
+
+    # FWER (Sidak-style) threshold condition, with m tests at each candidate n.
+    fwer_tests = np.ceil(float(n_max) / n_values)
+    fwer_threshold = 1 - np.power(1 - float(max_error), 1 / fwer_tests)
+    valid_fwer = errors <= fwer_threshold[None, :]
+    has_fwer = valid_fwer.any(axis=1)
+    idx_fwer = valid_fwer.argmax(axis=1)
+
+    jump_n_raw = np.where(has_raw, n_values[idx_raw], np.nan)
+    jump_n_fwer = np.where(has_fwer, n_values[idx_fwer], np.nan)
+
+    err_jump_raw = np.full(diff_values.shape[0], np.nan, dtype=float)
+    err_jump_fwer = np.full(diff_values.shape[0], np.nan, dtype=float)
+    thr_jump_fwer = np.full(diff_values.shape[0], np.nan, dtype=float)
+    tests_jump_fwer = np.full(diff_values.shape[0], np.nan, dtype=float)
+
+    rows_raw = np.where(has_raw)[0]
+    if rows_raw.size > 0:
+        cols_raw = idx_raw[rows_raw]
+        err_jump_raw[rows_raw] = errors[rows_raw, cols_raw]
+
+    rows_fwer = np.where(has_fwer)[0]
+    if rows_fwer.size > 0:
+        cols_fwer = idx_fwer[rows_fwer]
+        err_jump_fwer[rows_fwer] = errors[rows_fwer, cols_fwer]
+        thr_jump_fwer[rows_fwer] = fwer_threshold[cols_fwer]
+        tests_jump_fwer[rows_fwer] = fwer_tests[cols_fwer]
+
+    out = pd.DataFrame({
+        'Differentiate': diff_values,
+        'Jump N @ max_error': jump_n_raw,
+        'Error @ Jump N(max_error)': err_jump_raw,
+        'Jump N @ FWER(max_error)': jump_n_fwer,
+        'Error @ Jump N(FWER)': err_jump_fwer,
+        'FWER threshold @ Jump N(FWER)': thr_jump_fwer,
+        'FWER tests @ Jump N(FWER)': tests_jump_fwer
+    })
+
+    out[
+        [
+            'Error @ Jump N(max_error)',
+            'Error @ Jump N(FWER)',
+            'FWER threshold @ Jump N(FWER)'
+        ]
+    ] = out[
+        [
+            'Error @ Jump N(max_error)',
+            'Error @ Jump N(FWER)',
+            'FWER threshold @ Jump N(FWER)'
+        ]
+    ].round(8)
+    out['FWER tests @ Jump N(FWER)'] = out['FWER tests @ Jump N(FWER)'].round(2)
+    return out
+
+
+
 
 
 
@@ -1564,5 +1806,26 @@ def compute_metrics(n_compounds: int, diff: int, wa: np.ndarray):
 		'Max experiments per sample': max_dilution,
 		'Mean extra experiments': float(np.round(extra, 2)),
 		'Mean steps': rounds
+	}
+
+def compute_full_metrics(n_compounds: int, diff: int, wa: np.ndarray):
+	mean_exp, extra, rounds, p_check, Pos, Neg = full_mean_metrics_fast(well_assigner=wa, differentiate=diff)
+	nw = wa.shape[1]
+	ms = int(np.max(np.sum(wa, axis=0)))
+	max_dilution = int(np.max(np.sum(wa, axis=1)))+1
+	me = float(np.round(mean_exp, 2))
+	pc = int(p_check)
+	return {
+		'N': n_compounds,
+		'diff': diff,
+		'Mean experiments': me,
+		'Max samples per pool': ms,
+		'N pools': nw,
+		'Percentage check': pc,
+		'Max experiments per sample': max_dilution,
+		'Mean extra experiments': float(np.round(extra, 2)),
+		'Mean steps': rounds,
+        'Mean positive pools':Pos,
+        'Mean negative pools': Neg,
 	}
 

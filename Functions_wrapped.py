@@ -1819,6 +1819,7 @@ def compute_full_metrics(n_compounds: int, diff: int, wa: np.ndarray):
 		'N': n_compounds,
 		'diff': diff,
 		'Mean experiments': me,
+        
 		'Max samples per pool': ms,
 		'N pools': nw,
 		'Percentage check': pc,

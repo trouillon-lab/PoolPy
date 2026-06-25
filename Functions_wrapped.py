@@ -671,6 +671,7 @@ def iterative_splitter(id_samps, id_positives, ratio):
     
     pools=list(split(id_samps, ratio))
     partials=0
+    
     for pool in pools:
         if len(set(pool).intersection(id_positives))>0:
             partials+=iterative_splitter(pool,id_positives,ratio)
@@ -741,7 +742,7 @@ def full_iterative_uneven_splitter(id_samps, id_positives, ratios):
     n_neg=0
     for pool in pools:
         if len(set(pool).intersection(id_positives))>0:
-            new_partials, new_n_pos, new_n_neg=full_iterative_uneven_splitter(pool,id_positives,ratios)
+            new_partials, new_n_pos, new_n_neg=full_iterative_uneven_splitter(pool,set(pool).intersection(id_positives),ratios)
             partials+=new_partials
             n_pos+=new_n_pos+1
             n_neg+=new_n_neg
@@ -751,7 +752,20 @@ def full_iterative_uneven_splitter(id_samps, id_positives, ratios):
 
 
 
-def calculate_metrics_hierarchical_fast(n_compounds,  differentiate:int, checks=1e4, keep_ratios_constant=False,  **kwargs):
+def calculate_metrics_hierarchical_fast_old(n_compounds,  differentiate:int, checks=1e4, keep_ratios_constant=False,  **kwargs):
+
+    if differentiate==1:
+        BM=[0,np.inf]
+        splitos=[]
+        rest=n_compounds
+        while rest>4:
+            resto=rest/3
+            rest=np.ceil(resto)
+            splitos.append(3)
+        layers=len(splitos)
+        ME=np.round(np.sum(splitos)+resto,2)
+        return([ME, int(np.ceil(n_compounds/3)), 
+                splitos, int(np.round((NP-1)/(NP),2)*100), ME-3,layers])
     id_samps=np.arange(n_compounds)
     details={}
     posiz=pick_rand_pos(n_compounds, differentiate, checks)
@@ -762,7 +776,7 @@ def calculate_metrics_hierarchical_fast(n_compounds,  differentiate:int, checks=
             NP=0
             FM=0
             for id_pos in posiz:
-                posx=np.array(id_pos).reshape(-1,1)
+                posx=np.array(id_pos)#.reshape(1,-1)
                 measures=iterative_splitter(id_samps,posx,ratio)
                 FM+=measures
                 NP+=1
@@ -803,7 +817,77 @@ def calculate_metrics_hierarchical_fast(n_compounds,  differentiate:int, checks=
         layers=len(BM[0])+1
         MC=int(np.ceil(n_compounds/BM[0][0]))
         return([BM[1], MC, BM[0], int(np.round((NP-1)/(NP),2)*100), BM[1]-BM[0][0],layers])
-    
+
+def calculate_metrics_hierarchical_fast(n_compounds,  differentiate:int, checks=1e4, keep_ratios_constant=False, Faster=False,  **kwargs):
+
+    if differentiate==1 and Faster:
+        BM=[0,np.inf]
+        splitos=[]
+        rest=n_compounds
+        while rest>4:
+            resto=rest/3
+            rest=np.ceil(resto)
+            splitos.append(3)
+        layers=len(splitos)
+        ME=np.round(np.sum(splitos)+n_compounds/3**layers,2)
+        layers+=1
+        bn=np.min([1, layers -1])
+        return([ME, int(np.ceil(n_compounds/3)),splitos, int(bn*100), ME-3,layers])
+    id_samps=np.arange(n_compounds)
+    details={}
+    posiz=pick_rand_pos(n_compounds, differentiate, checks)
+    if keep_ratios_constant:
+        BM=[0,np.inf]
+        for ratiof in np.arange(2,np.ceil(np.sqrt(n_compounds))):
+            ratio=int(ratiof)
+            NP=0
+            FM=0
+            for id_pos in posiz:
+                posx=np.array(id_pos)#.reshape(1,-1)
+                measures=iterative_splitter(id_samps,posx,ratio)
+                FM+=measures
+                NP+=1
+                    
+            layers=int(np.ceil(np.log(n_compounds)/np.log(ratio)))
+            MC=int(np.ceil(n_compounds/ratio))
+
+            details.update({ratio:[BM[1], MC, BM[0], int(np.round((NP-1)/(NP),2)*100), BM[1]-BM[0],layers]})
+            if FM/NP<BM[1]:
+                BM=[ratio,FM/NP]
+        layers=int(np.ceil(np.log(n_compounds)/np.log(BM[0])))
+        MC=int(np.ceil(n_compounds/BM[0]))
+        bn=np.min([1, layers -1])
+        return([BM[1], MC, BM[0], int(bn*100), BM[1]-BM[0],layers, details ]) 
+
+    else:
+        BM=[[0],np.inf]
+        
+        if 'ls_splits' in kwargs.keys():
+            list_splits=[kwargs['ls_splits']]
+        else:
+            list_splits=uneven_wrapper(n_compounds, differentiate)
+        ls_id=0
+        for splito in list_splits:
+            NP=0
+            FM=0
+            for id_pos in posiz:
+                posx=np.array(id_pos)
+                measures=iterative_uneven_splitter(id_samps,posx,splito)
+                FM+=measures
+                NP+=1
+                    
+            layers=len(splito)+1
+            MC=int(np.ceil(n_compounds/splito[0]))
+            #details.update({ls_id:[FM/NP, MC, splito, int(np.round((NP-1)/(NP),2)*100), FM/NP-splito[0],layers]})
+            ls_id+=1
+            if FM/NP<BM[1]:
+                BM=[splito,FM/NP]
+        layers=len(BM[0])+1
+        MC=int(np.ceil(n_compounds/BM[0][0]))
+        bn=np.min([1, layers -1])
+        return([BM[1], MC, BM[0], int(bn*100), BM[1]-BM[0][0],layers])
+  
+
 def calculate_full_metrics_hierarchical_fast(n_compounds,  differentiate:int, checks=1e4, keep_ratios_constant=False,  **kwargs):
     id_samps=np.arange(n_compounds)
     details={}
@@ -1819,7 +1903,6 @@ def compute_full_metrics(n_compounds: int, diff: int, wa: np.ndarray):
 		'N': n_compounds,
 		'diff': diff,
 		'Mean experiments': me,
-        
 		'Max samples per pool': ms,
 		'N pools': nw,
 		'Percentage check': pc,

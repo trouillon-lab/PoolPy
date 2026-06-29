@@ -1733,7 +1733,7 @@ def classify_single_readout_payload(payload, n_pools_local: int):
     )
 
 
-def decode_single_readout_payload(payload, n_pools_local: int, WA: np.ndarray, diff: int, readout_id: str = None, min_signal=None, diluting=True):
+def decode_single_readout_payload(payload, n_pools_local: int, WA: np.ndarray, diff: int, readout_id: str = None, min_signal=None, diluting=True, alpha=1.0, l1_ratio=0.5):
     mode, arr, err = classify_single_readout_payload(payload, n_pools_local)
     if err:
         out = {
@@ -1751,6 +1751,8 @@ def decode_single_readout_payload(payload, n_pools_local: int, WA: np.ndarray, d
             diff=diff,
             min_signal=min_signal,
             diluting=diluting,
+            alpha=alpha,
+            l1_ratio=l1_ratio,
         )
         out = {
             "decoded_type": decoded_type,
@@ -1882,7 +1884,7 @@ def is_continuous_with_id_matrix(readout_df: pd.DataFrame, n_pools_local: int) -
     return True
 
 
-def _decode_fallback_row(row: pd.Series, row_idx: int, n_pools_local: int, WA: np.ndarray, diff: int, min_signal=None, diluting=True):
+def _decode_fallback_row(row: pd.Series, row_idx: int, n_pools_local: int, WA: np.ndarray, diff: int, min_signal=None, diluting=True, alpha=1.0, l1_ratio=0.5):
     tokens = [v for v in row.tolist() if not pd.isna(v) and str(v).strip() != ""]
     if len(tokens) == 0:
         return {
@@ -1914,10 +1916,12 @@ def _decode_fallback_row(row: pd.Series, row_idx: int, n_pools_local: int, WA: n
         readout_id=row_id,
         min_signal=min_signal,
         diluting=diluting,
+        alpha=alpha,
+        l1_ratio=l1_ratio,
     )
 
 
-def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int, min_signal=None, diluting=True, readout_ids=None) -> pd.DataFrame:
+def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int, min_signal=None, diluting=True, readout_ids=None, alpha=1.0, l1_ratio=0.5) -> pd.DataFrame:
     n_pools_local = WA.shape[1]
     base_df = normalize_readout_df(readout_df)
     if base_df is None or base_df.empty:
@@ -1965,6 +1969,8 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
                 diff,
                 min_signal=min_signal,
                 diluting=diluting,
+                alpha=alpha,
+                l1_ratio=l1_ratio,
             )
             # Use provided readout_ids if available, otherwise use default naming
             if readout_ids and i < len(readout_ids):
@@ -1983,6 +1989,8 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
                 diff,
                 min_signal=min_signal,
                 diluting=diluting,
+                alpha=alpha,
+                l1_ratio=l1_ratio,
             )
             # Use provided readout_ids if available, otherwise use default naming
             if readout_ids and i < len(readout_ids):
@@ -1995,7 +2003,17 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
     # Fallback: parse row-by-row as user-provided string with id.
     fallback_df = base_df
     for i, (_, row) in enumerate(fallback_df.iterrows()):
-        result = _decode_fallback_row(row, i, n_pools_local, WA, diff, min_signal=min_signal, diluting=diluting)
+        result = _decode_fallback_row(
+            row,
+            i,
+            n_pools_local,
+            WA,
+            diff,
+            min_signal=min_signal,
+            diluting=diluting,
+            alpha=alpha,
+            l1_ratio=l1_ratio,
+        )
         # Use provided readout_ids if available
         if readout_ids and i < len(readout_ids):
             result["readout_id"] = readout_ids[i]
@@ -2004,7 +2022,7 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
     return pd.DataFrame(rows)
 
 
-def decode_continuous(readout_arr, WA, diff=None, min_signal=None, diluting=True, alpha=1.0, l1_ratio=0.5):
+def decode_continuous(readout_arr, WA, diff=None, min_signal=None, diluting=True, alpha=0.05, l1_ratio=1):
     try:
         n_compounds, n_pools = WA.shape
         readout_arr = np.array(readout_arr, dtype=float).flatten()

@@ -16,6 +16,8 @@ parser.add_argument('--readout', type=str, help="A string either containing the 
 parser.add_argument('--extensive_search', type=str, default='False', help="weather to search all possibilities (True) or use a faster exclusion based implementation (False, default)")
 parser.add_argument('--min_signal', type=float, default=None, help='Minimum signal threshold for constrained continuous decoding.')
 parser.add_argument('--diluting', type=str, default='True', help='Whether to use dilution scaling in continuous decoding (True/False).')
+parser.add_argument('--alpha', type=float, default=0.05, help='Elastic net regularization strength for continuous decoding.')
+parser.add_argument('--l1_ratio', type=float, default=1, help='Elastic net l1 ratio for continuous decoding (0=ridge, 1=lasso).')
 
 args = parser.parse_args()
 args_dict = vars(args)
@@ -24,6 +26,8 @@ path_to_wa = args_dict['path_to_WA']
 diff = args_dict['differentiate']
 readout_in = args_dict['readout']
 min_signal = args_dict['min_signal']
+alpha = args_dict['alpha']
+l1_ratio = args_dict['l1_ratio']
 diluting_in = str(args_dict['diluting']).strip().lower()
 diluting = diluting_in in ['1', 'true', 't', 'yes', 'y']
 
@@ -120,7 +124,16 @@ if readout_in.lower().endswith('csv'):
     if readout_df is None or readout_df.empty:
         raise SystemExit('Error: Readout CSV appears to be empty.')
 
-    df_out = decode_multi_readout_df(readout_df, WA, diff, min_signal=min_signal, diluting=diluting, readout_ids=readout_ids)
+    df_out = decode_multi_readout_df(
+        readout_df,
+        WA,
+        diff,
+        min_signal=min_signal,
+        diluting=diluting,
+        readout_ids=readout_ids,
+        alpha=alpha,
+        l1_ratio=l1_ratio,
+    )
     if isinstance(df_out, pd.DataFrame) and not df_out.empty:
         df_with_index = df_out.copy()
         if "readout_id" in df_with_index.columns:
@@ -154,7 +167,16 @@ if readout_in.lower().endswith('csv'):
 
 else:
     file_name = os.path.basename(path_to_wa)
-    single_result = decode_single_readout_payload(readout_in, n_pools, WA, diff, min_signal=min_signal, diluting=diluting)
+    single_result = decode_single_readout_payload(
+        readout_in,
+        n_pools,
+        WA,
+        diff,
+        min_signal=min_signal,
+        diluting=diluting,
+        alpha=alpha,
+        l1_ratio=l1_ratio,
+    )
 
     if single_result.get("decoded_type") == "error":
         text_msg = str(single_result.get("decoder_output"))

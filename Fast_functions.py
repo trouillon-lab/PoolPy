@@ -1685,7 +1685,7 @@ def _tokens_from_payload(payload):
     return vals
 
 
-def classify_single_readout_payload(payload, n_pools_local: int):
+def classify_single_readout_payload(payload, n_pools_local: int, force_continuous: bool = False):
     tokens = _tokens_from_payload(payload)
     if len(tokens) == 0:
         return None, None, "Error: empty readout."
@@ -1708,6 +1708,14 @@ def classify_single_readout_payload(payload, n_pools_local: int):
 
     arr_float = np.array(nums, dtype=float)
     int_like = [is_int_like_value(v) for v in nums]
+
+    if force_continuous:
+        if len(nums) != n_pools_local:
+            return None, None, (
+                f"Error: forced continuous mode expects exactly {n_pools_local} numeric values, "
+                f"but got {len(nums)}."
+            )
+        return "continuous", arr_float, None
 
     # Condition 1: length == n_pools -> continuous decode (unless it's a strict binary vector)
     if len(nums) == n_pools_local:
@@ -1733,8 +1741,8 @@ def classify_single_readout_payload(payload, n_pools_local: int):
     )
 
 
-def decode_single_readout_payload(payload, n_pools_local: int, WA: np.ndarray, diff: int, readout_id: str = None, min_signal=None, diluting=True, alpha=1.0, l1_ratio=0.5):
-    mode, arr, err = classify_single_readout_payload(payload, n_pools_local)
+def decode_single_readout_payload(payload, n_pools_local: int, WA: np.ndarray, diff: int, readout_id: str = None, min_signal=None, diluting=True, alpha=1.0, l1_ratio=0.5, force_continuous: bool = False, grid_search: bool = False, grid_objective: str = "mse"):
+    mode, arr, err = classify_single_readout_payload(payload, n_pools_local, force_continuous=force_continuous)
     if err:
         out = {
             "decoded_type": "error",
@@ -1753,6 +1761,8 @@ def decode_single_readout_payload(payload, n_pools_local: int, WA: np.ndarray, d
             diluting=diluting,
             alpha=alpha,
             l1_ratio=l1_ratio,
+            grid_search=grid_search,
+            grid_objective=grid_objective,
         )
         out = {
             "decoded_type": decoded_type,
@@ -1884,29 +1894,14 @@ def is_continuous_with_id_matrix(readout_df: pd.DataFrame, n_pools_local: int) -
     return True
 
 
-def _decode_fallback_row(row: pd.Series, row_idx: int, n_pools_local: int, WA: np.ndarray, diff: int, min_signal=None, diluting=True, alpha=1.0, l1_ratio=0.5):
-    tokens = [v for v in row.tolist() if not pd.isna(v) and str(v).strip() != ""]
-    if len(tokens) == 0:
+def _decode_fallback_row(row: pd.Series, row_idx: int, n_pools_local: int, WA: np.ndarray, diff: int, min_signal=None, diluting=True, alpha=1.0, l1_ratio=0.5, force_continuous: bool = False, grid_search: bool = False, grid_objective: str = "mse"):
+    row_id, payload, prep_err = _extract_row_id_and_payload(row, row_idx)
+    if prep_err:
         return {
             "readout_id": f"Readout {row_idx + 1}",
             "decoded_type": "error",
-            "decoder_output": "Error: empty row.",
+            "decoder_output": prep_err,
         }
-
-    # If first token is non-numeric and there is payload after it, treat as row id.
-    first = str(tokens[0]).strip()
-    has_id = False
-    try:
-        float(first)
-    except Exception:
-        has_id = len(tokens) > 1
-
-    if has_id:
-        row_id = first
-        payload = tokens[1:]
-    else:
-        row_id = f"Readout {row_idx + 1}"
-        payload = tokens
 
     return decode_single_readout_payload(
         payload,
@@ -1918,10 +1913,107 @@ def _decode_fallback_row(row: pd.Series, row_idx: int, n_pools_local: int, WA: n
         diluting=diluting,
         alpha=alpha,
         l1_ratio=l1_ratio,
+        force_continuous=force_continuous,
+        grid_search=grid_search,
+        grid_objective=grid_objective,
     )
 
 
-def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int, min_signal=None, diluting=True, readout_ids=None, alpha=1.0, l1_ratio=0.5) -> pd.DataFrame:
+def _extract_row_id_and_payload(row: pd.Series, row_idx: int):
+    tokens = [v for v in row.tolist() if not pd.isna(v) and str(v).strip() != ""]
+    if len(tokens) == 0:
+        return f"Readout {row_idx + 1}", None, "Error: empty row."
+
+    first = str(tokens[0]).strip()
+    has_id = False
+    try:
+        float(first)
+    except Exception:
+        has_id = len(tokens) > 1
+
+    if has_id:
+        return first, tokens[1:], None
+    return f"Readout {row_idx + 1}", tokens, None
+
+
+def _grid_objective_loss(y, y_pred, objective: str) -> float:
+    objective_norm = str(objective).strip().lower()
+    if objective_norm == "mae":
+        return float(np.mean(np.abs(y - y_pred)))
+    if objective_norm == "rmse":
+        return float(np.sqrt(np.mean((y - y_pred) ** 2)))
+    if objective_norm == "r2":
+        ss_res = float(np.sum((y - y_pred) ** 2))
+        ss_tot = float(np.sum((y - np.mean(y)) ** 2))
+        r2 = 1.0 - (ss_res / ss_tot) if ss_tot > 0 else 0.0
+        return float(1.0 - r2)
+    return float(np.mean((y - y_pred) ** 2))
+
+
+def _select_shared_grid_params_multi(readout_arrays, WA: np.ndarray, diff: int, return_all_fits: bool = False, objective: str = "mse", include_decoders: bool = False):
+    n_compounds = WA.shape[0]
+    X = WA.T.astype(float)
+
+    alpha_candidates = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1]
+    l1_candidates = [0, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95, 1]
+
+    fits = []
+    for alpha_raw in alpha_candidates:
+        alpha_scaled = alpha_raw
+        if diff is not None and diff > 0:
+            alpha_scaled = alpha_raw * (diff / n_compounds)
+
+        for l1_try in l1_candidates:
+            try:
+                total_score = 0.0
+                decoder_outputs = []
+                for arr in readout_arrays:
+                    y = np.array(arr, dtype=float).flatten()
+                    if l1_try >= 0.999:
+                        model_try = Lasso(alpha=alpha_scaled, positive=True, max_iter=10000)
+                    else:
+                        model_try = ElasticNet(
+                            alpha=alpha_scaled,
+                            l1_ratio=l1_try,
+                            positive=True,
+                            max_iter=10000,
+                        )
+                    model_try.fit(X, y)
+                    y_pred = model_try.predict(X)
+                    total_score += _grid_objective_loss(y, y_pred, objective)
+                    if include_decoders:
+                        decoder_outputs.append(model_try.coef_.tolist())
+
+                fits.append({
+                    "alpha": float(alpha_raw),
+                    "l1_ratio": float(l1_try),
+                    "alpha_scaled": float(alpha_scaled),
+                    "total_score": float(total_score),
+                    "mean_score": float(total_score / max(1, len(readout_arrays))),
+                    "objective": str(objective).strip().lower(),
+                    "decoder_outputs": decoder_outputs if include_decoders else None,
+                })
+            except Exception:
+                continue
+
+    if len(fits) == 0:
+        return {"error": "Error in decode_continuous: shared multi-readout grid search failed to fit any model"}
+
+    fits_sorted = sorted(fits, key=lambda x: x["total_score"])
+    best = fits_sorted[0]
+    out = {
+        "alpha": best["alpha"],
+        "l1_ratio": best["l1_ratio"],
+        "alpha_scaled": best["alpha_scaled"],
+        "total_score": best["total_score"],
+        "objective": best["objective"],
+    }
+    if return_all_fits:
+        out["all_fits"] = fits_sorted
+    return out
+
+
+def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int, min_signal=None, diluting=True, readout_ids=None, alpha=1.0, l1_ratio=0.5, force_continuous: bool = False, grid_search: bool = False, return_all_fits: bool = False, save_grid_decoders: bool = False, grid_objective: str = "mse") -> pd.DataFrame:
     n_pools_local = WA.shape[1]
     base_df = normalize_readout_df(readout_df)
     if base_df is None or base_df.empty:
@@ -1930,6 +2022,119 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
             "decoded_type": "error",
             "decoder_output": "Error: Readout CSV appears to be empty.",
         }])
+
+    force_continuous_effective = force_continuous or save_grid_decoders
+    grid_search_effective = grid_search or save_grid_decoders
+
+    if force_continuous_effective:
+        entries = []
+        valid_idx = 0
+        for i, (_, row) in enumerate(base_df.iterrows()):
+            row_id, payload, prep_err = _extract_row_id_and_payload(row, i)
+            if readout_ids and i < len(readout_ids):
+                row_id = readout_ids[i]
+
+            if prep_err:
+                entries.append({
+                    "readout_id": row_id,
+                    "decoded_type": "error",
+                    "decoder_output": prep_err,
+                    "arr": None,
+                    "valid_idx": None,
+                })
+                continue
+
+            mode, arr, err = classify_single_readout_payload(payload, n_pools_local, force_continuous=True)
+            if err or mode != "continuous":
+                entries.append({
+                    "readout_id": row_id,
+                    "decoded_type": "error",
+                    "decoder_output": err or "Error: could not parse forced continuous row.",
+                    "arr": None,
+                    "valid_idx": None,
+                })
+                continue
+
+            entries.append({
+                "readout_id": row_id,
+                "decoded_type": None,
+                "decoder_output": None,
+                "arr": arr,
+                "valid_idx": valid_idx,
+            })
+            valid_idx += 1
+
+        alpha_use = alpha
+        l1_ratio_use = l1_ratio
+        shared_grid = None
+        valid_arrays = [e["arr"] for e in entries if e["arr"] is not None]
+        if grid_search_effective and len(valid_arrays) > 0:
+            shared_grid = _select_shared_grid_params_multi(
+                valid_arrays,
+                WA,
+                diff,
+                return_all_fits=(return_all_fits or save_grid_decoders),
+                objective=grid_objective,
+                include_decoders=save_grid_decoders,
+            )
+            if "error" in shared_grid:
+                for e in entries:
+                    if e["arr"] is not None:
+                        e["decoded_type"] = "error"
+                        e["decoder_output"] = shared_grid["error"]
+            else:
+                alpha_use = shared_grid["alpha"]
+                l1_ratio_use = shared_grid["l1_ratio"]
+
+        rows = []
+        for e in entries:
+            if e["arr"] is not None and e["decoded_type"] is None:
+                decoded_type, decoder_output = decode_continuous_lasso(
+                    e["arr"],
+                    WA,
+                    diff=diff,
+                    min_signal=min_signal,
+                    diluting=diluting,
+                    alpha=alpha_use,
+                    l1_ratio=l1_ratio_use,
+                    grid_search=False,
+                    grid_objective=grid_objective,
+                )
+                row_out = {
+                    "readout_id": e["readout_id"],
+                    "decoded_type": decoded_type,
+                    "decoder_output": decoder_output,
+                }
+            else:
+                row_out = {
+                    "readout_id": e["readout_id"],
+                    "decoded_type": e["decoded_type"],
+                    "decoder_output": e["decoder_output"],
+                }
+
+            if shared_grid is not None and "error" not in shared_grid:
+                row_out["grid_search_alpha"] = shared_grid["alpha"]
+                row_out["grid_search_l1_ratio"] = shared_grid["l1_ratio"]
+                row_out["grid_search_total_score"] = shared_grid["total_score"]
+                row_out["grid_search_objective"] = shared_grid.get("objective", str(grid_objective).strip().lower())
+                if (return_all_fits or save_grid_decoders) and "all_fits" in shared_grid:
+                    row_out["grid_search_all_fits"] = shared_grid["all_fits"]
+                if save_grid_decoders and e["valid_idx"] is not None and "all_fits" in shared_grid:
+                    row_out["grid_search_row_decoders"] = [
+                        {
+                            "alpha": fit.get("alpha"),
+                            "l1_ratio": fit.get("l1_ratio"),
+                            "alpha_scaled": fit.get("alpha_scaled"),
+                            "objective": fit.get("objective"),
+                            "objective_value": fit.get("mean_score"),
+                            "decoder_output": fit.get("decoder_outputs", [])[e["valid_idx"]]
+                            if fit.get("decoder_outputs") and e["valid_idx"] < len(fit.get("decoder_outputs"))
+                            else None,
+                        }
+                        for fit in shared_grid["all_fits"]
+                    ]
+            rows.append(row_out)
+        return pd.DataFrame(rows)
 
     # Try full-matrix checks on a small set of candidates to handle optional header/index rows.
     candidates = [("raw", base_df)]
@@ -1961,22 +2166,97 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
 
     rows = []
     if mode == "continuous" and chosen_df is not None:
+        entries = []
+        valid_idx = 0
         for i, (_, row) in enumerate(chosen_df.iterrows()):
-            out = decode_single_readout_payload(
-                row.tolist(),
-                n_pools_local,
+            row_id = readout_ids[i] if (readout_ids and i < len(readout_ids)) else f"Readout {i + 1}"
+            mode_i, arr_i, err_i = classify_single_readout_payload(row.tolist(), n_pools_local, force_continuous=True)
+            if err_i or mode_i != "continuous":
+                entries.append({
+                    "readout_id": row_id,
+                    "decoded_type": "error",
+                    "decoder_output": err_i or "Error: could not parse continuous row.",
+                    "arr": None,
+                    "valid_idx": None,
+                })
+            else:
+                entries.append({
+                    "readout_id": row_id,
+                    "decoded_type": None,
+                    "decoder_output": None,
+                    "arr": arr_i,
+                    "valid_idx": valid_idx,
+                })
+                valid_idx += 1
+
+        alpha_use = alpha
+        l1_ratio_use = l1_ratio
+        shared_grid = None
+        valid_arrays = [e["arr"] for e in entries if e["arr"] is not None]
+        if grid_search_effective and len(valid_arrays) > 0:
+            shared_grid = _select_shared_grid_params_multi(
+                valid_arrays,
                 WA,
                 diff,
-                min_signal=min_signal,
-                diluting=diluting,
-                alpha=alpha,
-                l1_ratio=l1_ratio,
+                return_all_fits=(return_all_fits or save_grid_decoders),
+                objective=grid_objective,
+                include_decoders=save_grid_decoders,
             )
-            # Use provided readout_ids if available, otherwise use default naming
-            if readout_ids and i < len(readout_ids):
-                out["readout_id"] = readout_ids[i]
+            if "error" in shared_grid:
+                for e in entries:
+                    if e["arr"] is not None:
+                        e["decoded_type"] = "error"
+                        e["decoder_output"] = shared_grid["error"]
             else:
-                out["readout_id"] = f"Readout {i + 1}"
+                alpha_use = shared_grid["alpha"]
+                l1_ratio_use = shared_grid["l1_ratio"]
+
+        for e in entries:
+            if e["arr"] is not None and e["decoded_type"] is None:
+                decoded_type, decoder_output = decode_continuous_lasso(
+                    e["arr"],
+                    WA,
+                    diff=diff,
+                    min_signal=min_signal,
+                    diluting=diluting,
+                    alpha=alpha_use,
+                    l1_ratio=l1_ratio_use,
+                    grid_search=False,
+                    grid_objective=grid_objective,
+                )
+                out = {
+                    "readout_id": e["readout_id"],
+                    "decoded_type": decoded_type,
+                    "decoder_output": decoder_output,
+                }
+            else:
+                out = {
+                    "readout_id": e["readout_id"],
+                    "decoded_type": e["decoded_type"],
+                    "decoder_output": e["decoder_output"],
+                }
+
+            if shared_grid is not None and "error" not in shared_grid:
+                out["grid_search_alpha"] = shared_grid["alpha"]
+                out["grid_search_l1_ratio"] = shared_grid["l1_ratio"]
+                out["grid_search_total_score"] = shared_grid["total_score"]
+                out["grid_search_objective"] = shared_grid.get("objective", str(grid_objective).strip().lower())
+                if (return_all_fits or save_grid_decoders) and "all_fits" in shared_grid:
+                    out["grid_search_all_fits"] = shared_grid["all_fits"]
+                if save_grid_decoders and e["valid_idx"] is not None and "all_fits" in shared_grid:
+                    out["grid_search_row_decoders"] = [
+                        {
+                            "alpha": fit.get("alpha"),
+                            "l1_ratio": fit.get("l1_ratio"),
+                            "alpha_scaled": fit.get("alpha_scaled"),
+                            "objective": fit.get("objective"),
+                            "objective_value": fit.get("mean_score"),
+                            "decoder_output": fit.get("decoder_outputs", [])[e["valid_idx"]]
+                            if fit.get("decoder_outputs") and e["valid_idx"] < len(fit.get("decoder_outputs"))
+                            else None,
+                        }
+                        for fit in shared_grid["all_fits"]
+                    ]
             rows.append(out)
         return pd.DataFrame(rows)
 
@@ -1991,6 +2271,9 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
                 diluting=diluting,
                 alpha=alpha,
                 l1_ratio=l1_ratio,
+                force_continuous=force_continuous,
+                grid_search=grid_search,
+                grid_objective=grid_objective,
             )
             # Use provided readout_ids if available, otherwise use default naming
             if readout_ids and i < len(readout_ids):
@@ -2013,6 +2296,9 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
             diluting=diluting,
             alpha=alpha,
             l1_ratio=l1_ratio,
+            force_continuous=force_continuous,
+            grid_search=grid_search,
+            grid_objective=grid_objective,
         )
         # Use provided readout_ids if available
         if readout_ids and i < len(readout_ids):
@@ -2324,7 +2610,7 @@ def build_text_message(file_name: str, readout_list: list, diff_deco: int, n_com
 
 
 
-def decode_continuous_lasso(readout_arr, WA, diff=None, min_signal=None, diluting=True, alpha=0.05, l1_ratio=0.5):
+def decode_continuous_lasso(readout_arr, WA, diff=None, min_signal=None, diluting=True, alpha=0.05, l1_ratio=0.5, grid_search=False, grid_objective: str = "mse"):
     try:
         n_compounds, n_pools = WA.shape
         readout_arr = np.array(readout_arr, dtype=float).flatten()
@@ -2345,9 +2631,42 @@ def decode_continuous_lasso(readout_arr, WA, diff=None, min_signal=None, dilutin
         else:
             alpha_scaled = alpha
         
-        model = Lasso(alpha=alpha_scaled, positive=True, max_iter=10000)
+        if grid_search:
+            alpha_candidates = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1]
+            l1_candidates = [0, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95, 1]
+
+            best_model = None
+            best_score = np.inf
+
+            for alpha_raw in alpha_candidates:
+                alpha_try = alpha_raw
+                if diff is not None and diff > 0:
+                    alpha_try = alpha_raw * (diff / n_compounds)
+
+                for l1_try in l1_candidates:
+                    model_try = ElasticNet(
+                        alpha=alpha_try,
+                        l1_ratio=l1_try,
+                        positive=True,
+                        max_iter=10000,
+                    )
+                    model_try.fit(X, y)
+                    y_pred = model_try.predict(X)
+                    score = _grid_objective_loss(y, y_pred, grid_objective)
+                    if score < best_score:
+                        best_score = score
+                        best_model = model_try
+
+            if best_model is None:
+                return "error", "Error in decode_continuous: grid search failed to fit any model"
+            return "continuous", best_model.coef_
+
+        if l1_ratio >= 0.999:
+            model = Lasso(alpha=alpha_scaled, positive=True, max_iter=10000)
+        else:
+            model = ElasticNet(alpha=alpha_scaled, l1_ratio=l1_ratio, positive=True, max_iter=10000)
+
         model.fit(X, y)
-        # Get the optimized coefficients
         
         return "continuous",  model.coef_
     

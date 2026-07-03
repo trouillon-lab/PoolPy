@@ -12,6 +12,7 @@ from sklearn.linear_model import ElasticNet
 from scipy.optimize import minimize
 from scipy.optimize import nnls
 from sklearn.linear_model import Lasso
+from sklearn.linear_model import Ridge
 
 def int_to_base(n, N):
     """Return base N representation for int n."""
@@ -1969,7 +1970,9 @@ def _select_shared_grid_params_multi(readout_arrays, WA: np.ndarray, diff: int, 
                 decoder_outputs = []
                 for arr in readout_arrays:
                     y = np.array(arr, dtype=float).flatten()
-                    if l1_try >= 0.999:
+                    if l1_try < 0.001:
+                        model_try = Ridge(alpha=alpha_scaled, positive=True, max_iter=10000)
+                    elif l1_try >= 0.999:
                         model_try = Lasso(alpha=alpha_scaled, positive=True, max_iter=10000)
                     else:
                         model_try = ElasticNet(
@@ -2645,12 +2648,17 @@ def decode_continuous_lasso(readout_arr, WA, diff=None, min_signal=None, dilutin
                     alpha_try = alpha_raw * (diff / n_compounds)
 
                 for l1_try in l1_candidates:
-                    model_try = ElasticNet(
-                        alpha=alpha_try,
-                        l1_ratio=l1_try,
-                        positive=True,
-                        max_iter=10000,
-                    )
+                    if l1_try < 0.001:
+                        model_try = Ridge(alpha=alpha_try, positive=True, max_iter=10000)
+                    elif l1_try >= 0.999:
+                        model_try = Lasso(alpha=alpha_try, positive=True, max_iter=10000)
+                    else:
+                        model_try = ElasticNet(
+                            alpha=alpha_try,
+                            l1_ratio=l1_try,
+                            positive=True,
+                            max_iter=10000,
+                        )
                     model_try.fit(X, y)
                     y_pred = model_try.predict(X)
                     score = _grid_objective_loss(y, y_pred, grid_objective)

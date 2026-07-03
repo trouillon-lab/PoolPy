@@ -95,7 +95,7 @@ This will:
 
 ### 1. **Compute group testing design**
 
-You can execute locally a pooling design comparison by usign the pool_interface.ipynb interface notebook or running the command:
+You can execute locally a pooling design comparison by using the pool_interface.ipynb interface notebook or running the command:
 
 `python pool_N.py --n_samp NC`
 
@@ -177,7 +177,7 @@ In this example, we create a pooling scheme for 100 samples using the matrix poo
 &nbsp;
 
 ```bash
-python pool_N.py --n_samp 100 --max_differentiate 1 --path ./designs
+python pool_N.py --n_samp 100 --max_diff 1 --path ./designs
 ```
 
 **Outputs:**

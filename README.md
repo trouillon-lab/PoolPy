@@ -162,6 +162,11 @@ For binary readout (e.g. positive/negative):
 For continuous readout:
 - **Continuous**: Used if the readout is inferred to be continuous and the single sample value is inferred via penalized regression. The continuous decoder also supports grid search over `alpha` and `l1_ratio` via `--grid_search True`.
 
+#### Grid search for continuous decoding
+
+Default grid candidates are all combinations of `alpha = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1]` and `l1_ratio = [0, 0.05, 0.1, 0.2, 0.5, 0.8, 0.9, 0.95, 1]`.
+The grid-search objective can be `mse` (default), `mae`, `rmse`, or `r2`.
+
 &nbsp;
 
 ## 🧪 Example: From Design to Decoding

@@ -141,6 +141,10 @@ if readout_in.lower().endswith('csv'):
     if readout_df is None or readout_df.empty:
         raise SystemExit('Error: Readout CSV appears to be empty.')
 
+    show_progress = len(readout_df) > 1
+    if show_progress:
+        print(f"Decoding {len(readout_df)} readouts...")
+
     df_out = decode_multi_readout_df(
         readout_df,
         WA,
@@ -155,6 +159,7 @@ if readout_in.lower().endswith('csv'):
         return_all_fits=return_all_fits,
         save_grid_decoders=save_grid_decoders,
         grid_objective=grid_objective,
+        show_progress=show_progress,
     )
 
     if isinstance(df_out, pd.DataFrame) and not df_out.empty and save_grid_decoders and "grid_search_row_decoders" in df_out.columns:

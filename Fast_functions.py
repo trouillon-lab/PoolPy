@@ -12,6 +12,7 @@ from sklearn.linear_model import ElasticNet
 from scipy.optimize import minimize
 from scipy.optimize import nnls
 from sklearn.linear_model import Lasso
+from sklearn.linear_model import Ridge
 
 def int_to_base(n, N):
     """Return base N representation for int n."""
@@ -1969,7 +1970,9 @@ def _select_shared_grid_params_multi(readout_arrays, WA: np.ndarray, diff: int, 
                 decoder_outputs = []
                 for arr in readout_arrays:
                     y = np.array(arr, dtype=float).flatten()
-                    if l1_try >= 0.999:
+                    if l1_try < 0.001:
+                        model_try = Ridge(alpha=alpha_scaled, positive=True, max_iter=10000)
+                    elif l1_try >= 0.999:
                         model_try = Lasso(alpha=alpha_scaled, positive=True, max_iter=10000)
                     else:
                         model_try = ElasticNet(
@@ -2013,7 +2016,30 @@ def _select_shared_grid_params_multi(readout_arrays, WA: np.ndarray, diff: int, 
     return out
 
 
-def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int, min_signal=None, diluting=True, readout_ids=None, alpha=1.0, l1_ratio=0.5, force_continuous: bool = False, grid_search: bool = False, return_all_fits: bool = False, save_grid_decoders: bool = False, grid_objective: str = "mse") -> pd.DataFrame:
+def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int, min_signal=None, diluting=True, readout_ids=None, alpha=1.0, l1_ratio=0.5, force_continuous: bool = False, grid_search: bool = False, return_all_fits: bool = False, save_grid_decoders: bool = False, grid_objective: str = "mse", show_progress: bool = False) -> pd.DataFrame:
+    def _progress_iter(iterable, total_count: int, label: str):
+        if not show_progress or total_count <= 1:
+            for item in iterable:
+                yield item
+            return
+
+        bar_width = 30
+        start_t = time.time()
+        for idx, item in enumerate(iterable, start=1):
+            yield item
+            ratio = idx / total_count
+            filled = int(bar_width * ratio)
+            bar = "#" * filled + "-" * (bar_width - filled)
+            elapsed = max(time.time() - start_t, 1e-9)
+            rate = idx / elapsed
+            eta = (total_count - idx) / rate if rate > 0 else 0
+            print(
+                f"\r{label}: [{bar}] {idx}/{total_count} ({ratio * 100:5.1f}%) ETA {format_time(eta)}",
+                end="",
+                flush=True,
+            )
+        print()
+
     n_pools_local = WA.shape[1]
     base_df = normalize_readout_df(readout_df)
     if base_df is None or base_df.empty:
@@ -2023,8 +2049,9 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
             "decoder_output": "Error: Readout CSV appears to be empty.",
         }])
 
-    force_continuous_effective = force_continuous or save_grid_decoders
-    grid_search_effective = grid_search or save_grid_decoders
+    grid_search_effective = bool(grid_search)
+    save_grid_decoders_effective = bool(save_grid_decoders) and grid_search_effective
+    force_continuous_effective = force_continuous or save_grid_decoders_effective
 
     if force_continuous_effective:
         entries = []
@@ -2073,9 +2100,9 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
                 valid_arrays,
                 WA,
                 diff,
-                return_all_fits=(return_all_fits or save_grid_decoders),
+                return_all_fits=(return_all_fits or save_grid_decoders_effective),
                 objective=grid_objective,
-                include_decoders=save_grid_decoders,
+                include_decoders=save_grid_decoders_effective,
             )
             if "error" in shared_grid:
                 for e in entries:
@@ -2087,7 +2114,7 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
                 l1_ratio_use = shared_grid["l1_ratio"]
 
         rows = []
-        for e in entries:
+        for e in _progress_iter(entries, len(entries), "Decoding readouts"):
             if e["arr"] is not None and e["decoded_type"] is None:
                 decoded_type, decoder_output = decode_continuous_lasso(
                     e["arr"],
@@ -2117,9 +2144,9 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
                 row_out["grid_search_l1_ratio"] = shared_grid["l1_ratio"]
                 row_out["grid_search_total_score"] = shared_grid["total_score"]
                 row_out["grid_search_objective"] = shared_grid.get("objective", str(grid_objective).strip().lower())
-                if (return_all_fits or save_grid_decoders) and "all_fits" in shared_grid:
+                if (return_all_fits or save_grid_decoders_effective) and "all_fits" in shared_grid:
                     row_out["grid_search_all_fits"] = shared_grid["all_fits"]
-                if save_grid_decoders and e["valid_idx"] is not None and "all_fits" in shared_grid:
+                if save_grid_decoders_effective and e["valid_idx"] is not None and "all_fits" in shared_grid:
                     row_out["grid_search_row_decoders"] = [
                         {
                             "alpha": fit.get("alpha"),
@@ -2198,9 +2225,9 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
                 valid_arrays,
                 WA,
                 diff,
-                return_all_fits=(return_all_fits or save_grid_decoders),
+                return_all_fits=(return_all_fits or save_grid_decoders_effective),
                 objective=grid_objective,
-                include_decoders=save_grid_decoders,
+                include_decoders=save_grid_decoders_effective,
             )
             if "error" in shared_grid:
                 for e in entries:
@@ -2211,7 +2238,7 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
                 alpha_use = shared_grid["alpha"]
                 l1_ratio_use = shared_grid["l1_ratio"]
 
-        for e in entries:
+        for e in _progress_iter(entries, len(entries), "Decoding readouts"):
             if e["arr"] is not None and e["decoded_type"] is None:
                 decoded_type, decoder_output = decode_continuous_lasso(
                     e["arr"],
@@ -2241,9 +2268,9 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
                 out["grid_search_l1_ratio"] = shared_grid["l1_ratio"]
                 out["grid_search_total_score"] = shared_grid["total_score"]
                 out["grid_search_objective"] = shared_grid.get("objective", str(grid_objective).strip().lower())
-                if (return_all_fits or save_grid_decoders) and "all_fits" in shared_grid:
+                if (return_all_fits or save_grid_decoders_effective) and "all_fits" in shared_grid:
                     out["grid_search_all_fits"] = shared_grid["all_fits"]
-                if save_grid_decoders and e["valid_idx"] is not None and "all_fits" in shared_grid:
+                if save_grid_decoders_effective and e["valid_idx"] is not None and "all_fits" in shared_grid:
                     out["grid_search_row_decoders"] = [
                         {
                             "alpha": fit.get("alpha"),
@@ -2261,7 +2288,7 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
         return pd.DataFrame(rows)
 
     if mode == "binary" and chosen_df is not None:
-        for i, (_, row) in enumerate(chosen_df.iterrows()):
+        for i, (_, row) in enumerate(_progress_iter(chosen_df.iterrows(), len(chosen_df), "Decoding readouts")):
             out = decode_single_readout_payload(
                 row.tolist(),
                 n_pools_local,
@@ -2285,7 +2312,7 @@ def decode_multi_readout_df(readout_df: pd.DataFrame, WA: np.ndarray, diff: int,
 
     # Fallback: parse row-by-row as user-provided string with id.
     fallback_df = base_df
-    for i, (_, row) in enumerate(fallback_df.iterrows()):
+    for i, (_, row) in enumerate(_progress_iter(fallback_df.iterrows(), len(fallback_df), "Decoding readouts")):
         result = _decode_fallback_row(
             row,
             i,
@@ -2644,12 +2671,17 @@ def decode_continuous_lasso(readout_arr, WA, diff=None, min_signal=None, dilutin
                     alpha_try = alpha_raw * (diff / n_compounds)
 
                 for l1_try in l1_candidates:
-                    model_try = ElasticNet(
-                        alpha=alpha_try,
-                        l1_ratio=l1_try,
-                        positive=True,
-                        max_iter=10000,
-                    )
+                    if l1_try < 0.001:
+                        model_try = Ridge(alpha=alpha_try, positive=True, max_iter=10000)
+                    elif l1_try >= 0.999:
+                        model_try = Lasso(alpha=alpha_try, positive=True, max_iter=10000)
+                    else:
+                        model_try = ElasticNet(
+                            alpha=alpha_try,
+                            l1_ratio=l1_try,
+                            positive=True,
+                            max_iter=10000,
+                        )
                     model_try.fit(X, y)
                     y_pred = model_try.predict(X)
                     score = _grid_objective_loss(y, y_pred, grid_objective)
@@ -2693,4 +2725,3 @@ def decode_continuous_elastic(readout_arr, WA, diff=None, min_signal=None, dilut
     
     except Exception as e:
         return "error", f"Error in decode_continuous: {str(e)}"
-

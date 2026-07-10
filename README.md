@@ -160,7 +160,7 @@ For binary readout (e.g. positive/negative):
 - **Putative**: Used if the readout is binary and there exists more sets of positive samples (of maximum *differentiate* samples) than the number of unique samples across all sets that can explain the measured readout.
 - 
 For continuous readout:
-- **Continuous**: Used if the readout is inferred to be continuous and the single sample value is inferred via penalized regression.
+- **Continuous**: Used if the readout is inferred to be continuous and the single sample value is inferred via penalized regression. The continuous decoder also supports grid search over `alpha` and `l1_ratio` via `--grid_search True`.
 
 &nbsp;
 

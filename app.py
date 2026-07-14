@@ -396,9 +396,9 @@ app_ui = ui.page_fluid(
                 ui.h2("Prevalence", style="text-align: center; margin-top: 150px;"),
                 ui.div(
                     ui.div(
-                        "Here we provide a user-friendly interface to quickly establish the size of pool when sampling from an infinite population with known prevalence.",
+                        "This tool enables to quickly establish the size of pools when sampling from an infinite population with known prevalence.",
                         ui.br(),
-                        "Based on a provided prevalence estimate we provide the best hierarchical and multi dimensional sampling of the data to minimize expected test per sample.",
+                        "Based on a provided prevalence estimate, the best hierarchical and multi-dimensional sampling of the data to minimize expected test per sample is given.",
                         style="text-align: center; color: #444; font-size: 16px;"
                     ),
                     style="text-align: center; margin-bottom: 18px;"
@@ -454,11 +454,11 @@ app_ui = ui.page_fluid(
                 ui.div(
                     ui.div(
                         "This section is meant to guide the decision of pooling parameters for specific use cases. " \
-                        "This is to choose a max. number of positive samples and a number of test batches to exploit for non adaptive pooling designs.",
+                        "This is to choose a max. number of positive samples and a number of test batches to use for non-adaptive pooling designs.",
                         ui.br(),
                         "Based on a provided prevalence estimate, misparametrization rates are reported over ranges of sample (and batch) numbers (S; rows) and of max. number of positive samples (D; columns).",
                         ui.br(),
-                        "The tables show the probability of at least one pool having more than the desired  max. number of positive samples, D." \
+                        "The tables show the probability of misparametrization; i.e., at least one pool having more than the desired  max. number of positive samples, D." \
                         "This porobability is expressed per pool (left) or across combinatorial pooling batch(es) (right).",
                         style="text-align: center; color: #444; font-size: 16px;"
                     ),
@@ -647,18 +647,13 @@ app_ui = ui.page_fluid(
             ui.div(
                 ui.div(
                     ui.p(
-                        "PoolPy is our application for designing and optimizing combinatorial pooling strategies to increase throughput and reduce costs across biological experiments.",
+                        "PoolPy is an application for designing and optimizing combinatorial pooling strategies to increase throughput and reduce costs across biological experiments.",
                         style="margin-bottom: 16px;"
                     ),
                     ui.p(
-                        "With PoolPy, we replace one-sample-one-test workflows with structured pooling designs that still allow positives to be identified while using far fewer measurements. "
-                        "We built PoolPy to make combinatorial group testing practical under real experimental constraints such as expected prevalence, turnaround time, assay cost, and signal dilution.",
-                        style="margin-bottom: 16px;"
-                    ),
-                    ui.p(
+                        "With PoolPy, we replace one-sample-one-test workflows with structured pooling designs that still allow positives to be identified while using fewer measurements. "
                         "PoolPy brings together design selection, benchmarking, automation, and decoding in a single end-to-end platform. "
                         "By integrating ten conceptually different pooling algorithms and benchmarking them across more than 100,000 in silico conditions, PoolPy helps users choose designs based on the trade-offs that matter most for their application, including test efficiency, pool size, number of steps, and robustness to dilution.",
-                        style="margin-bottom: 16px;"
                     ),
                     ui.p(
                         "A core idea behind PoolPy is that there is no universally best pooling strategy. "
@@ -674,19 +669,7 @@ app_ui = ui.page_fluid(
                         "Overall, PoolPy bridges combinatorial group testing theory and laboratory practice by making it easier to compare methods, generate pooling schemes, automate sample handling, and decode pooled results within one accessible web application.",
                         style="margin-bottom: 12px;"
                     ),
-                    ui.p(
-                        "Access the repository at: ",
-                        ui.a(
-                            "DOI: 10.5281/zenodo.18660061",
-                            href="https://doi.org/10.5281/zenodo.18660061",
-                            style="text-decoration: underline;",
-                            target="_blank",
-                            rel="noopener noreferrer"
-                        ),
-                        ".",
-                        style="margin-bottom: 16px;"
-                    ),
-                    ui.p(
+                                        ui.p(
                         "For more information and to contribute, visit our ",
                         ui.a(
                             "GitHub repository",
@@ -697,6 +680,18 @@ app_ui = ui.page_fluid(
                         ),
                         ".",
                         style="margin-bottom: 12px;"
+                    ),
+                    ui.p(
+                        "Access the dataset repository at: ",
+                        ui.a(
+                            "DOI: 10.5281/zenodo.18660061",
+                            href="https://doi.org/10.5281/zenodo.18660061",
+                            style="text-decoration: underline;",
+                            target="_blank",
+                            rel="noopener noreferrer"
+                        ),
+                        ".",
+                        style="margin-bottom: 16px;"
                     ),
                     ui.p(
                         "You can also read the paper on arXiv: ",
@@ -2197,7 +2192,7 @@ def server(input, output, session):
         n = output.prev_n_samp.get()
         p = output.prev_prevalence.get()
         max_e = output.prev_max_error.get()
-        output.last_val_prev.set(f"Number of Samples: {n}, Prevalence: {p}, Max. error: {max_e}")
+        output.last_val_prev.set(f"Number of Samples: {n}, Prevalence: {p}, Max. misparametrization rate: {max_e}")
 
     @reactive.Effect
     @reactive.event(input.BG2_submit)
@@ -3674,9 +3669,9 @@ def server(input, output, session):
     @render.ui
     def prevalence_legend():
         html = '<div style="font-size: 15px; text-align: center; margin-top: 18px;">'
-        html += '<div style="margin-bottom: 6px;"><span style="background-color: #ffeaea; color: #111; padding: 4px 14px; border-radius: 4px; border: 1px solid #eee;">Red: pooling error &gt; max. error for both single pooling and FWER (all poolings combined).</span></div>'
-        html += '<div style="margin-bottom: 6px;"><span style="background-color: #ffffea; color: #111; padding: 4px 14px; border-radius: 4px; border: 1px solid #eee;">Yellow: pooling error ≤ max. error for single pooling, but &gt; max. error for FWER (all poolings combined).</span></div>'
-        html += '<div><span style="background-color: #b6fcb6; color: #111; padding: 4px 14px; border-radius: 4px; border: 1px solid #eee;">Green: pooling error ≤ max. error for both single pooling and FWER (all poolings combined).</span></div>'
+        html += '<div style="margin-bottom: 6px;"><span style="background-color: #ffeaea; color: #111; padding: 4px 14px; border-radius: 4px; border: 1px solid #eee;">Red: pooling misparametrization rate &gt; max. rate for both single pooling and FWER (all poolings combined).</span></div>'
+        html += '<div style="margin-bottom: 6px;"><span style="background-color: #ffffea; color: #111; padding: 4px 14px; border-radius: 4px; border: 1px solid #eee;">Yellow: pooling misparametrization rate ≤ max. rate for single pooling, but &gt; max. rate for FWER (all poolings combined).</span></div>'
+        html += '<div><span style="background-color: #b6fcb6; color: #111; padding: 4px 14px; border-radius: 4px; border: 1px solid #eee;">Green: pooling misparametrization rate ≤ max. rate for both single pooling and FWER (all poolings combined).</span></div>'
         html += '</div>'
         return ui.HTML(html)
 

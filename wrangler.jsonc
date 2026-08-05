@@ -1,0 +1,7 @@
+{
+  "name": "poolpy-app",
+  "compatibility_date": "2026-08-05",
+  "assets": {
+    "directory": "./docs"
+  }
+}

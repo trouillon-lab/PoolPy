@@ -46,6 +46,7 @@ More details can be found in the associated [publication](https://arxiv.org/abs/
 
 **Poolpy v1.0**: Full version of the tool comprehensive of pooling design, decoding, automation, prevalence-based pooling both in app and script format. 
 
+**Poolpy v1.1**: Updated user guide, markdown, and cosmetics
 
 ## 🚀 Quick Start
 

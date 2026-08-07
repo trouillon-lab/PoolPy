@@ -40,6 +40,10 @@ More details can be found in the associated [publication](https://arxiv.org/abs/
 
 &nbsp;
 
+## Releases
+
+Poolpy v1.0
+
 ## 🚀 Quick Start
 
 Below is a guide on how to use the PoolPy code locally. We provide two notebooks, `pool_interface.ipynb` and `decode_interface.ipynb`, which contain step-by-step instructions and code to design a pooling experiment and decode its results, respectivelly. Alternatively, users can use the code directly as explained below.

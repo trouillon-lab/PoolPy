@@ -42,7 +42,10 @@ More details can be found in the associated [publication](https://arxiv.org/abs/
 
 ## Releases
 
-Poolpy v1.0: Full version of the tool comprehensive of pooling design, decoding, automation, prevalence-based pooling both in app and script format.  [![DOI](https://zenodo.org/badge/827240376.svg)](https://doi.org/10.5281/zenodo.21836249)
+[DOI @Zenodo](https://doi.org/10.5281/zenodo.21836249)
+
+**Poolpy v1.0**: Full version of the tool comprehensive of pooling design, decoding, automation, prevalence-based pooling both in app and script format. 
+
 
 ## 🚀 Quick Start
 

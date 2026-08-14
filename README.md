@@ -1,7 +1,7 @@
 <img align="left" width="200" src="https://github.com/trouillon-lab/PoolPy/blob/main/images/PoolPy_logo_transparent.png" />
 
 ### A **Py**thon package to design **Pool**ing strategies.
-#### ➡️ [_PoolPy web app_](https://trouillon-lab.github.io/PoolPy/)
+#### ➡️ [_PoolPy web app_](https://poolpy.trouillonlab.org/)
 #### ➡️ [_PoolPy preprint_](https://arxiv.org/abs/2509.03481/)
 &nbsp;
 
@@ -14,7 +14,7 @@ PoolPy is an open-source tool to design and evaluate combinatorial group testing
 While mostly used for tests that give results that can be classified in a binary manner (e.g. significant/non-significant, positive/negative, functional/defective ...),PoolPy has both a standard binary decoder and a LASSO-based continuous decoder for compressed sensing, enabling combinatorial testing for genome-scale molecular profiling assays with complex quantitative readouts. PoolPy supports both single-readout assays with binary outcomes, such as diagnostic infection testing or ligand–target interaction drug screening, and multi-readout experiments, including mass spectrometry- or sequencing-based molecular profiling approaches.
 
 ### Web app
-We provide the [PoolPy web app](https://trouillon-lab.github.io/PoolPy/), which allows to design and decode group testing strategies online without the need of any computational expertise. There, we provide direct comparison of all ten methods for any use case, as well as downloadable design tables that guide the user on how to perform the pooling. Results from pooled experiments can be decoded directly on the web app. Additionally, the app has tools to help in deciding pooling parameters based on prevalence, to generate method files for pipeting robots for automated pooling, and to decode the results of pooled experiments.
+We provide the [PoolPy web app](https://poolpy.trouillonlab.org/), which allows to design and decode group testing strategies online without the need of any computational expertise. There, we provide direct comparison of all ten methods for any use case, as well as downloadable design tables that guide the user on how to perform the pooling. Results from pooled experiments can be decoded directly on the web app. Additionally, the app has tools to help in deciding pooling parameters based on prevalence, to generate method files for pipeting robots for automated pooling, and to decode the results of pooled experiments.
 
 **We encourage users to use the web app as it covers all steps needed for the vast majority of use cases.** Users can run the code locally in cases that are computationally intensive, such as to generate a full performance summary table for very large number of samples that were not precomputed.
 
@@ -211,7 +211,7 @@ In this example, the matrix design tells us that we can make 20 pools out of our
 Presence or absence of a sample into a specific pool is denoted by 1 or 0, respectivelly.
 &nbsp;
 
-To note, we provide pre-computed designs across a large range of sample numbers on the [PoolPy web app](https://trouillon-lab.github.io/PoolPy/), which means that you likely don't need to compute the design yourself as explained here. In this example, a pooling design using the Matrix method with 100 samples and at most 1 positive sample is already provided on the web app. There, you can directly see the comparison of all 10 methods and see that for this example, using the Binary method would be the most efficient (only 7 pools needed) as long as you are not restricted in how many samples can be pooled together.
+To note, we provide pre-computed designs across a large range of sample numbers on the [PoolPy web app](https://poolpy.trouillonlab.org/), which means that you likely don't need to compute the design yourself as explained here. In this example, a pooling design using the Matrix method with 100 samples and at most 1 positive sample is already provided on the web app. There, you can directly see the comparison of all 10 methods and see that for this example, using the Binary method would be the most efficient (only 7 pools needed) as long as you are not restricted in how many samples can be pooled together.
 &nbsp;
 
 ---

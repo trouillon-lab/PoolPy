@@ -1,0 +1,10 @@
+# Dependencies for the Streamlit application (streamlit_app.py).
+# The app is self-contained: it does not import Fast_functions.py, so
+# scikit-learn and the plotting stack in requirements.txt are not needed here.
+streamlit>=1.49
+pandas>=2.0
+numpy>=1.26
+scipy>=1.11
+altair>=5.0
+pyarrow>=14.0
+pillow>=10.0

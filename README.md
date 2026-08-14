@@ -252,16 +252,30 @@ Here, the sample number 23 is the positive sample!
 
 ## 📦 Managing Dependencies
 
-- **Import from requirements.txt:**
+Two dependency files, for two different things:
+
+| File | What it is for |
+|---|---|
+| `requirements.txt` | The web app (`streamlit_app.py`). Kept minimal, and it is the file Streamlit Community Cloud installs. |
+| `requirements-dev.txt` | The analysis environment: notebooks, `Fast_functions.py`, scikit-learn, matplotlib and the plotting stack. |
+
+- **Import the analysis environment:**
 
 ```bash
-uv add -r requirements.txt
+uv add -r requirements-dev.txt
 ```
 
 - **Export current environment:**
 
 ```bash
-uv export > requirements.txt
+uv export > requirements-dev.txt
+```
+
+- **Run the web app locally:**
+
+```bash
+pip install -r requirements.txt
+streamlit run streamlit_app.py
 ```
 &nbsp;
 

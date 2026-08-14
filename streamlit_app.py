@@ -49,6 +49,11 @@ MAX_DIFFERENTIATE = 10
 MAX_N = 1000
 MAX_PROD = 2500          # S·D² above which on-the-fly benchmarking is refused
 MAX_PREVALENCE = 0.1
+# Samples × pools above which a design is not offered as a download. A cell is
+# two bytes of CSV, and building one costs several times that in memory, so this
+# is what keeps a hosted instance inside its container. Raise it if you run the
+# app somewhere with more headroom.
+MAX_DESIGN_CELLS = 25_000_000
 
 GITHUB_URL = "https://github.com/trouillon-lab/PoolPy"
 ARXIV_URL = "https://arxiv.org/abs/2509.03481"
@@ -164,7 +169,7 @@ def assign_wells_mat(n_compounds: int, **kwargs) -> np.ndarray:
     """Matrix (row × column) pooling: every sample sits in exactly two pools."""
     L1 = np.ceil(np.sqrt(n_compounds))
     L2 = L1 - 1 if L1 * (L1 - 1) >= n_compounds else L1
-    wa = np.zeros((n_compounds, int(L1 + L2))) == 1
+    wa = np.zeros((n_compounds, int(L1 + L2)), dtype=bool)
     for i in range(n_compounds):
         wa[i, [int(i // L2), int(L1 + (i % L2))]] = True
     return wa
@@ -178,7 +183,7 @@ def well_selecter(compound: int, n_wells: int, differentiate: int = 1) -> np.nda
 def assign_wells_bin(n_compounds: int, differentiate: int = 1, **kwargs) -> np.ndarray:
     """Binary code pooling: pool membership follows the bits of the sample index."""
     n_wells = int(np.ceil(np.log2(n_compounds + 1)))
-    wa = np.zeros((n_compounds, n_wells)) == 1
+    wa = np.zeros((n_compounds, n_wells), dtype=bool)
     for i in range(n_compounds):
         wa[i, :] = well_selecter(i + 1, n_wells)
     return wa
@@ -200,7 +205,7 @@ def assign_wells_multidim(n_compounds: int, n_dims: int, **kwargs) -> np.ndarray
         i += 1
     ls_dim = [L1] * (n_dims - i) + [L1 - 1] * i
     up_samps = np.prod(np.array(ls_dim))
-    wa = np.zeros((n_compounds, int(L1 * (n_dims - i) + (L1 - 1) * i))) == 1
+    wa = np.zeros((n_compounds, int(L1 * (n_dims - i) + (L1 - 1) * i)), dtype=bool)
     for j in range(n_compounds):
         cp_id = []
         jj = np.copy(j)
@@ -225,7 +230,7 @@ def get_s(N: int, j: int, q: int) -> np.ndarray:
 
 
 def std_matrix(N: int, q: int, k: int) -> np.ndarray:
-    L = np.zeros((k, q, N)) == 1
+    L = np.zeros((k, q, N), dtype=bool)
     for j in range(k):
         s = get_s(N, j, q) % q
         L[j, s, np.arange(N)] = True
@@ -350,7 +355,7 @@ def _base_digits(n_compounds: int, base: int, n_digits: int) -> np.ndarray:
 
 def _crt_matrix(moduli, n_compounds: int) -> np.ndarray:
     c_id = np.arange(n_compounds)
-    wa = np.zeros((int(np.sum(moduli)), n_compounds)) == 1
+    wa = np.zeros((int(np.sum(moduli)), n_compounds), dtype=bool)
     past = 0
     for m in moduli:
         for x in range(m):
@@ -898,37 +903,46 @@ def from_id_to_well(idx: int, offset: int = 0):
     return str(plate + 1 + offset), f"{chr(65 + row)}{column + 1}"
 
 
-def _plates_and_wells(idx: np.ndarray, offset: int = 0):
-    """Vectorised from_id_to_well over a whole index array."""
-    return (idx // 96 + 1 + offset).astype(str), WELL_LABELS[idx % 96]
+def _plate_column(idx: np.ndarray, offset: int = 0, prefix: str = "") -> pd.Categorical:
+    """Plate labels for a whole index array, as a categorical.
+
+    A transfer list runs to millions of rows in which the same few hundred plate
+    names and 96 well names repeat; held as Python strings they cost hundreds of
+    megabytes, as categories a couple of bytes per row. The CSV is identical.
+    """
+    codes = (idx // 96).astype(np.int32)
+    n_plates = int(codes.max()) + 1 if codes.size else 0
+    return pd.Categorical.from_codes(
+        codes, categories=[f"{prefix}{i + 1 + offset}" for i in range(n_plates)])
+
+
+def _well_column(idx: np.ndarray) -> pd.Categorical:
+    return pd.Categorical.from_codes((idx % 96).astype(np.int8),
+                                     categories=list(WELL_LABELS))
 
 
 def build_robot_protocols(wa: np.ndarray, volume: float = 1.0) -> dict:
     """Transfer lists in Biomek, Hamilton and Opentrons column formats."""
     offset = int(np.ceil(wa.shape[0] / 96))
     src, dst = np.where(wa == 1)
-    s_plate, s_well = _plates_and_wells(src)
-    d_plate, d_well = _plates_and_wells(dst, offset=offset)
+    s_well, d_well = _well_column(src), _well_column(dst)
+    s_plate, d_plate = _plate_column(src), _plate_column(dst, offset=offset)
 
-    base = pd.DataFrame({"Source": s_plate, "SourceWell": s_well,
-                         "Dest": d_plate, "DestWell": d_well, "Volume": volume})
+    biomek = pd.DataFrame({
+        "Source": _plate_column(src, prefix="Plate"), "SourceWell": s_well,
+        "Dest": _plate_column(dst, offset=offset, prefix="Plate"), "DestWell": d_well,
+        "Volume": volume})
 
-    biomek = base.copy()
-    biomek["Source"] = "Plate" + biomek["Source"]
-    biomek["Dest"] = "Plate" + biomek["Dest"]
+    hamilton = pd.DataFrame({
+        "SourceSite": s_plate, "SourceWell": s_well,
+        "TargetSite": d_plate, "TargetWell": d_well, "Volume": volume})
 
-    hamilton = base.rename(columns={"Source": "SourceSite", "Dest": "TargetSite",
-                                    "DestWell": "TargetWell"})
-
-    opentrons = base.rename(columns={
-        "Source": "Source Slot", "SourceWell": "Source Well", "Dest": "Dest Slot",
-        "DestWell": "Dest Well", "Volume": "Volume (in ul)"})
-    opentrons["Source Labware"] = "96_wells_plate_" + opentrons["Source Slot"]
-    opentrons["Dest Labware"] = "96_wells_plate_" + opentrons["Dest Slot"]
-    opentrons["Source Aspiration Height Above Bottom (in mm)"] = 1
-    opentrons = opentrons[["Source Labware", "Source Slot", "Source Well",
-                           "Source Aspiration Height Above Bottom (in mm)",
-                           "Dest Labware", "Dest Slot", "Dest Well", "Volume (in ul)"]]
+    opentrons = pd.DataFrame({
+        "Source Labware": _plate_column(src, prefix="96_wells_plate_"),
+        "Source Slot": s_plate, "Source Well": s_well,
+        "Source Aspiration Height Above Bottom (in mm)": 1,
+        "Dest Labware": _plate_column(dst, offset=offset, prefix="96_wells_plate_"),
+        "Dest Slot": d_plate, "Dest Well": d_well, "Volume (in ul)": volume})
 
     return {"Biomek": biomek, "Hamilton": hamilton, "Opentrons": opentrons}
 
@@ -1071,24 +1085,59 @@ def cached_fly_summary(n: int, d: int) -> pd.DataFrame:
     return fly_summary(n, d)
 
 
-@st.cache_data(show_spinner=False, max_entries=32)
-def cached_design(label: str, n: int, d: int) -> pd.DataFrame:
+def build_design(label: str, n: int, d: int) -> pd.DataFrame:
     builder, uses_diff, _ = DESIGN_BUILDERS[label]
     return clean_wa(builder(n, d if uses_diff else 1))
+
+
+@st.cache_data(show_spinner=False, max_entries=256)
+def design_pool_count(label: str, n: int, d: int) -> int:
+    """How many pools a design would use, without building the matrix.
+
+    The Design page shows nine download buttons at once. Materialising all nine
+    just to label them costs ~1 GB at the largest S — more than a hosted app is
+    given — so the pool count comes from the same parameter maths the
+    constructors use, and was checked against them over the (label, S, D) grid.
+    """
+    if label == "STD":
+        q, k = get_std_params(n, d)
+        return int(q * k)
+    if label == "Chinese remainder":
+        return int(np.sum(_chinese_primes(n, d)))
+    if label == "Ch. Rm. backtrack":
+        return int(np.sum(_chinese_backtrack_moduli(_chinese_primes(n, d), n, d)))
+    if label == "Ch. Rm. special":
+        if d in (2, 3):
+            return int(get_chinese_parameters(n, d, special_diff=True)[1])
+        return int(np.sum(_chinese_primes(n, d)))
+    if label == "Matrix":
+        side = np.ceil(np.sqrt(n))
+        return int(side + (side - 1 if side * (side - 1) >= n else side))
+    if label.endswith("dimensional"):
+        return int(np.sum(get_params_multidims(n, int(label[0]))))
+    if label == "Binary":
+        return int(np.ceil(np.log2(n + 1)))
+    raise KeyError(label)
 
 
 def deferred_csv(df: pd.DataFrame, index: bool = True):
     """A no-argument callable for st.download_button.
 
     Streamlit runs it on a worker thread only when the button is actually
-    clicked. Nine designs at the maximum S encode to ~350 MB of CSV; producing
-    that up front is what a download button normally does, and it stalls the
-    page for seconds. Nothing here touches Streamlit, so it is thread-safe.
+    clicked. Producing every CSV up front — what a download button normally does
+    — costs ~350 MB and several seconds at the maximum S. Nothing in here touches
+    Streamlit, so it is safe off the script thread.
     """
     return lambda: csv_bytes(df, index=index)
 
 
-@st.cache_data(show_spinner=False, max_entries=4)
+def deferred_design_csv(label: str, n: int, d: int):
+    """As above, but the design is built inside the callback and dropped after,
+    so a page showing nine download buttons holds nine shapes, not nine matrices."""
+    return lambda: csv_bytes(build_design(label, n, d))
+
+
+@st.cache_data(show_spinner=False, max_entries=2)
 def cached_robot_protocols(wa: np.ndarray, volume: float) -> dict:
     return build_robot_protocols(wa, volume)
 
@@ -1865,13 +1914,21 @@ def _render_design_downloads(n_samp: int, diff: int):
                               help="Available only for D = 2 or D = 3.", width="stretch")
                     continue
                 try:
-                    design = cached_design(label, n_samp, diff)
+                    pools = design_pool_count(label, n_samp, diff)
+                    size_mb = 2 * n_samp * pools / 1e6      # ≈ two bytes per cell
+                    if n_samp * pools > MAX_DESIGN_CELLS:
+                        st.button(label, disabled=True, key=f"big_{label}", width="stretch",
+                                  help=f"{n_samp:,} samples × {pools:,} pools would be a "
+                                       f"~{size_mb:,.0f} MB file — too large to build in the "
+                                       f"browser. Generate it locally with the command below.")
+                        continue
                     st.download_button(
-                        label, deferred_csv(design),
+                        label, deferred_design_csv(label, n_samp, diff),
                         file_name=f"{label.replace('. ', '_').replace(' ', '_')}"
                                   f"_S{n_samp}_D{diff}.csv",
                         mime="text/csv", key=f"dl_{label}", width="stretch",
-                        help=f"{design.shape[0]} samples × {design.shape[1]} pools")
+                        help=f"{n_samp:,} samples × {pools:,} pools"
+                             + (f" · ~{size_mb:,.0f} MB" if size_mb >= 1 else ""))
                 except Exception as exc:
                     st.button(label, disabled=True, key=f"err_{label}",
                               help=f"Not available: {exc}", width="stretch")

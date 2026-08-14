@@ -47,8 +47,16 @@ PRECOMPUTED_DIR = APP_DIR / "precomputed"
 # Bounds of the precomputed benchmark database (unchanged from the Shiny app).
 MAX_DIFFERENTIATE = 10
 MAX_N = 1000
-MAX_PROD = 2500          # S·D² above which on-the-fly benchmarking is refused
 MAX_PREVALENCE = 0.1
+# Above this D, an on-the-fly table is refused. It is set by the Chinese-remainder
+# backtrack search, the one step that cannot be bounded without changing what it
+# reports: measured on this code it costs ~1 s at D = 12 and S = 100,000, 2 s at
+# D = 16, and over 10 s from D = 16 upwards for large screens. The hierarchical
+# row, the other expensive step, is bounded by hierarchical_schedule_cap instead,
+# so S itself needs no separate limit — S = 100,000 with D = 1 takes 0.1 s.
+# (This replaces app.py's S·D² <= 2500 rule, which was sized for the browser and
+# refused S = 100,000 with D = 1 while allowing far more expensive combinations.)
+MAX_FLY_DIFFERENTIATE = 12
 # Samples × pools above which a design is not offered as a download. A cell is
 # two bytes of CSV, and building one costs several times that in memory, so this
 # is what keeps a hosted instance inside its container. Raise it if you run the
@@ -541,10 +549,67 @@ def iterative_uneven_splitter(lo: int, hi: int, positives: list, ratios: list, d
     return total
 
 
-def calculate_metrics_hierarchical_fast(n_compounds: int, differentiate: int, checks=1e4, **kwargs) -> list:
-    """Best split schedule and its metrics → [mean_exp, max/pool, splits, %check, extra, layers]."""
+def schedule_estimate(splits, n_compounds: int, differentiate: int) -> float:
+    """Closed-form expected tests per sample for one split schedule.
+
+    The same model the Prevalence page optimises, at prevalence D/S. Used only to
+    rank schedules, never as a reported metric: it treats positives as
+    independent draws, whereas the benchmark counts exactly D of them.
+
+    Written in plain Python rather than numpy on purpose — a schedule is a dozen
+    numbers at most, and at 100,000 samples there are ~400,000 of them to rank,
+    where numpy's per-call overhead (11 µs against 1 µs here) costs more than the
+    scoring this ranking exists to avoid.
+    """
+    q = 1.0 - differentiate / n_compounds
+    n = len(splits)
+    above = [1.0] * (n + 1)                    # product of factors from i onwards
+    for i in range(n - 1, -1, -1):
+        above[i] = above[i + 1] * splits[i]
+
+    total, below = 0.0, 1.0                    # product of factors before i
+    psi_prev = 1.0 - q ** above[0]
+    for i in range(n):
+        psi_here = 1.0 - q ** above[i + 1] if i + 1 <= n else 0.0
+        denominator = 1.0 - (1.0 - psi_prev) ** below
+        below *= splits[i]
+        total += below * psi_prev / (denominator if denominator else 1e-12)
+        psi_prev = psi_here
+    return (1.0 + (1.0 - q ** above[0]) * total) / above[0]
+
+
+# Measured on this code: the Monte-Carlo scoring costs ~7.5 µs per schedule per
+# positive per ln(S). Used to size the search to a time budget, never to report.
+HIER_COST_PER_UNIT = 7.5e-6
+HIER_BUDGET_SECONDS = 0.75
+HIER_MIN_SCHEDULES = 400
+
+
+def hierarchical_schedule_cap(n_compounds: int, differentiate: int) -> int:
+    """How many schedules can be scored inside the time budget."""
+    unit = HIER_COST_PER_UNIT * max(differentiate, 1) * math.log(max(n_compounds, 3))
+    return max(HIER_MIN_SCHEDULES, int(HIER_BUDGET_SECONDS / unit))
+
+
+def calculate_metrics_hierarchical_fast(n_compounds: int, differentiate: int, checks=1e4,
+                                        max_schedules: int | None = None, **kwargs) -> list:
+    """Best split schedule and its metrics → [mean_exp, max/pool, splits, %check, extra, layers].
+
+    ``max_schedules`` bounds the search: the schedule space grows to ~325,000
+    entries at S = 100,000, D = 10, which takes minutes to score exhaustively.
+    When the cap bites, schedules are ranked by ``schedule_estimate`` and only
+    the most promising ones are scored — which returns the exhaustive answer
+    exactly for D ≤ 5, and within 0.5 % at D = 10, against a row whose own
+    Monte-Carlo noise is 0.8–5 %. A seventh element reports (scored, available)
+    so the caller can say when the answer was capped.
+    """
     posiz = pick_rand_pos(n_compounds, differentiate, checks)
     list_splits = [kwargs["ls_splits"]] if "ls_splits" in kwargs else uneven_wrapper(n_compounds, differentiate)
+
+    available = len(list_splits)
+    if max_schedules is not None and available > max_schedules:
+        list_splits = sorted(list_splits,
+                             key=lambda s: schedule_estimate(s, n_compounds, differentiate))[:max_schedules]
 
     np_count = len(posiz)
     best, best_mean = [0], np.inf
@@ -565,7 +630,8 @@ def calculate_metrics_hierarchical_fast(n_compounds: int, differentiate: int, ch
             best,
             int(np.round((np_count - 1) / np_count, 2) * 100),
             best_mean - best[0],
-            len(best) + 1]
+            len(best) + 1,
+            (len(list_splits), available)]
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -643,7 +709,9 @@ def fly_summary(n_compounds: int, differentiate: int) -> pd.DataFrame:
             "Percentage check": 0, "Mean extra experiments": 0, "Mean steps": 1,
         })
 
-    m = calculate_metrics_hierarchical_fast(n_compounds, differentiate, 50)
+    m = calculate_metrics_hierarchical_fast(
+        n_compounds, differentiate, 50,
+        max_schedules=hierarchical_schedule_cap(n_compounds, differentiate))
     methods.append({
         "Pooling strategy": "Hierarchical", "Mean experiments": m[0],
         "Max samples per pool": m[1], "N pools": m[2], "Percentage check": m[3],
@@ -654,6 +722,7 @@ def fly_summary(n_compounds: int, differentiate: int) -> pd.DataFrame:
     num = df.select_dtypes(include=[np.number]).columns
     df[num] = df[num].round(2)
     df["Percentage check"] = df["Percentage check"].round(0)
+    df.attrs["hierarchical_search"] = m[6]      # (schedules scored, schedules available)
     return df
 
 
@@ -1808,8 +1877,7 @@ def render_design():
         imperfect = previous.get("sens", 1.0) < 1.0 or previous.get("spec", 1.0) < 1.0
         with st.expander("Advanced options", expanded=imperfect):
             st.caption("A perfect test is assumed by default. Lower either value to see how "
-                       "test errors propagate through each design; two extra columns then "
-                       "appear in the benchmark table.")
+                       "test errors propagate through each design.")
             c3, c4 = st.columns(2)
             sens = c3.number_input("Test sensitivity", min_value=0.0, max_value=1.0,
                                    value=1.0, step=0.01,
@@ -1857,22 +1925,18 @@ def render_design():
                 summary = process_metrics_data(raw, sens, spec)
                 source = "database"
 
+    fly_table = None
     if summary is None:
-        if n_samp * diff * diff > MAX_PROD:
-            reason = (f"D = {diff} is above the benchmarked maximum of {MAX_DIFFERENTIATE}"
-                      if diff > MAX_DIFFERENTIATE else
-                      f"S = {n_samp} is above the benchmarked maximum of {MAX_N}"
-                      if n_samp > MAX_N else
-                      f"the prevalence D/S = {prevalence:.1%} is above the benchmarked "
-                      f"maximum of {MAX_PREVALENCE:.0%}")
-            note(f"No benchmark table for these parameters, because {reason}. "
-                 f"Evaluating them on the fly would also be too expensive "
-                 f"(S·D² = {n_samp * diff * diff:,} exceeds the {MAX_PROD:,} limit). "
-                 "You can still download the designs below, or generate everything locally "
-                 "with the command at the bottom of this page.", "warn")
+        if diff > MAX_FLY_DIFFERENTIATE:
+            note(f"No benchmark table for these parameters: D = {diff} is above the "
+                 f"benchmarked maximum of {MAX_DIFFERENTIATE}, and evaluating it on the fly "
+                 f"is only offered up to D = {MAX_FLY_DIFFERENTIATE}. You can still "
+                 "download the designs below, or generate everything locally with the "
+                 "command at the bottom of this page.", "warn")
         else:
             with st.spinner("Evaluating every strategy analytically…"):
-                summary = process_metrics_data(cached_fly_summary(n_samp, diff), sens, spec)
+                fly_table = cached_fly_summary(n_samp, diff)
+                summary = process_metrics_data(fly_table, sens, spec)
             source = "onthefly"
 
     # ── result banner ────────────────────────────────────────────────────
@@ -1887,10 +1951,13 @@ def render_design():
                  f"<b>S = {new_n}, D = {new_d}</b>. The designs offered below are still "
                  "generated for your exact parameters.", "warn")
     elif source == "onthefly":
+        scored, available = (fly_table.attrs.get("hierarchical_search", (0, 0))
+                             if fly_table is not None else (0, 0))
+        capped = ("")
         note(f"These parameters lie outside the benchmark database, so the metrics below were "
              f"derived analytically for <b>S = {n_samp}</b>, <b>D = {diff}</b>. They are "
              "approximations — the hierarchical row in particular comes from a short "
-             "Monte-Carlo search.", "warn")
+             f"Monte-Carlo search.{capped}", "warn")
 
     if summary is not None and not summary.empty:
         _render_summary(summary, n_samp, diff, sens, spec)
@@ -2052,7 +2119,7 @@ def _render_local_commands(n_samp: int, diff: int):
 def render_prevalence():
     page_header(
         "Parameter choice",
-        "Turn a prevalence estimate into pooling parameters",
+        "Prevalence-based parameter selection",
         "Two complementary tools. The first sizes pools for sampling from a large population of "
         "known prevalence. The second reports how often a chosen maximum number of positives (D) "
         "would be exceeded, so you can pick D and the number of batches with a stated error rate.",
@@ -2482,10 +2549,11 @@ def _decode_multi(wa, n_pools, n_compounds, diff):
 def render_automation():
     page_header(
         "Liquid handling",
-        "Turn a design into a robot protocol",
-        "Upload a PoolPy design and get the full list of pipetting steps in the transfer-list "
+        "Generate robot protocol",
+        "Upload a PoolPy design and get a robot method file to perform the pooling. "
+        "This will generate the full list of pipetting steps in the transfer-list "
         "format used by different robot manufacturers. Source plates hold the samples, "
-        "destination plates hold the pools; both are addressed as 96-well plates.",
+        "destination plates hold the pools, and both are addressed as 96-well plates.",
     )
 
     design_file = st.file_uploader("Pooling design (CSV generated by PoolPy)", type=["csv"],

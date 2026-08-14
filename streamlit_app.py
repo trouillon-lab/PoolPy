@@ -66,7 +66,7 @@ MAX_DESIGN_CELLS = 25_000_000
 GITHUB_URL = "https://github.com/trouillon-lab/PoolPy"
 ARXIV_URL = "https://arxiv.org/abs/2509.03481"
 ZENODO_URL = "https://doi.org/10.5281/zenodo.18660061"
-CONTACT = "jtrouillon [at] ethz [dot] ch"
+CONTACT = "jtrouillon@ethz.ch"
 
 # Palette derived from the PoolPy logo. The two chart marks (#35659C, #C0392B)
 # were validated for the OKLCH lightness band, chroma floor, protan/deutan
@@ -2700,17 +2700,17 @@ def render_about():
     page_header(
         "About",
         "PoolPy",
-        "Combinatorial pooling designs that increase throughput and cut costs across biological "
-        "experiments.",
+        "Combinatorial pooling designs that increase throughput and reduce experimental costs across biological "
+        "applications.",
     )
 
     st.markdown(
         "PoolPy replaces one-sample-one-test workflows with structured pooling designs that "
-        "still identify positives while using fewer measurements. It brings design "
-        "selection, benchmarking, automation and decoding together in a single end-to-end "
+        "use fewer measurements. It offers design "
+        "selection, benchmarking, automation and decoding as a unified end-to-end "
         "platform.\n\n"
         "Ten conceptually different pooling algorithms are benchmarked across more than "
-        "100,000 in-silico conditions, so designs can be chosen on the trade-offs that matter "
+        "100,000 *in silico* conditions, so designs can be chosen on the trade-offs that matter "
         "for a given application: test efficiency, pool size, number of steps, and robustness "
         "to dilution.\n\n"
         "A core idea is that **there is no universally best pooling strategy**. PoolPy tailors "

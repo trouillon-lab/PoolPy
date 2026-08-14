@@ -278,6 +278,11 @@ def _chinese_backtrack_moduli(primes: list, n_compounds: int, differentiate: int
     so the answer is both correct and immediate. The all-exponents-one vector
     is always feasible (that is how ``primes`` was built), so it seeds the
     incumbent and guarantees a usable design whatever the budget.
+
+    Ties are broken exactly as app.py broke them: it kept the first exponent
+    vector of minimal cost in itertools.product order, which is the
+    lexicographically smallest one, so the design that comes out here is the
+    same design the Shiny app produced, not merely one of equal cost.
     """
     ND = n_compounds ** differentiate
     log_nd = math.log(ND)
@@ -311,15 +316,22 @@ def _chinese_backtrack_moduli(primes: list, n_compounds: int, differentiate: int
             for j, e in enumerate(vec):
                 if e:
                     product *= primes[j] ** e
-            if product >= ND and cost < best_cost:
-                best_cost, best_vec = cost, vec + [0] * (k - len(vec))
+            padded = vec + [0] * (k - len(vec))
+            # Equal cost keeps the lexicographically smaller vector — app.py's
+            # "first one found in product order" tie-break.
+            if product >= ND and (cost < best_cost
+                                  or (cost == best_cost and padded < best_vec)):
+                best_cost, best_vec = cost, padded
             return
-        if i == k or cost >= best_cost:
+        if i == k or cost > best_cost:
             return
         if log_prod + reach[i] < log_nd - eps:
             return                                    # cannot reach N^D any more
-        if cost + (log_nd - log_prod) / efficiency[i] >= best_cost:
-            return                                    # cannot beat the incumbent
+        # The 1e-9 slack matters: this bound is computed in floats, and without
+        # it a rounding error of 1e-15 discards an exact tie — which is the very
+        # thing the lexicographic tie-break needs to see.
+        if cost + (log_nd - log_prod) / efficiency[i] > best_cost + 1e-9:
+            return                                    # cannot match the incumbent
 
         for e, value, log_value in choices[i]:
             search(i + 1, cost + (value if e else 0), log_prod + log_value, vec + [e])
@@ -405,19 +417,48 @@ def assign_wells_chinese(n_compounds: int, differentiate: int, backtrack: bool =
     return _crt_matrix(_chinese_primes(n_compounds, differentiate), n_compounds)
 
 
-# Registry used by the design-download section of the Design page.
+# Registry used by the design-download section of the Design page. Labels are the
+# ones the benchmark table uses, so a row and its download button carry the same
+# name. The multidimensional designs are not listed here: how many of them exist
+# depends on S (a 2,000-sample screen is benchmarked up to multidim-10), so they
+# are resolved per request by ``design_builder`` instead.
 DESIGN_BUILDERS = {
     # label: (builder, uses_differentiate, family)
     "STD": (lambda n, d: assign_wells_std(n, d), True, "dependent"),
     "Chinese remainder": (lambda n, d: assign_wells_chinese(n, d), True, "dependent"),
     "Ch. Rm. backtrack": (lambda n, d: assign_wells_chinese(n, d, backtrack=True), True, "dependent"),
     "Ch. Rm. special": (lambda n, d: assign_wells_chinese(n, d, special_diff=True), True, "dependent"),
+    # Matrix is exactly assign_wells_multidim(n, 2); the table calls it Matrix.
     "Matrix": (lambda n, d: assign_wells_mat(n), False, "independent"),
-    "2-dimensional": (lambda n, d: assign_wells_multidim(n, 2), False, "independent"),
-    "3-dimensional": (lambda n, d: assign_wells_multidim(n, 3), False, "independent"),
-    "4-dimensional": (lambda n, d: assign_wells_multidim(n, 4), False, "independent"),
     "Binary": (lambda n, d: assign_wells_bin(n), False, "independent"),
 }
+
+# Strategies that appear in the benchmark table but have no design file: one is
+# adaptive, the other is drawn per run.
+NO_DESIGN_FILE = ("Hierarchical", "Random")
+
+
+def design_builder(label: str):
+    """(builder, uses_differentiate) for any strategy name in the table."""
+    if label.startswith("multidim-"):
+        dims = int(label.split("-")[1])
+        return (lambda n, d, k=dims: assign_wells_multidim(n, k)), False
+    builder, uses_diff, _ = DESIGN_BUILDERS[label]
+    return builder, uses_diff
+
+
+def multidim_dims(summary: pd.DataFrame | None, n_samp: int) -> list:
+    """Which multidimensional designs to offer: whichever the table lists.
+
+    Falls back to the range fly_summary itself iterates over, so the downloads
+    still match when the parameters are too large for a benchmark table.
+    """
+    if summary is not None and not summary.empty:
+        dims = sorted(int(s.split("-")[1]) for s in summary["Pooling strategy"]
+                      if str(s).startswith("multidim-"))
+        if dims:
+            return dims
+    return list(range(3, max(3, int(np.ceil(np.log2(max(n_samp, 2)))))))
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -805,6 +846,35 @@ def decode_readout(readout_list: list, wa: np.ndarray, diff: int) -> dict:
             "samples": sorted({s for c in combos for s in c}), "combinations": combos}
 
 
+def narrowing_suggestion(readout_list: list, wa: np.ndarray, diff: int, result: dict,
+                         max_trials: int = 6):
+    """The smallest max-positives value that would resolve an ambiguous readout.
+
+    The Shiny app told users that setting or lowering D might narrow a putative
+    result; this works out whether it actually would, and to what. Returns
+    ``(d, better_result)`` or None. Only ever tried on an ambiguous answer, and
+    only while the combination count stays inside the decoder's own budget, so
+    it costs less than the decode that has already run.
+    """
+    if result["type"] not in ("putative", "multiple"):
+        return None
+    candidates = result.get("samples") or []
+    current = len(candidates)
+    ceiling = min(int(diff), wa.shape[0]) - 1
+    if ceiling < 1 or current < 2:
+        return None
+
+    for d in range(1, min(ceiling, max_trials) + 1):
+        if sum(math.comb(current, i) for i in range(d + 1)) > 1e4:
+            break
+        trial = decode_readout(readout_list, wa, d)
+        if trial["type"] == "error":
+            continue                     # too few positives to explain the readout at all
+        if trial["type"] == "unique" or len(trial.get("samples") or []) < current:
+            return d, trial
+    return None
+
+
 def series_to_readout_list(ser: pd.Series, n_pools: int):
     """Parse one CSV row into a list of ints (pool indices or a binary vector)."""
     vals = [str(v).strip() for v in ser.tolist() if pd.notna(v) and str(v).strip() != ""]
@@ -923,6 +993,9 @@ def _well_column(idx: np.ndarray) -> pd.Categorical:
 
 def build_robot_protocols(wa: np.ndarray, volume: float = 1.0) -> dict:
     """Transfer lists in Biomek, Hamilton and Opentrons column formats."""
+    # A whole-number volume is written as "1", not "1.0" — app.py wrote an
+    # integer column, and the transfer lists it produced are already in use.
+    volume = int(volume) if float(volume).is_integer() else volume
     offset = int(np.ceil(wa.shape[0] / 96))
     src, dst = np.where(wa == 1)
     s_well, d_well = _well_column(src), _well_column(dst)
@@ -1086,7 +1159,7 @@ def cached_fly_summary(n: int, d: int) -> pd.DataFrame:
 
 
 def build_design(label: str, n: int, d: int) -> pd.DataFrame:
-    builder, uses_diff, _ = DESIGN_BUILDERS[label]
+    builder, uses_diff = design_builder(label)
     return clean_wa(builder(n, d if uses_diff else 1))
 
 
@@ -1094,10 +1167,11 @@ def build_design(label: str, n: int, d: int) -> pd.DataFrame:
 def design_pool_count(label: str, n: int, d: int) -> int:
     """How many pools a design would use, without building the matrix.
 
-    The Design page shows nine download buttons at once. Materialising all nine
-    just to label them costs ~1 GB at the largest S — more than a hosted app is
-    given — so the pool count comes from the same parameter maths the
-    constructors use, and was checked against them over the (label, S, D) grid.
+    The Design page shows every strategy's button at once — up to fourteen for a
+    large screen. Materialising them all just to label them costs ~1 GB at the
+    largest S, more than a hosted app is given, so the pool count comes from the
+    same parameter maths the constructors use, and was checked against them over
+    the (label, S, D) grid.
     """
     if label == "STD":
         q, k = get_std_params(n, d)
@@ -1113,8 +1187,8 @@ def design_pool_count(label: str, n: int, d: int) -> int:
     if label == "Matrix":
         side = np.ceil(np.sqrt(n))
         return int(side + (side - 1 if side * (side - 1) >= n else side))
-    if label.endswith("dimensional"):
-        return int(np.sum(get_params_multidims(n, int(label[0]))))
+    if label.startswith("multidim-"):
+        return int(np.sum(get_params_multidims(n, int(label.split("-")[1]))))
     if label == "Binary":
         return int(np.ceil(np.log2(n + 1)))
     raise KeyError(label)
@@ -1133,7 +1207,7 @@ def deferred_csv(df: pd.DataFrame, index: bool = True):
 
 def deferred_design_csv(label: str, n: int, d: int):
     """As above, but the design is built inside the callback and dropped after,
-    so a page showing nine download buttons holds nine shapes, not nine matrices."""
+    so a page full of download buttons holds shapes, not matrices."""
     return lambda: csv_bytes(build_design(label, n, d))
 
 
@@ -1642,9 +1716,12 @@ def tradeoff_chart(summary: pd.DataFrame, n_samp: int):
     x_lo, x_hi = domain(df["Tests"])
     y_lo, y_hi = domain(df["Pool size"])
     y_title = "Max samples per pool"
-    x = alt.X("Tests:Q", title="Mean number of tests",
+    # Both axes count things, so the ticks are whole numbers: tickMinStep keeps
+    # d3 from subdividing below 1, and format "d" drops the trailing zeros.
+    whole = alt.Axis(format="d", tickMinStep=1)
+    x = alt.X("Tests:Q", title="Mean number of tests", axis=whole,
               scale=alt.Scale(domain=[x_lo, x_hi], nice=False, clamp=True))
-    y = alt.Y("Pool size:Q", title=y_title,
+    y = alt.Y("Pool size:Q", title=y_title, axis=whole,
               scale=alt.Scale(domain=[y_lo, y_hi], nice=False, clamp=True))
 
     front["LabelY"] = _dodge_labels(front["Pool size"].to_numpy(dtype=float),
@@ -1670,7 +1747,7 @@ def tradeoff_chart(summary: pd.DataFrame, n_samp: int):
     # The label layer plots a second field on the shared y scale, so it has to
     # repeat the axis title verbatim: layered axes are merged, and either None or
     # a different string here loses the axis for the whole chart.
-    label_y = alt.Y("LabelY:Q", title=y_title,
+    label_y = alt.Y("LabelY:Q", title=y_title, axis=whole,
                     scale=alt.Scale(domain=[y_lo, y_hi], nice=False, clamp=True))
     labels = []
     for side, part in front.groupby("Side"):
@@ -1714,7 +1791,7 @@ def render_design():
         "Method comparison",
         "Find the right pooling design",
         "Enter how many samples you need to screen and how many positives you are willing to "
-        "resolve in one batch. PoolPy benchmarks up to 13 different pooling designs "
+        "resolve in one batch. PoolPy benchmarks 10 different pooling algorithms "
         "and returns the designs ready to run.",
     )
 
@@ -1818,7 +1895,7 @@ def render_design():
     if summary is not None and not summary.empty:
         _render_summary(summary, n_samp, diff, sens, spec)
 
-    _render_design_downloads(n_samp, diff)
+    _render_design_downloads(n_samp, diff, summary)
     _render_local_commands(n_samp, diff)
 
 
@@ -1889,59 +1966,77 @@ def _render_summary(summary: pd.DataFrame, n_samp: int, diff: int, sens: float, 
 
 
 @st.fragment
-def _render_design_downloads(n_samp: int, diff: int):
+def _render_design_downloads(n_samp: int, diff: int, summary: pd.DataFrame | None = None):
     section("Download designs for your exact parameters")
-    st.caption("Designs are generated on demand for S = %d and D = %d, as a samples × pools "
+    st.caption("Every strategy in the table above that has a fixed pooling matrix can be "
+               "downloaded here, generated on demand for S = %d and D = %d as a samples × pools "
                "binary matrix. These same CSVs feed the Decoder and Automation pages."
                % (n_samp, diff))
 
+    dependent = ["STD", "Chinese remainder", "Ch. Rm. backtrack"]
+    if diff in (2, 3):                       # only exists for two or three positives
+        dependent.append("Ch. Rm. special")
+    independent = ["Matrix"] + [f"multidim-{k}" for k in multidim_dims(summary, n_samp)] + ["Binary"]
+
     families = [
-        ("Positive-count dependent", "dependent",
+        ("Positive-count dependent", dependent,
          "These designs adapt to the number of expected positives."),
-        ("Positive-count independent", "independent",
-         "These designs do not adapt to D — use them with care above one positive."),
+        ("Positive-count independent", independent,
+         "These designs do not adapt to D — use them with care above one positive. ")
     ]
-    for title, family, blurb in families:
+    for title, labels, blurb in families:
         st.markdown(f"**{title}**  \n<span style='color:{MUTED};font-size:0.95rem'>{blurb}</span>",
                     unsafe_allow_html=True)
-        labels = [k for k, v in DESIGN_BUILDERS.items() if v[2] == family]
-        cols = st.columns(len(labels))
-        for col, label in zip(cols, labels):
-            with col:
-                if label == "Ch. Rm. special" and diff not in (2, 3):
-                    st.button(label, disabled=True, key=f"dis_{label}",
-                              help="Available only for D = 2 or D = 3.", width="stretch")
-                    continue
-                try:
-                    pools = design_pool_count(label, n_samp, diff)
-                    size_mb = 2 * n_samp * pools / 1e6      # ≈ two bytes per cell
-                    if n_samp * pools > MAX_DESIGN_CELLS:
-                        st.button(label, disabled=True, key=f"big_{label}", width="stretch",
-                                  help=f"{n_samp:,} samples × {pools:,} pools would be a "
-                                       f"~{size_mb:,.0f} MB file — too large to build in the "
-                                       f"browser. Generate it locally with the command below.")
-                        continue
-                    st.download_button(
-                        label, deferred_design_csv(label, n_samp, diff),
-                        file_name=f"{label.replace('. ', '_').replace(' ', '_')}"
-                                  f"_S{n_samp}_D{diff}.csv",
-                        mime="text/csv", key=f"dl_{label}", width="stretch",
-                        help=f"{n_samp:,} samples × {pools:,} pools"
-                             + (f" · ~{size_mb:,.0f} MB" if size_mb >= 1 else ""))
-                except Exception as exc:
-                    st.button(label, disabled=True, key=f"err_{label}",
-                              help=f"Not available: {exc}", width="stretch")
+        # Wrapped into rows of six: a large screen benchmarks up to multidim-10, and
+        # eleven buttons on one line would each be too narrow to read.
+        for start in range(0, len(labels), 6):
+            chunk = labels[start:start + 6]
+            cols = st.columns(6)
+            for col, label in zip(cols, chunk):
+                with col:
+                    _design_button(label, n_samp, diff)
         st.write("")
+
+    _no_design_note(summary)
 
     note("Every benchmarked design is archived on Zenodo — "
          f'<a href="{ZENODO_URL}" target="_blank">DOI: 10.5281/zenodo.18660061</a>.')
+
+
+def _design_button(label: str, n_samp: int, diff: int):
+    try:
+        pools = design_pool_count(label, n_samp, diff)
+        size_mb = 2 * n_samp * pools / 1e6              # ≈ two bytes per cell
+        if n_samp * pools > MAX_DESIGN_CELLS:
+            st.button(label, disabled=True, key=f"big_{label}", width="stretch",
+                      help=f"{n_samp:,} samples × {pools:,} pools would be a "
+                           f"~{size_mb:,.0f} MB file — too large to build in the browser. "
+                           f"Generate it locally with the command below.")
+            return
+        st.download_button(
+            label, deferred_design_csv(label, n_samp, diff),
+            file_name=f"{label.replace('. ', '_').replace(' ', '_')}_S{n_samp}_D{diff}.csv",
+            mime="text/csv", key=f"dl_{label}", width="stretch",
+            help=f"{n_samp:,} samples × {pools:,} pools"
+                 + (f" · ~{size_mb:,.0f} MB" if size_mb >= 1 else ""))
+    except Exception as exc:
+        st.button(label, disabled=True, key=f"err_{label}",
+                  help=f"Not available: {exc}", width="stretch")
+
+
+def _no_design_note(summary: pd.DataFrame | None):
+    """Explain the table rows that have no matrix to download."""
+    listed = ([s for s in NO_DESIGN_FILE if (summary["Pooling strategy"] == s).any()]
+              if summary is not None and not summary.empty else [])
+    if not listed:
+        return
 
 
 def _render_local_commands(n_samp: int, diff: int):
     section("Run locally")
     st.caption("For large screens, or to reproduce the benchmark yourself, run the same code "
                "from the repository. Use the notebooks `pool_interface.ipynb` and "
-               "`decode_interface.ipynb`, or the command line:")
+               "`decode_interface.ipynb`, or the command lines below. The first generates the designs, the second decodes the pooled results.")
     st.markdown(
         f'<div class="pp-cmd">python pool_N.py --n_samp {n_samp} --differentiate {diff} '
         f'--directory your/path</div>'
@@ -2027,8 +2122,8 @@ def _prevalence_optimiser():
 @st.fragment
 def _prevalence_risk():
     section("Misparametrisation risk for a chosen D")
-    st.caption("The tables give the probability that at least one pool contains more than D "
-               "positives — per pool on the left, and across all pools of a combinatorial batch "
+    st.caption("The tables give the probability that a set of samples at a given prevalence contains more than D "
+               "positives — per set on the left, and across multiple batches "
                "on the right (family-wise error rate). Rows are sample counts, columns are D.")
 
     with st.form("prev_form"):
@@ -2171,6 +2266,35 @@ def render_decoder():
         _decode_multi(wa, n_pools, n_compounds, diff)
 
 
+def _narrowing_note(result: dict, suggestion, diff: int, n_compounds: int):
+    """Tell the user whether a tighter max-positives would sharpen an ambiguous call."""
+    if result["type"] not in ("putative", "multiple"):
+        return
+    unbounded = diff >= n_compounds
+    lead = ("You left the maximum number of positives empty, so the decoder allowed "
+            f"any number of positives up to {n_compounds}. " if unbounded else
+            f"The search allowed up to {diff} positives. ")
+
+    if suggestion is None:
+        note(lead + "Lowering it would not sharpen this readout — the ambiguity comes from "
+                    "the design itself. To resolve it, test the candidates individually, or "
+                    "run a design built for more positives.", "warn")
+        return
+
+    d, better = suggestion
+    limit = f"<b>{d} {plural(d, 'positive')}</b>"
+    if better["type"] == "unique":
+        answer = ", ".join(str(s) for s in better["samples"])
+        note(lead + f"If at most {limit} can be present, this readout has exactly one "
+                    f"explanation: <b>Sample {answer}</b>. Set the maximum number of positives "
+                f"to {d} above (only if it makes sense) and decode again to get that answer.", "good")
+    else:
+        answer = ", ".join(str(s) for s in better["samples"])
+        note(lead + f"Setting the maximum number of positives to {d} narrows the candidates "
+                    f"from {len(result['samples'])} to {len(better['samples'])} "
+                    f"({answer}).", "good")
+
+
 @st.fragment
 def _decode_single(wa, n_pools, n_compounds, diff):
     readout_str = st.text_input(
@@ -2187,15 +2311,17 @@ def _decode_single(wa, n_pools, n_compounds, diff):
             note("Only non-negative integers separated by commas are accepted.", "bad")
             return
         with st.spinner("Searching sample combinations…"):
-            st.session_state["dec_single"] = (signature,
-                                              decode_readout([int(t) for t in tokens], wa, diff))
+            readout = [int(t) for t in tokens]
+            outcome = decode_readout(readout, wa, diff)
+            st.session_state["dec_single"] = (
+                signature, outcome, narrowing_suggestion(readout, wa, diff, outcome))
 
     stored = st.session_state.get("dec_single")
     # Results are kept across the reruns that download buttons trigger, but only
     # while the design, readout and D are unchanged.
     if not stored or stored[0] != signature:
         return
-    result = stored[1]
+    result, suggestion = stored[1], stored[2]
     kind, title = TYPE_COPY[result["type"]]
 
     if result["type"] == "error":
@@ -2217,6 +2343,7 @@ def _decode_single(wa, n_pools, n_compounds, diff):
                 f"<b>{', '.join(map(str, result['samples']))}</b>. Test them individually, or "
                 f"use a design that resolves more positives.")
     note(body, kind)
+    _narrowing_note(result, suggestion, diff, n_compounds)
 
     text = (f"PoolPy decoder\nReadout (positive pools): {readout_str}\n"
             f"Design: {n_compounds} samples x {n_pools} pools\n"
@@ -2308,10 +2435,23 @@ def _decode_multi(wa, n_pools, n_compounds, diff):
     stat_strip([(TYPE_COPY[t][1], f"{counts.get(t, 0)}", f"of {len(out_df)} readouts")
                 for t in ("unique", "multiple", "putative", "error") if t in counts.index])
 
-    if counts.get("putative", 0) > len(out_df) / 2 and diff >= n_compounds:
-        note("Most readouts came back putative because the maximum number of positives is "
-             "unbounded, so the combination search runs out of budget. Set it to the D you "
-             "designed for and decode again.", "warn")
+    ambiguous = counts.get("putative", 0) + counts.get("multiple", 0)
+    if ambiguous:
+        share = ambiguous / len(out_df)
+        if diff >= n_compounds:
+            note(f"<b>{ambiguous}</b> of {len(out_df)} readouts "
+                 f"({share:.0%}) came back ambiguous, and the maximum number of positives was "
+                 f"left empty — so every combination of up to {n_compounds} samples was allowed, "
+                 "which usually exhausts the search budget. Set it to the D this design was "
+                 "built for and decode again: most of these normally resolve to a single set.",
+                 "warn")
+        elif share >= 0.25:
+            note(f"<b>{ambiguous}</b> of {len(out_df)} readouts ({share:.0%}) stayed ambiguous "
+                 f"with at most {diff} {plural(diff, 'positive')} allowed. If your batch cannot "
+                 f"really hold that many positives, lower the maximum and decode again — a "
+                 "tighter bound removes candidate combinations and often leaves exactly one. "
+                 "Use the single-readout mode on one of these rows to see what a given bound "
+                 "would give.", "warn")
 
     # A decoded row can name dozens of samples, so that column wraps instead of
     # widening the table. Long batches are capped rather than dumped in full —
@@ -2351,7 +2491,7 @@ def render_automation():
     design_file = st.file_uploader("Pooling design (CSV generated by PoolPy)", type=["csv"],
                                    key="auto_design")
     if design_file is None:
-        note("Volumes and plate names will likely need adjusting for your deck layout. "
+        note("Volumes and plate names might need adjusting for your deck layout. "
              "If your instrument is not covered here, get in touch and we will add it.")
         return
 
@@ -2462,6 +2602,12 @@ def render_guide():
         "- **Multiple** — several sets of at most D samples explain the readout; all are listed.\n"
         "- **Putative** — more candidate sets than candidate samples, so only the pooled set of "
         "possible positives is reported. Confirm them individually.\n"
+        "\n"
+        "For a *multiple* or *putative* verdict the decoder also checks whether a tighter "
+        "maximum number of positives would settle it, and tells you which value to use: the "
+        "fewer positives you can rule in, the fewer sample combinations stay consistent with "
+        "the same readout. Leaving the maximum empty is the least informative setting, since "
+        "every combination of up to S samples is then allowed.\n"
         "- **Error** — nothing is consistent with the readout. Check the input, or raise D."
     )
 

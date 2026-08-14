@@ -990,6 +990,67 @@ def get_STD_params(n_compounds:int, differentiate=1, False_results=0, force_q=Fa
     k=t*Gamma+2*E+1
     return(q,k)
 
+def backtrack_moduli(primes, n_compounds:int, differentiate:int)->np.array:
+    """Prime powers minimising the sum of the moduli, subject to their product being >= N^D.
+
+    Same search space and same objective as the exhaustive enumeration this
+    replaces, and the same tie-break (the first minimum in itertools.product
+    order, i.e. the lexicographically smallest exponent vector), so it returns
+    the same moduli. It differs in two respects, both of which were bugs:
+
+      * the product is evaluated in Python integers. Evaluated in int64 it
+        overflowed above 9.2e18, so above roughly D = 7 no candidate ever
+        satisfied the constraint, no best was recorded, and the function raised
+        UnboundLocalError instead of returning a design;
+      * it is a branch and bound rather than a full enumeration of the exponent
+        grid, which for those same large values ran to millions of candidates.
+    """
+    ND = n_compounds ** differentiate
+    log_nd = math.log(ND)
+    log_max = math.log(primes[-1])
+    k = len(primes)
+
+    # Admissible exponents per prime, largest first (0 means the prime is unused).
+    choices = []
+    for p in primes:
+        e_max = int(math.floor(log_max / math.log(p)))
+        choices.append([(e, p ** e, e * math.log(p)) for e in range(e_max, 0, -1)] + [(0, 1, 0.0)])
+
+    # Pruning bounds: the most product still reachable from prime i onwards, and
+    # the best log-product bought per unit of cost from prime i onwards.
+    reach = [0.0] * (k + 1)
+    efficiency = [1e-12] * (k + 1)
+    for i in range(k - 1, -1, -1):
+        reach[i] = reach[i + 1] + choices[i][0][2]
+        efficiency[i] = max(max(lg / v for e, v, lg in choices[i] if e), efficiency[i + 1])
+
+    eps = 1e-9
+    # All exponents one is always feasible: that is how primes was built.
+    best = {'cost': sum(primes), 'vec': [1] * k}
+
+    def search(i, cost, log_prod, vec):
+        if log_prod >= log_nd - eps:
+            product = 1
+            for j, e in enumerate(vec):
+                if e:
+                    product *= primes[j] ** e
+            padded = vec + [0] * (k - len(vec))
+            if product >= ND and (cost < best['cost'] or (cost == best['cost'] and padded < best['vec'])):
+                best['cost'], best['vec'] = cost, padded
+            return
+        if i == k or cost > best['cost']:
+            return
+        if log_prod + reach[i] < log_nd - eps:
+            return
+        if cost + (log_nd - log_prod) / efficiency[i] > best['cost'] + eps:
+            return
+        for e, value, log_value in choices[i]:
+            search(i + 1, cost + (value if e else 0), log_prod + log_value, vec + [e])
+
+    search(0, 0, 0.0, [])
+    return np.array([primes[j] ** e for j, e in enumerate(best['vec']) if e])
+
+
 def get_chinese_prameters(n_compounds:int,  differentiate:int, backtrack=False, special_diff=False, **kwargs)->np.array:
     prod=1
     n=1
@@ -1002,33 +1063,8 @@ def get_chinese_prameters(n_compounds:int,  differentiate:int, backtrack=False, 
             primes.append(n)
 
     if backtrack:
-        T=np.inf
-        nprimes=np.array(primes)
-        ND=n_compounds**differentiate
-        ls_of_ls=[]
-        LMP=np.log(primes[-1])
-        for pi in primes:
-            LE=np.floor(LMP/np.log(pi)).astype(int)
-            ls_of_ls.append(list(range(LE+1)))
-        ls_iter=list(itertools.product(*ls_of_ls))
-        for id_combo, combo in enumerate(ls_iter):
-            carr=np.array(combo)
-            flt=carr>0
-            this_primes=nprimes[flt]
-            this_exp=carr[flt]
-            npc=this_primes**this_exp
-            if np.prod(npc)>=ND and np.sum(npc)<T:
-                T=np.sum(npc)
-                best_id=id_combo
-        combo=ls_iter[best_id]
-        carr=np.array(combo)
-        flt=carr>0
-        this_primes=nprimes[flt]
-        this_exp=carr[flt]
-        npc=this_primes**this_exp
+        return backtrack_moduli(primes, n_compounds, differentiate)
 
-        return npc
-    
     if special_diff and differentiate==2:
         q=np.ceil(np.log(n_compounds)/np.log(3)).astype(int)
         t=int((q+5)*q/2)
@@ -1076,30 +1112,10 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
             primes.append(n)
 
     if backtrack:
-        T=np.inf
-        nprimes=np.array(primes)
-        ND=n_compounds**differentiate
-        ls_of_ls=[]
-        LMP=np.log(primes[-1])
-        for pi in primes:
-            LE=np.floor(LMP/np.log(pi)).astype(int)
-            ls_of_ls.append(list(range(LE+1)))
-        ls_iter=list(itertools.product(*ls_of_ls))
-        for id_combo, combo in enumerate(ls_iter):
-            carr=np.array(combo)
-            flt=carr>0
-            this_primes=nprimes[flt]
-            this_exp=carr[flt]
-            npc=this_primes**this_exp
-            if np.prod(npc)>=ND and np.sum(npc)<T:
-                T=np.sum(npc)
-                best_id=id_combo
-        combo=ls_iter[best_id]
-        carr=np.array(combo)
-        flt=carr>0
-        this_primes=nprimes[flt]
-        this_exp=carr[flt]
-        npc=this_primes**this_exp
+        # Same search as get_chinese_prameters, shared rather than duplicated: in
+        # int64 the product overflowed above 9.2e18, so from roughly D = 7 upwards
+        # this raised UnboundLocalError instead of returning a design.
+        npc=backtrack_moduli(primes, n_compounds, differentiate)
 
         WA=np.zeros((np.sum(npc), n_compounds))==1
         past_primes=0
@@ -1128,7 +1144,10 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
                 for j in range(n_compounds):
                     WA[k,j]=True if int(ls_nc3[j][i])==int(ls_nc3[j][ii]) else False
                 k+=1
-        return q,t
+        # The design, like every other branch here. This returned the parameters
+        # (q, t) instead, so the download handler called clean_WA on a tuple and
+        # raised AttributeError — the Ch. Rm. special design could never be saved.
+        return(WA.T)
     
     if special_diff and differentiate==3:
         q=np.ceil(np.log(n_compounds)/np.log(2)).astype(int)
@@ -1143,7 +1162,8 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
                         for j in range(n_compounds):
                             WA[k,j]=True if int(ls_nc3[j][i])==nu and int(ls_nc3[j][ii])==nuu else False
                         k+=1
-        return q,t
+        # As above: the design, not the parameters.
+        return(WA.T)
 
 
     WA=np.zeros((np.sum(primes), n_compounds))==1
@@ -1159,6 +1179,10 @@ def assign_wells_chinese(n_compounds:int,  differentiate:int, backtrack=False, s
     return(WA.T)
 
 def generalized_factorial(N,pw):
+    # int(): called with numpy integers this multiplied in int64 and overflowed
+    # from differentiate ~ 6 upwards, which made the multidimensional rows of the
+    # on-the-fly table report a negative number of experiments.
+    N, pw = int(N), int(pw)
     FT=1
     for i in range(N):
         FT*=(N-i)**(pw-1)
@@ -1191,7 +1215,9 @@ def fly_summary(n_compounds:int,  differentiate:int, **kwargs):
             PCT=100*(1-np.sum(PCF))
 
 
-        MEE=np.min([differentiate**n_dims, generalized_factorial(differentiate,  n_dims), n_compounds ])-1
+        # Built-in min over Python ints: np.min would take these back into int64
+        # and overflow again, as would differentiate ** n_dims with a numpy exponent.
+        MEE=min(int(differentiate)**int(n_dims), generalized_factorial(differentiate,  n_dims), int(n_compounds) )-1
         method_dict = {
             'Pooling strategy': method_name,
             'Mean experiments': np.sum(arr_dims)+MEE,
@@ -2383,15 +2409,18 @@ def server(input, output, session):
                                 s = str(val).strip()
                                 if s == "" or s.lower() == "nan":
                                     return None
+                                # binary string of length n_pools — tested BEFORE the
+                                # integer form, since "010010001000" also parses as a
+                                # huge integer and would then look out of range, which
+                                # made a first row written that way get dropped as a header
+                                if set(s).issubset({"0","1"}) and len(s) == n_pools:
+                                    return True
                                 # integer scalar
                                 try:
                                     iv = int(float(s))
                                     return 0 <= iv <= n_pools
                                 except Exception:
                                     pass
-                                # binary string of length n_pools
-                                if set(s).issubset({"0","1"}) and len(s) == n_pools:
-                                    return True
                                 # delimited list of ints
                                 parts = [p for p in re.split(r"[\s,;]+", s) if p]
                                 if parts and all(p.isdigit() and 0 <= int(p) <= n_pools for p in parts):
@@ -2456,7 +2485,14 @@ def server(input, output, session):
 
                             # Now process like the single-input path
                             try:
-                                rl_sorted = sorted([int(x) for x in rl])
+                                rl_ints = [int(x) for x in rl]
+                                # A full-length 0/1 vector IS the readout, pool by pool, so
+                                # it has to keep its order — sorting it turns it into a
+                                # different readout. Only a list of pool indices is sorted.
+                                if len(rl_ints) == n_pools and set(rl_ints).issubset({0, 1}):
+                                    rl_sorted = rl_ints
+                                else:
+                                    rl_sorted = sorted(rl_ints)
                             except Exception:
                                 results_rows.append({
                                     "decoded_type": "error",
@@ -2668,7 +2704,12 @@ def server(input, output, session):
                 if diff_deco==-1:
                     diff_deco=n_compounds
 
-                readout_list.sort()
+                # A full-length 0/1 vector IS the readout, pool by pool, so it has to
+                # keep its order — sorting it turns it into a different readout, which
+                # made binary readouts decode to the wrong sample or to no sample at
+                # all. Only a list of pool indices is sorted.
+                if not (len(readout_list) == n_pools and set(readout_list).issubset({0, 1})):
+                    readout_list.sort()
                 msg=f'Processing file <b>{fileinfo[0]["name"]}</b> with max. <b>{diff_deco}</b> positive samples and readout: <br>'
                 msg+=f"{readout_list}<br>"
                     #msg+=f'{WA}'

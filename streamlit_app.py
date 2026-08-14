@@ -2132,6 +2132,9 @@ def render_prevalence():
 @st.fragment
 def _prevalence_optimiser():
     section("Optimal pool size at a known prevalence")
+    st.caption("This tool identifies optimal pool sizes based on prevalence only, "
+               "not considering the maximum number of positives (D) or the number of samples (S)."
+               " It returns the best hierarchical and multidimensional strategies.")
     with st.form("bg2_form"):
         c1, c2, c3 = st.columns([2, 2, 1])
         p = c1.number_input("Prevalence (as a fraction)", min_value=1e-6, max_value=0.5,

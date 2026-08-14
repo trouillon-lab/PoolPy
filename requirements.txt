@@ -6,11 +6,16 @@
 # scikit-learn, matplotlib and the rest — lives in requirements-dev.txt; the app
 # does not import any of it.
 #
-# Tested on Python 3.13 with Streamlit 1.60 and 1.61.
+# The lower bounds are the first releases that ship wheels for Python 3.14,
+# which is what Community Cloud now provisions. Without them a resolver is free
+# to pick an older version, fail to find a wheel, try to compile from source and
+# die on a missing system header (this is exactly how pillow==11.2.1 failed).
+#
+# Tested on Python 3.13 and 3.14, Streamlit 1.60 and 1.61.
 streamlit>=1.60
-pandas>=2.0
-numpy>=1.26
-scipy>=1.11
-altair>=5.0
-pyarrow>=14.0
-pillow>=10.0
+pandas>=2.3.3
+numpy>=2.3.2
+scipy>=1.16.1
+altair>=5.5
+pyarrow>=22.0
+pillow>=11.3

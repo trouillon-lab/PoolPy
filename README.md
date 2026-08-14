@@ -256,7 +256,7 @@ Two dependency files, for two different things:
 
 | File | What it is for |
 |---|---|
-| `requirements.txt` | The web app (`streamlit_app.py`). Kept minimal, and it is the file Streamlit Community Cloud installs. |
+| `requirements.txt` | The web app (`streamlit_app.py`). |
 | `requirements-dev.txt` | The analysis environment: notebooks, `Fast_functions.py`, scikit-learn, matplotlib and the plotting stack. |
 
 - **Import the analysis environment:**
@@ -264,20 +264,6 @@ Two dependency files, for two different things:
 ```bash
 uv add -r requirements-dev.txt
 ```
-
-- **Export current environment:**
-
-```bash
-uv export > requirements-dev.txt
-```
-
-- **Run the web app locally:**
-
-```bash
-pip install -r requirements.txt
-streamlit run streamlit_app.py
-```
-&nbsp;
 
 
 ## 📚 Citation

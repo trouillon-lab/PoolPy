@@ -66,6 +66,8 @@ MAX_DESIGN_CELLS = 25_000_000
 GITHUB_URL = "https://github.com/trouillon-lab/PoolPy"
 ARXIV_URL = "https://arxiv.org/abs/2509.03481"
 ZENODO_URL = "https://doi.org/10.5281/zenodo.18660061"
+# The Shiny/Shinylive app this one replaces, still served from GitHub Pages.
+LEGACY_APP_URL = "https://trouillon-lab.github.io/PoolPy/"
 CONTACT = "jtrouillon@ethz.ch"
 
 # Palette derived from the PoolPy logo. The two chart marks (#35659C, #C0392B)
@@ -1380,6 +1382,10 @@ section[data-testid="stSidebar"] [data-testid="stImage"] img {{
 .pp-sidebar-links {{ font-size: 0.9rem; line-height: 1.9; color: var(--pp-muted); }}
 .pp-sidebar-links a {{ color: var(--pp-blue-dark); text-decoration: none; }}
 .pp-sidebar-links a:hover {{ text-decoration: underline; }}
+.pp-sidebar-legacy {{
+  margin-top: 0.9rem; padding-top: 0.7rem; border-top: 1px solid rgba(90,102,115,0.18);
+  font-size: 0.85rem; line-height: 1.5;
+}}
 
 /* ── page header ─────────────────────────────────────────────────────── */
 .pp-eyebrow {{
@@ -2780,7 +2786,10 @@ def main():
             f'<div class="pp-sidebar-links" style="margin-top:1.6rem">'
             f'<a href="{GITHUB_URL}" target="_blank">GitHub repository</a><br>'
             f'<a href="{ARXIV_URL}" target="_blank">Read the paper</a><br>'
-            f'<a href="{ZENODO_URL}" target="_blank">Design archive (Zenodo)</a><br>', unsafe_allow_html=True)
+            f'<a href="{ZENODO_URL}" target="_blank">Design archive (Zenodo)</a>'
+            f'<div class="pp-sidebar-legacy">'
+            f'<a href="{LEGACY_APP_URL}" target="_blank">Previous version of the app ↗</a>'
+            f'</div></div>', unsafe_allow_html=True)
 
     RENDERERS[page]()
 

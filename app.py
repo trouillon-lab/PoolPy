@@ -694,10 +694,10 @@ app_ui = ui.page_fluid(
                         style="margin-bottom: 16px;"
                     ),
                     ui.p(
-                        "You can also read the paper on arXiv: ",
+                        "You can also read the paper: ",
                         ui.a(
-                            "PoolPy: Flexible Group Testing Design for Large-Scale Screening",
-                            href="https://arxiv.org/abs/2509.03481",
+                            "Combinatorial group testing for efficient scaling across biological applications",
+                            href="https://www.nature.com/articles/s41467-026-77055-5",
                             style="text-decoration: underline;",
                             target="_blank",
                             rel="noopener noreferrer"

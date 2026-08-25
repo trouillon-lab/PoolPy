@@ -64,7 +64,11 @@ MAX_FLY_DIFFERENTIATE = 12
 MAX_DESIGN_CELLS = 25_000_000
 
 GITHUB_URL = "https://github.com/trouillon-lab/PoolPy"
-ARXIV_URL = "https://arxiv.org/abs/2509.03481"
+PAPER_URL = "https://www.nature.com/articles/s41467-026-77055-5"
+PAPER_DOI = "10.1038/s41467-026-77055-5"
+PAPER_TITLE = ("Combinatorial group testing for efficient scaling across "
+               "biological applications")
+PAPER_CITATION = "Talamanca &amp; Trouillon, Nature Communications, 2026"
 ZENODO_URL = "https://doi.org/10.5281/zenodo.18660061"
 # The Shiny/Shinylive app this one replaces, still served from GitHub Pages.
 LEGACY_APP_URL = "https://trouillon-lab.github.io/PoolPy/"
@@ -2733,8 +2737,8 @@ def render_about():
                 f'<p><a href="{GITHUB_URL}" target="_blank">github.com/trouillon-lab/PoolPy</a></p>'
                 f'<p>Issues and contributions welcome.</p></div>', unsafe_allow_html=True)
     c2.markdown(f'<div class="pp-card"><h4>Paper</h4>'
-                f'<p><a href="{ARXIV_URL}" target="_blank">PoolPy: Flexible Group Testing '
-                f'Design for Large-Scale Screening</a></p><p>arXiv:2509.03481</p></div>',
+                f'<p><a href="{PAPER_URL}" target="_blank">{PAPER_TITLE}</a></p>'
+                f'<p>{PAPER_CITATION}<br>DOI: {PAPER_DOI}</p></div>',
                 unsafe_allow_html=True)
     c3.markdown(f'<div class="pp-card"><h4>Data</h4>'
                 f'<p><a href="{ZENODO_URL}" target="_blank">DOI: 10.5281/zenodo.18660061</a></p>'
@@ -2785,7 +2789,7 @@ def main():
         st.markdown(
             f'<div class="pp-sidebar-links" style="margin-top:1.6rem">'
             f'<a href="{GITHUB_URL}" target="_blank">GitHub repository</a><br>'
-            f'<a href="{ARXIV_URL}" target="_blank">Read the paper</a><br>'
+            f'<a href="{PAPER_URL}" target="_blank">Read the paper</a><br>'
             f'<a href="{ZENODO_URL}" target="_blank">Design archive (Zenodo)</a>'
             f'<div class="pp-sidebar-legacy">'
             f'<a href="{LEGACY_APP_URL}" target="_blank">Previous version of the app ↗</a>'
@@ -2796,7 +2800,7 @@ def main():
     st.markdown(
         f'<div class="pp-foot">PoolPy · Trouillon lab, ETH Zürich · '
         f'<a href="{GITHUB_URL}" target="_blank" style="color:{BLUE_DARK}">source</a> · '
-        f'<a href="{ARXIV_URL}" target="_blank" style="color:{BLUE_DARK}">arXiv:2509.03481</a>'
+        f'<a href="{PAPER_URL}" target="_blank" style="color:{BLUE_DARK}">Nat Commun 2026</a>'
         f'</div>', unsafe_allow_html=True)
 
 

@@ -2,7 +2,7 @@
 
 ### A **Py**thon package to design **Pool**ing strategies.
 #### ➡️ [_PoolPy web app_](https://poolpy.trouillonlab.org/)
-#### ➡️ [_PoolPy preprint_](https://arxiv.org/abs/2509.03481/)
+#### ➡️ [_PoolPy paper_](https://www.nature.com/articles/s41467-026-77055-5)
 &nbsp;
 
 &nbsp;
@@ -35,7 +35,7 @@ This package implements several of the most commonly used group testing strategi
 - Chinese remainder (standard, backtrack, special-2 and special-3)
 - Random
 
-More details can be found in the associated [publication](https://arxiv.org/abs/2509.03481/).
+More details can be found in the associated [publication](https://www.nature.com/articles/s41467-026-77055-5).
 &nbsp;
 
 &nbsp;
@@ -268,7 +268,25 @@ uv add -r requirements-dev.txt
 
 ## 📚 Citation
 
-If you use PoolPy in your research, please cite the [PoolPy paper](https://arxiv.org/abs/2509.03481).
+If you use PoolPy in your research, please cite:
+
+> Talamanca, L. & Trouillon, J. Combinatorial group testing for efficient scaling across
+> biological applications. *Nature Communications* (2026).
+> doi:[10.1038/s41467-026-77055-5](https://www.nature.com/articles/s41467-026-77055-5)
+
+```bibtex
+@article{Talamanca_2026,
+  title    = {Combinatorial group testing for efficient scaling across biological applications},
+  author   = {Talamanca, Lorenzo and Trouillon, Julian},
+  journal  = {Nature Communications},
+  year     = {2026},
+  month    = aug,
+  doi      = {10.1038/s41467-026-77055-5},
+  url      = {https://www.nature.com/articles/s41467-026-77055-5},
+  issn     = {2041-1723},
+  publisher = {Springer Science and Business Media LLC}
+}
+```
 
 &nbsp;
 

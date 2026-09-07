@@ -2,7 +2,7 @@
 PoolPy — group-testing design, benchmarking, automation and decoding.
 
 A Streamlit re-implementation of the PoolPy web application (previously a Shiny
-app served as a static Shinylive page, still available under docs/). All
+app served as a static Shinylive page, still available under legacy/). All
 pooling algorithms, metrics and the decoder are ported from ``app.py`` so
 results are identical, apart from the corrections marked inline (see FIX
 comments).
@@ -86,10 +86,10 @@ PAPER_TITLE = ("Combinatorial group testing for efficient scaling across "
 PAPER_CITATION = "Talamanca &amp; Trouillon, Nature Communications, 2026"
 ZENODO_URL = "https://doi.org/10.5281/zenodo.18660061"
 # The Shiny/Shinylive app this one replaces, still served from GitHub Pages out
-# of the docs/ folder. The github.io address is kept on purpose: once a custom
+# of the legacy/ folder. The github.io address is kept on purpose: once a custom
 # domain is attached to the site, GitHub redirects it there, so this link keeps
 # working before, during and after the domain switch.
-LEGACY_APP_URL = "https://trouillon-lab.github.io/PoolPy/docs/"
+LEGACY_APP_URL = "https://trouillon-lab.github.io/PoolPy/legacy/"
 CONTACT = "jtrouillon@ethz.ch"
 
 # Palette derived from the PoolPy logo. The two chart marks (#35659C, #C0392B)
@@ -2827,7 +2827,7 @@ def main():
             f'<a href="{PAPER_URL}" target="_blank">Read the paper</a><br>'
             f'<a href="{ZENODO_URL}" target="_blank">Design archive (Zenodo)</a>'
             f'<div class="pp-sidebar-legacy">'
-            f'<a href="{LEGACY_APP_URL}" target="_blank">Previous version of the app ↗</a>'
+            f'<a href="{LEGACY_APP_URL}" target="_blank">Legacy app ↗</a>'
             f'</div></div>', unsafe_allow_html=True)
 
     RENDERERS[page]()

@@ -78,8 +78,11 @@ PAPER_TITLE = ("Combinatorial group testing for efficient scaling across "
                "biological applications")
 PAPER_CITATION = "Talamanca &amp; Trouillon, Nature Communications, 2026"
 ZENODO_URL = "https://doi.org/10.5281/zenodo.18660061"
-# The Shiny/Shinylive app this one replaces, still served from GitHub Pages.
-LEGACY_APP_URL = "https://trouillon-lab.github.io/PoolPy/"
+# The Shiny/Shinylive app this one replaces, still served from GitHub Pages out
+# of the docs/ folder. The github.io address is kept on purpose: once a custom
+# domain is attached to the site, GitHub redirects it there, so this link keeps
+# working before, during and after the domain switch.
+LEGACY_APP_URL = "https://trouillon-lab.github.io/PoolPy/docs/"
 CONTACT = "jtrouillon@ethz.ch"
 
 # Palette derived from the PoolPy logo. The two chart marks (#35659C, #C0392B)

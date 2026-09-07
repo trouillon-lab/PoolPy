@@ -10,11 +10,12 @@
       on a server — the Python interpreter, the app and the benchmark database
       are all downloaded to the visitor's browser and run there.
 
-      The app source and its data files are NOT copied into this folder. They
-      are fetched at start-up from the repository root, one level up, so this
-      page must be served from a tree that also contains streamlit_app.py,
-      data/, assets/ and user_guide.pdf (e.g. GitHub Pages serving the
-      repository root, where this page is reached at /PoolPy/stlite/).
+      The app source and its data files are not copied anywhere: this page sits
+      at the repository root and fetches streamlit_app.py, data/, assets/ and
+      user_guide.pdf from beside it at start-up. Serve the repository root
+      (GitHub Pages set to "/ (root)", or `python3 -m http.server` from here)
+      and the app is the site's front page. The earlier Shinylive version of
+      the app is still served from docs/.
     -->
     <link
       rel="stylesheet"
@@ -35,10 +36,10 @@
           // automatically for read_parquet, so pyarrow is not needed here.
           requirements: ["pandas", "numpy", "scipy", "altair", "pillow"],
           files: {
-            "streamlit_app.py": { url: "../streamlit_app.py" },
-            "data/precomputed_metrics.parquet": { url: "../data/precomputed_metrics.parquet" },
-            "assets/poolpy_logo.png": { url: "../assets/poolpy_logo.png" },
-            "user_guide.pdf": { url: "../user_guide.pdf" },
+            "streamlit_app.py": { url: "./streamlit_app.py" },
+            "data/precomputed_metrics.parquet": { url: "./data/precomputed_metrics.parquet" },
+            "assets/poolpy_logo.png": { url: "./assets/poolpy_logo.png" },
+            "user_guide.pdf": { url: "./user_guide.pdf" },
           },
           // Same settings as .streamlit/config.toml, which stlite does not read.
           streamlitConfig: {

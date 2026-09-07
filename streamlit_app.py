@@ -22,6 +22,7 @@ import itertools
 import math
 import re
 import string
+import sys
 from bisect import bisect_left
 from functools import lru_cache
 from pathlib import Path
@@ -57,11 +58,18 @@ MAX_PREVALENCE = 0.1
 # (This replaces app.py's S·D² <= 2500 rule, which was sized for the browser and
 # refused S = 100,000 with D = 1 while allowing far more expensive combinations.)
 MAX_FLY_DIFFERENTIATE = 12
+# True when the app runs inside the visitor's browser under stlite (Streamlit on
+# Pyodide/WebAssembly, see stlite/index.html) rather than on a server. The two
+# platforms differ only in the caps below and in how downloads are produced.
+IN_BROWSER = sys.platform == "emscripten"
 # Samples × pools above which a design is not offered as a download. A cell is
 # two bytes of CSV, and building one costs several times that in memory, so this
 # is what keeps a hosted instance inside its container. Raise it if you run the
-# app somewhere with more headroom.
-MAX_DESIGN_CELLS = 25_000_000
+# app somewhere with more headroom. In the browser every offered design is built
+# up front (see deferred_design_csv), so the cap is lower: at 1,000,000 cells the
+# whole benchmarked range S ≤ 1000 stays downloadable and the worst grid cell
+# measured (S = 20,000, D = 12) builds 12 designs, 17 MB, in 1.4 s natively.
+MAX_DESIGN_CELLS = 1_000_000 if IN_BROWSER else 25_000_000
 
 GITHUB_URL = "https://github.com/trouillon-lab/PoolPy"
 PAPER_URL = "https://www.nature.com/articles/s41467-026-77055-5"
@@ -1276,13 +1284,30 @@ def deferred_csv(df: pd.DataFrame, index: bool = True):
     clicked. Producing every CSV up front — what a download button normally does
     — costs ~350 MB and several seconds at the maximum S. Nothing in here touches
     Streamlit, so it is safe off the script thread.
+
+    Under stlite the callable form does not work: the frontend is handed an
+    internal ``stlite.invalid`` URL for the deferred file and navigates to it
+    directly, which the browser cannot resolve, whereas plain bytes are fetched
+    through stlite's own shim and download normally. So in the browser the bytes
+    are produced immediately; MAX_DESIGN_CELLS is lowered there to keep that cheap.
     """
+    if IN_BROWSER:
+        return csv_bytes(df, index=index)
     return lambda: csv_bytes(df, index=index)
+
+
+@st.cache_data(show_spinner=False, max_entries=64)
+def _eager_design_csv(label: str, n: int, d: int) -> bytes:
+    """Browser-only: the CSV for one design, cached so that rerunning the
+    downloads fragment (every download click does) rebuilds nothing."""
+    return csv_bytes(build_design(label, n, d))
 
 
 def deferred_design_csv(label: str, n: int, d: int):
     """As above, but the design is built inside the callback and dropped after,
     so a page full of download buttons holds shapes, not matrices."""
+    if IN_BROWSER:
+        return _eager_design_csv(label, n, d)
     return lambda: csv_bytes(build_design(label, n, d))
 
 

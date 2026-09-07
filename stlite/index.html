@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <title>PoolPy</title>
+    <!--
+      Browser-only build of the PoolPy Streamlit app (streamlit_app.py), run by
+      stlite: Streamlit compiled to WebAssembly via Pyodide. Nothing is computed
+      on a server — the Python interpreter, the app and the benchmark database
+      are all downloaded to the visitor's browser and run there.
+
+      The app source and its data files are NOT copied into this folder. They
+      are fetched at start-up from the repository root, one level up, so this
+      page must be served from a tree that also contains streamlit_app.py,
+      data/, assets/ and user_guide.pdf (e.g. GitHub Pages serving the
+      repository root, where this page is reached at /PoolPy/stlite/).
+    -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@stlite/browser@1.8.1/build/stlite.css"
+    />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module">
+      import { mount } from "https://cdn.jsdelivr.net/npm/@stlite/browser@1.8.1/build/stlite.js";
+
+      mount(
+        {
+          entrypoint: "streamlit_app.py",
+          // Pyodide-prebuilt packages; streamlit itself is bundled with stlite.
+          // Mirrors requirements.txt minus streamlit and pyarrow: stlite's
+          // Streamlit build ships fastparquet instead, which pandas picks up
+          // automatically for read_parquet, so pyarrow is not needed here.
+          requirements: ["pandas", "numpy", "scipy", "altair", "pillow"],
+          files: {
+            "streamlit_app.py": { url: "../streamlit_app.py" },
+            "data/precomputed_metrics.parquet": { url: "../data/precomputed_metrics.parquet" },
+            "assets/poolpy_logo.png": { url: "../assets/poolpy_logo.png" },
+            "user_guide.pdf": { url: "../user_guide.pdf" },
+          },
+          // Same settings as .streamlit/config.toml, which stlite does not read.
+          streamlitConfig: {
+            "theme.base": "light",
+            "theme.primaryColor": "#35659C",
+            "theme.backgroundColor": "#FBF9F7",
+            "theme.secondaryBackgroundColor": "#FFFFFF",
+            "theme.textColor": "#16202B",
+            "theme.font": "sans serif",
+            "server.maxUploadSize": 20,
+            "browser.gatherUsageStats": false,
+            "client.toolbarMode": "viewer",
+          },
+        },
+        document.getElementById("root"),
+      );
+    </script>
+  </body>
+</html>

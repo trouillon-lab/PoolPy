@@ -17,6 +17,15 @@
       and the app is the site's front page. The earlier Shinylive version of
       the app is still served from docs/.
     -->
+    <!--
+      Browser-tab icon. On a Streamlit server this comes from the page_icon
+      passed to st.set_page_config; under stlite that icon is handed to the
+      browser as an internal stlite.invalid URL it cannot load, so the tab
+      would stay blank. Declared here instead, from the same logo file. The
+      rel is "icon", not "shortcut icon", because Streamlit's frontend only
+      rewrites the latter and would replace it with the unreachable URL.
+    -->
+    <link rel="icon" type="image/png" href="./assets/poolpy_logo.png" />
     <link
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@stlite/browser@1.8.1/build/stlite.css"

@@ -1,15 +1,19 @@
-# Dependencies for the PoolPy web application (streamlit_app.py).
+# Dependencies for running the PoolPy web application (streamlit_app.py) on a
+# Python interpreter:  pip install -r requirements.txt && streamlit run streamlit_app.py
 #
-# This is the file Streamlit Community Cloud installs: it looks for a file named
-# exactly "requirements.txt" next to the entrypoint or at the repository root,
-# and a custom name would be ignored. The analysis/notebook environment — with
-# scikit-learn, matplotlib and the rest — lives in requirements-dev.txt; the app
-# does not import any of it.
+# The published app at https://poolpy.trouillonlab.org/ does not use this file.
+# It runs in the visitor's browser through stlite (see index.html), which
+# bundles its own Streamlit and installs the other packages from Pyodide's
+# prebuilt set — the same libraries as below, minus pyarrow, which stlite
+# replaces with fastparquet. Keep the two lists in step when adding a package.
 #
-# The lower bounds are the first releases that ship wheels for Python 3.14,
-# which is what Community Cloud now provisions. Without them a resolver is free
-# to pick an older version, fail to find a wheel, try to compile from source and
-# die on a missing system header (this is exactly how pillow==11.2.1 failed).
+# The analysis/notebook environment — with scikit-learn, matplotlib and the
+# rest — lives in requirements-dev.txt; the app does not import any of it.
+#
+# The lower bounds are the first releases that ship wheels for Python 3.14.
+# Without them a resolver is free to pick an older version, fail to find a
+# wheel, try to compile from source and die on a missing system header (this
+# is exactly how pillow==11.2.1 failed).
 #
 # Tested on Python 3.13 and 3.14, Streamlit 1.60 and 1.61.
 streamlit>=1.60

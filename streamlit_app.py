@@ -2,16 +2,23 @@
 PoolPy — group-testing design, benchmarking, automation and decoding.
 
 A Streamlit re-implementation of the PoolPy web application (previously a Shiny
-app served as a static Shinylive page). All pooling algorithms, metrics and the
-decoder are ported from ``app.py`` so results are identical, apart from the
-corrections marked inline (see FIX comments).
+app served as a static Shinylive page, still available under docs/). All
+pooling algorithms, metrics and the decoder are ported from ``app.py`` so
+results are identical, apart from the corrections marked inline (see FIX
+comments).
 
 Several routines are rewritten for speed — primality by sieve, the Chinese
 remainder backtrack search by branch and bound, the hierarchical splitter on
 index ranges, the digit-pair designs and the expected-tests sum vectorised.
 Every one of them was checked to return the same values as the original.
 
-Run with:  streamlit run streamlit_app.py
+The published app (https://poolpy.trouillonlab.org/) is this same file run in
+the visitor's browser by stlite — Streamlit on Pyodide/WebAssembly — from
+``index.html`` at the repository root, served by GitHub Pages. No server is
+involved. The code detects that environment through ``IN_BROWSER`` and differs
+only in how downloads are produced and how large a design it offers.
+
+Run locally with:  streamlit run streamlit_app.py
 """
 
 from __future__ import annotations

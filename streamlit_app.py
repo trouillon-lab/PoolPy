@@ -34,13 +34,18 @@ from bisect import bisect_left
 from functools import lru_cache
 from pathlib import Path
 
-import altair as alt
 import numpy as np
 import pandas as pd
-import scipy.stats
 import streamlit as st
 from PIL import Image
-from scipy import optimize as opt
+
+# altair and scipy are imported inside the functions that use them, not here.
+# Both are slow to import and neither is needed to draw the first screen: the
+# charts appear only once a benchmark has been run, and scipy only on the
+# Prevalence page. Deferring them takes that cost off every visitor's initial
+# load, which under stlite is Python starting up in their browser. Repeat
+# imports are a dictionary lookup in sys.modules, so the functions pay nothing
+# for asking again.
 
 # ═══════════════════════════════════════════════════════════════════════════
 #  CONFIGURATION
@@ -755,6 +760,8 @@ def fly_summary(n_compounds: int, differentiate: int) -> pd.DataFrame:
 # ═══════════════════════════════════════════════════════════════════════════
 
 def _et_multidim(N, D, p) -> float:
+    import scipy.stats
+
     N = int(np.round(N))
     NS = N ** D
     rg = np.arange(N + 1)
@@ -795,6 +802,8 @@ def optimal_multidim(p: float, d_max: int) -> list | None:
 
 def optimal_hierarchical(p: float, max_layers: int) -> list | None:
     """Best per-layer split factors for an infinite population at prevalence p."""
+    from scipy import optimize as opt
+
     def expected_tests(N):
         Mm = np.insert(np.cumprod(N), 0, 1, axis=0)
         M = np.insert(np.flip(np.cumprod(np.flip(N))), len(N), 1, axis=0)
@@ -816,6 +825,8 @@ def optimal_hierarchical(p: float, max_layers: int) -> list | None:
 
 def expected_error_table(N, prevalence, max_diff=4, correct=False, max_error=0.05, extra_steps=2) -> pd.DataFrame:
     """P(more than D positives in a pool) over sub-population sizes × D."""
+    import scipy.stats
+
     diff_values = np.arange(1, int(max_diff) + extra_steps + 1)
     extreme_diff = int(np.ceil(scipy.stats.binom.isf(max_error, N, prevalence)))
     min_N = 5
@@ -1411,12 +1422,26 @@ header[data-testid="stHeader"] {{ background: transparent; }}
 section[data-testid="stSidebar"] {{
   background: linear-gradient(180deg, #FFFFFF 0%, var(--pp-blue-soft) 100%);
   border-right: 1px solid #DFE4EA;
+  /* Streamlit's resizable sidebar sets an inline "width: 300px", so trimming
+     it needs !important. 220px is as narrow as this navigation goes: measured
+     across widths, every caption still fits on two lines here, at 200px
+     "Compare methods and get designs" spills onto a third, and Streamlit
+     clamps the section at about 199px whatever is asked for. The 80px saved
+     goes to the benchmark table and charts. */
+  width: 220px !important;
 }}
 section[data-testid="stSidebar"] .stRadio label p {{ font-size: 1.02rem; }}
 section[data-testid="stSidebar"] .stRadio [data-testid="stCaptionContainer"] p {{ font-size: 0.88rem; }}
 section[data-testid="stSidebar"] [data-testid="stImage"] {{ padding: 0.4rem 0 1.1rem 0; }}
+/* Streamlit sizes a width="stretch" image with an inline "width: <n>px;
+   max-width: 100%", and an inline declaration beats this stylesheet, so the
+   cap here needs !important to bite. Without it the logo fills the sidebar
+   (a plain max-width in px was silently ignored). The percentage is set
+   against the narrowed sidebar above: 85% of 220px keeps the wordmark at
+   roughly the size it had at 75% of the old 300px, so trimming the sidebar
+   does not shrink the logo twice over. */
 section[data-testid="stSidebar"] [data-testid="stImage"] img {{
-  max-width: 200px; display: block; margin: 0 auto;
+  max-width: 85% !important; display: block; margin: 0 auto;
 }}
 .pp-sidebar-links {{ font-size: 0.9rem; line-height: 1.9; color: var(--pp-muted); }}
 .pp-sidebar-links a {{ color: var(--pp-blue-dark); text-decoration: none; }}
@@ -1671,6 +1696,8 @@ STATUS_RANGE = [BLUE, CRITICAL]
 
 
 def _chart_base(df: alt.Chart):
+    # No altair import needed: only the chart handed in is configured, and the
+    # annotation is a string (see "from __future__ import annotations" above).
     return df.configure_view(strokeWidth=0).configure_axis(
         labelFont=CHART_FONT, titleFont=CHART_FONT, labelColor=MUTED, titleColor=INK,
         labelFontSize=14, titleFontSize=15, titleFontWeight=600, titlePadding=10,
@@ -1699,6 +1726,8 @@ def _status_colour(df: pd.DataFrame):
 
     A single state needs no legend box — the chart title and caption name it.
     """
+    import altair as alt
+
     present = [s for s in STATUS_DOMAIN if (df["Status"] == s).any()]
     colours = [STATUS_RANGE[STATUS_DOMAIN.index(s)] for s in present]
     return alt.Color("Status:N",
@@ -1707,6 +1736,8 @@ def _status_colour(df: pd.DataFrame):
 
 
 def _tooltip():
+    import altair as alt
+
     return [alt.Tooltip("Pooling strategy:N", title="Strategy"),
             alt.Tooltip("Tests:Q", title="Mean tests", format=".1f"),
             alt.Tooltip("Saving:Q", title="Saving vs individual (%)", format=".0f"),
@@ -1715,6 +1746,8 @@ def _tooltip():
 
 
 def tests_chart(summary: pd.DataFrame, n_samp: int):
+    import altair as alt
+
     df = _chart_frame(summary, n_samp)
     if df.empty:
         return None
@@ -1815,6 +1848,8 @@ def _label_alignments(front: pd.DataFrame, df: pd.DataFrame, x_lo, x_hi, y_lo, y
 
 
 def tradeoff_chart(summary: pd.DataFrame, n_samp: int):
+    import altair as alt
+
     df = _chart_frame(summary, n_samp).dropna(subset=["Pool size"])
     if df.empty:
         return None
@@ -2802,7 +2837,7 @@ PAGE_BLURB = {
     "Decoder": "Decode pooled results",
     "Automation": "Generate robot protocols",
     "Guide": "Methods, metrics and notation",
-    "About": "The project, paper and data",
+    "About": "About PoolPy",
 }
 
 

@@ -2105,7 +2105,7 @@ def _render_summary(summary: pd.DataFrame, n_samp: int, diff: int, sens: float, 
     c2 = tradeoff_chart(summary, n_samp)
     if c2 is not None:
         st.altair_chart(c2, width="stretch")
-        st.caption("There is no universally best pooling strategy — designs that need the "
+        st.caption("There is no universally best pooling strategy. Designs that need the "
                    "fewest tests generally require the largest pools, which leads to "
                    "higher signal dilution. Named points sit on the trade-off frontier (dashed "
                    "line): nothing else does better on both axes at once. Hover any point for "
@@ -2273,7 +2273,7 @@ def _prevalence_optimiser():
 def _prevalence_risk():
     section("Misparametrisation risk for a chosen D")
     st.caption("The tables give the probability that a set of samples at a given prevalence contains more than D "
-               "positives — per set on the left, and across multiple batches "
+               "positives, shown per set on the left, and across multiple batches "
                "on the right (family-wise error rate). Rows are sample counts, columns are D.")
 
     with st.form("prev_form"):
@@ -2725,9 +2725,9 @@ def render_guide():
         "These keep the same design whatever D is, so use them with care when more than one "
         "positive is expected.\n\n"
         "- **Matrix** — semi-adaptive; each sample sits in one row pool and one column pool.\n"
-        "- **Multidimensional (3D, 4D, …)** — samples on a higher-dimensional grid, one pool per "
+        "- **Multidimensional (3D, 4D, …)** — semi-adaptive; samples on a higher-dimensional grid, one pool per "
         "coordinate per axis.\n"
-        "- **Binary** — samples are assigned to pools by a binary code, maximising information "
+        "- **Binary** — semi-adaptive; samples are assigned to pools by a binary code, maximising information "
         "per test."
     )
 
@@ -2738,8 +2738,8 @@ def render_guide():
         "| Mean experiments | Average number of tests needed to identify the positives. |\n"
         "| Mean steps | Average number of successive testing rounds; 1 means fully non-adaptive. |\n"
         "| N pools (W) | Pools used in the first step. For Hierarchical, the list of splits. |\n"
-        "| Max samples per pool | Largest number of samples combined in any one pool — the "
-        "practical limit set by assay dilution. |\n"
+        "| Max samples per pool | Largest number of samples combined in any one pool"
+        " (defines signal dilution). |\n"
         "| Percentage check | Share of cases needing a confirmation round beyond the first step. |\n"
         "| Mean extra experiments | Average number of tests beyond the first step. |\n"
         "| Max experiments per sample | Most times any individual sample is tested. |\n"
@@ -2869,8 +2869,8 @@ def main():
 
     st.markdown(
         f'<div class="pp-foot">PoolPy · Trouillon lab, ETH Zürich · '
-        f'<a href="{GITHUB_URL}" target="_blank" style="color:{BLUE_DARK}">source</a> · '
-        f'<a href="{PAPER_URL}" target="_blank" style="color:{BLUE_DARK}">Nat Commun 2026</a>'
+        f'<a href="{GITHUB_URL}" target="_blank" style="color:{BLUE_DARK}">Source code</a> · '
+        f'<a href="{PAPER_URL}" target="_blank" style="color:{BLUE_DARK}">Publication</a>'
         f'</div>', unsafe_allow_html=True)
 
 

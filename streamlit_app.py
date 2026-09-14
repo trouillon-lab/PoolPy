@@ -1431,8 +1431,25 @@ section[data-testid="stSidebar"] {{
   width: 220px !important;
 }}
 section[data-testid="stSidebar"] .stRadio label p {{ font-size: 1.02rem; }}
-section[data-testid="stSidebar"] .stRadio [data-testid="stCaptionContainer"] p {{ font-size: 0.88rem; }}
-section[data-testid="stSidebar"] [data-testid="stImage"] {{ padding: 0.4rem 0 1.1rem 0; }}
+section[data-testid="stSidebar"] .stRadio [data-testid="stCaptionContainer"] p {{
+  font-size: 0.88rem; line-height: 1.15;
+}}
+section[data-testid="stSidebar"] [data-testid="stImage"] {{ padding: 0 0 0.5rem 0; }}
+/* The rules below exist so the whole navigation fits without scrolling. Before
+   them the sidebar needed 865px of window height, more than a laptop screen,
+   and the links at the bottom were cut off; it now needs 743px. Streamlit's
+   sidebar header reserves 60px plus a 16px margin, of which 32px is a
+   placeholder for st.logo() — an API this app does not use, so that space is
+   dead. The bottom padding is Streamlit's scroll allowance, far more than this
+   sidebar needs. */
+section[data-testid="stSidebar"] [data-testid="stSidebarHeader"] {{
+  height: 36px; min-height: 36px; margin-bottom: 0.35rem;
+}}
+section[data-testid="stSidebar"] [data-testid="stLogoSpacer"] {{ display: none; }}
+section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{ padding-bottom: 1.5rem; }}
+section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] [data-testid="stVerticalBlock"] {{
+  gap: 0.7rem;
+}}
 /* Streamlit sizes a width="stretch" image with an inline "width: <n>px;
    max-width: 100%", and an inline declaration beats this stylesheet, so the
    cap here needs !important to bite. Without it the logo fills the sidebar

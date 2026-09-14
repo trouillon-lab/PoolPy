@@ -30,13 +30,76 @@
       rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/@stlite/browser@1.8.1/build/stlite.css"
     />
+    <style>
+      /* Loading splash. It covers the page until the app's navigation appears,
+         replacing stlite's own progress toasts (disabled below) with wording
+         that says what is happening in the visitor's terms. Colours are the
+         app's own palette, so the hand-over is not a visible jump. */
+      #pp-splash {
+        position: fixed; inset: 0; z-index: 9999;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 1.4rem; padding: 2rem; text-align: center;
+        background: linear-gradient(180deg, #FBF9F7 0%, #E6EDF6 100%);
+        font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #16202B;
+        transition: opacity 0.45s ease;
+      }
+      #pp-splash.pp-done { opacity: 0; pointer-events: none; }
+      #pp-splash img { width: 180px; max-width: 55vw; }
+      #pp-splash-step {
+        font-size: 1.05rem; font-weight: 600; color: #24466C;
+        min-height: 1.5em;   /* reserve the line so the layout never jumps */
+      }
+      #pp-splash-track {
+        width: min(320px, 70vw); height: 4px; border-radius: 2px;
+        background: rgba(53, 101, 156, 0.18); overflow: hidden;
+      }
+      #pp-splash-bar {
+        height: 100%; width: 0%; border-radius: 2px; background: #35659C;
+        transition: width 0.5s ease;
+      }
+      /* Fallback links, anchored to the bottom of the splash: if loading stalls
+         or fails on a visitor's browser, PoolPy is still reachable from here. */
+      #pp-splash-links {
+        position: absolute; bottom: 1.5rem; left: 0; right: 0;
+        font-size: 0.8rem; color: #5A6673;
+      }
+      #pp-splash-links a { color: #24466C; text-decoration: none; }
+      #pp-splash-links a:hover { text-decoration: underline; }
+      @media (prefers-reduced-motion: reduce) {
+        #pp-splash, #pp-splash-bar { transition: none; }
+      }
+    </style>
   </head>
   <body>
+    <div id="pp-splash">
+      <img src="./assets/poolpy_logo.png" alt="PoolPy" />
+      <div id="pp-splash-track"><div id="pp-splash-bar"></div></div>
+      <div id="pp-splash-step">Starting PoolPy…</div>
+      <!-- Mirrors LEGACY_APP_URL, GITHUB_URL and PAPER_URL in streamlit_app.py.
+           The legacy link is relative so it follows whichever domain serves
+           this page. -->
+      <div id="pp-splash-links">
+        <a href="./legacy/">Legacy app</a> ·
+        <a href="https://github.com/trouillon-lab/PoolPy">Source code</a> ·
+        <a href="https://www.nature.com/articles/s41467-026-77055-5">Publication</a>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module">
       import { mount } from "https://cdn.jsdelivr.net/npm/@stlite/browser@1.8.1/build/stlite.js";
 
-      mount(
+      // Local development only. stlite fetches the app from inside a Web
+      // Worker, and a hard reload (Cmd+Shift+R) does not reliably bypass the
+      // HTTP cache for worker-initiated requests, so edits to streamlit_app.py
+      // can silently appear not to take effect. A timestamp forces a fresh copy
+      // when serving from localhost. The published site keeps a clean URL, so
+      // GitHub Pages caching is untouched. Only the app file is busted — the
+      // parquet database and the PDF are large and rarely edited.
+      const DEV = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+      const appUrl = "./streamlit_app.py" + (DEV ? "?v=" + Date.now() : "");
+
+      const controller = mount(
         {
           entrypoint: "streamlit_app.py",
           // Pyodide-prebuilt packages; streamlit itself is bundled with stlite.
@@ -45,7 +108,7 @@
           // automatically for read_parquet, so pyarrow is not needed here.
           requirements: ["pandas", "numpy", "scipy", "altair", "pillow"],
           files: {
-            "streamlit_app.py": { url: "./streamlit_app.py" },
+            "streamlit_app.py": { url: appUrl },
             "data/precomputed_metrics.parquet": { url: "./data/precomputed_metrics.parquet" },
             "assets/poolpy_logo.png": { url: "./assets/poolpy_logo.png" },
             "user_guide.pdf": { url: "./user_guide.pdf" },
@@ -62,9 +125,76 @@
             "browser.gatherUsageStats": false,
             "client.toolbarMode": "viewer",
           },
+          // stlite's own progress toasts, replaced by the splash above. Error
+          // toasts are governed separately and stay on, so a failure to load
+          // is still reported rather than hidden behind the splash.
+          disableProgressToasts: true,
         },
         document.getElementById("root"),
       );
+
+      // ── splash progress ───────────────────────────────────────────────
+      // The kernel emits one "loadProgress" event per start-up step, carrying
+      // stlite's own wording as event.detail. Known steps are translated to the
+      // lines below; an unrecognised step leaves the text alone but still moves
+      // the bar, so a future stlite that renames or reorders its steps degrades
+      // to a moving bar rather than breaking or showing the wrong thing.
+      const STEPS = [
+        [/pyodide/i, "Downloading the Python runtime…"],
+        [/mounting files/i, "Loading PoolPy and its benchmark database…"],
+        [/installing/i, "Installing the scientific libraries…"],
+        [/streamlit package/i, "Starting the app…"],
+        [/booting/i, "Almost ready…"],
+      ];
+      // Start-up steps counted on stlite 1.8.1; only the bar's pace depends on
+      // it, and it is clamped so an extra step cannot overshoot.
+      const EXPECTED_STEPS = 9;
+
+      const splash = document.getElementById("pp-splash");
+      const stepEl = document.getElementById("pp-splash-step");
+      const barEl = document.getElementById("pp-splash-bar");
+      let seen = 0;
+
+      function onProgress(event) {
+        const message = String((event && event.detail) || "");
+        const hit = STEPS.find(([pattern]) => pattern.test(message));
+        if (hit) stepEl.textContent = hit[1];
+        seen += 1;
+        barEl.style.width = Math.min(92, (seen / EXPECTED_STEPS) * 92) + "%";
+      }
+
+      // _kernel is documented as an unstable API, so every use is guarded: if a
+      // future stlite drops it the app still loads, just without step updates.
+      const kernel = controller && controller._kernel;
+      if (kernel && typeof kernel.addEventListener === "function") {
+        kernel.addEventListener("loadProgress", onProgress);
+      }
+
+      // The splash lifts once the sidebar navigation exists, which means the
+      // Python script has run and rendered, not merely that Streamlit booted.
+      const READY = '[data-testid="stSidebar"] input[type="radio"]';
+      function finish() {
+        barEl.style.width = "100%";
+        splash.classList.add("pp-done");
+        setTimeout(() => splash.remove(), 500);
+      }
+      if (document.querySelector(READY)) {
+        finish();
+      } else {
+        const observer = new MutationObserver(() => {
+          if (document.querySelector(READY)) {
+            observer.disconnect();
+            finish();
+          }
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
+        // Never trap the visitor behind the splash: if the app fails to render,
+        // drop it anyway so stlite's error toast and the page are reachable.
+        setTimeout(() => {
+          observer.disconnect();
+          if (document.getElementById("pp-splash")) finish();
+        }, 90000);
+      }
     </script>
   </body>
 </html>

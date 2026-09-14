@@ -11,3 +11,8 @@ maxUploadSize = 20
 
 [browser]
 gatherUsageStats = false
+
+[client]
+# Hides the three-dot menu (Print, Rerun, Streamlit version). Kept in step with
+# the streamlitConfig block in index.html, which stlite uses instead of this file.
+toolbarMode = "minimal"

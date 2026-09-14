@@ -123,7 +123,11 @@
             "theme.font": "sans serif",
             "server.maxUploadSize": 20,
             "browser.gatherUsageStats": false,
-            "client.toolbarMode": "viewer",
+            // "minimal" leaves the three-dot menu (Print, Rerun, Streamlit
+            // version) out entirely: it keeps only entries added externally or
+            // via st.set_page_config's menu_items, and this app adds none, so
+            // the menu has nothing to show and is hidden.
+            "client.toolbarMode": "minimal",
           },
           // stlite's own progress toasts, replaced by the splash above. Error
           // toasts are governed separately and stay on, so a failure to load

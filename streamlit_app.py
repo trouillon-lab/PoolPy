@@ -84,6 +84,7 @@ IN_BROWSER = sys.platform == "emscripten"
 MAX_DESIGN_CELLS = 1_000_000 if IN_BROWSER else 25_000_000
 
 GITHUB_URL = "https://github.com/trouillon-lab/PoolPy"
+LAB_URL = "https://trouillonlab.org/"
 PAPER_URL = "https://www.nature.com/articles/s41467-026-77055-5"
 PAPER_DOI = "10.1038/s41467-026-77055-5"
 PAPER_TITLE = ("Combinatorial group testing for efficient scaling across "
@@ -2885,7 +2886,8 @@ def main():
     RENDERERS[page]()
 
     st.markdown(
-        f'<div class="pp-foot">PoolPy · Trouillon lab, ETH Zürich · '
+        f'<div class="pp-foot">PoolPy · '
+        f'<a href="{LAB_URL}" target="_blank" style="color:{BLUE_DARK}">Trouillon lab</a>, ETH Zürich · '
         f'<a href="{GITHUB_URL}" target="_blank" style="color:{BLUE_DARK}">Source code</a> · '
         f'<a href="{PAPER_URL}" target="_blank" style="color:{BLUE_DARK}">Publication</a>'
         f'</div>', unsafe_allow_html=True)
